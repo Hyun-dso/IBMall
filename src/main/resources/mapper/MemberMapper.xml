@@ -1,0 +1,16 @@
+<mapper namespace="com.itbank.mall.mapper.MemberMapper">
+  <insert id="insertMember">
+    INSERT INTO member (email, password, nickname, provider, is_verified, created_at)
+    VALUES (#{email}, #{password}, #{nickname}, #{provider}, #{isVerified}, NOW())
+  </insert>
+
+  <select id="findByEmail" resultType="com.itbank.mall.entity.Member">
+    SELECT * FROM member WHERE email = #{email}
+  </select>
+
+  <update id="verifyMemberByEmail">
+    UPDATE member
+    SET verified = 1
+    WHERE email = #{email}
+</update>
+</mapper>
