@@ -26,10 +26,12 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	// mariaDB
+	implementation 'org.mariadb.jdbc:mariadb-java-client'
 	// 비밀번호 암호화
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	// mybatis
-	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.2'
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	// 롬복
 	compileOnly 'org.projectlombok:lombok'
