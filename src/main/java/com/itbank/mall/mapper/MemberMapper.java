@@ -10,4 +10,5 @@ public interface MemberMapper {
     void insertMember(Member member);
     Member findByEmail(String email);
     void verifyMemberByEmail(@Param("email") String email);
+    void updatePassword(@Param("email") String email, @Param("password") String encodedPassword);
 }

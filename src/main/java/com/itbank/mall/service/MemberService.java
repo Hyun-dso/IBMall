@@ -12,9 +12,19 @@ import org.springframework.stereotype.Service;
 public class MemberService {
 
     private final MemberMapper memberMapper;
-    private final EmailVerificationService emailVerificationService;
-    private final BCryptPasswordEncoder passwordEncoder; 
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService; // 🔥 추가
 
+    public Member signin(String email, String rawPassword) {
+        Member member = memberMapper.findByEmail(email);
+        if (member == null) {
+            return null;
+        }
+
+        boolean matched = passwordEncoder.matches(rawPassword, member.getPassword());
+        return matched ? member : null;
+    }
+    
     public void signup(SignupRequestDto dto) {
         if (memberMapper.findByEmail(dto.getEmail()) != null) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다");
@@ -29,11 +39,9 @@ public class MemberService {
         member.setVerified(false);
 
         memberMapper.insertMember(member);
-
-        emailVerificationService.sendVerificationCode(dto.getEmail());
     }
-
-    public void verifyMember(String email) {
-        memberMapper.verifyMemberByEmail(email);
+    
+    public Member findByEmail(String email) {
+        return memberMapper.findByEmail(email);
     }
 }

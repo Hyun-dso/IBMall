@@ -11,6 +11,6 @@ public class Member {
     private String nickname;
     private String provider;       // "local", "google", "naver"
     private String providerId;     // 소셜 로그인용 고유값 (일반 회원은 null)
-    private Boolean Verified;    // 이메일 인증 여부
+    private Boolean verified;    // 이메일 인증 여부
     private LocalDateTime createdAt;
 }

@@ -26,4 +26,9 @@
         WHERE id = #{id}
     </update>
 
+<update id="updateMemberVerified">
+    UPDATE member
+    SET is_verified = 1
+    WHERE email = #{email}
+</update>
 </mapper>

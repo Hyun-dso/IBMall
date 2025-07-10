@@ -1,5 +1,13 @@
 // src/main/resources/static/js/signup.js
-document.getElementById('signup-form').addEventListener('submit', async function (e) {
+let signupEmail = '';
+
+const signupForm = document.getElementById('signup-form');
+const verifySection = document.getElementById('verify-section');
+const postSignupSection = document.getElementById('post-signup-section');
+const verifyForm = document.getElementById('verify-form');
+const sendVerificationBtn = document.getElementById('send-verification-btn');
+
+signupForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const form = e.target;
@@ -16,14 +24,60 @@ document.getElementById('signup-form').addEventListener('submit', async function
       body: JSON.stringify(data)
     });
 
+    const result = await res.json();
     if (res.ok) {
-      alert('회원가입 성공! 이메일 인증을 확인하세요.');
+      signupEmail = data.email;
+      alert(result.message || '회원가입 성공!');
+      postSignupSection.style.display = 'block';  // ✅ post-signup 보이기
+      signupForm.style.display = 'none';           // ✅ 폼 숨기기
     } else {
-      const err = await res.text();
-      alert('오류 발생: ' + err);
+      alert(result.message || '회원가입 실패');
     }
   } catch (err) {
-    alert('서버 연결 실패');
+    alert('서버 오류');
+    console.error(err);
+  }
+});
+
+sendVerificationBtn.addEventListener('click', async () => {
+  try {
+    const res = await fetch('/api/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: signupEmail })
+    });
+
+    const result = await res.json();
+    alert(result.message || '인증번호가 이메일로 전송되었습니다.');
+    postSignupSection.style.display = 'none';
+    verifySection.style.display = 'block';  // ✅ 인증 폼 보여주기
+  } catch (err) {
+    alert('인증 요청 실패');
+    console.error(err);
+  }
+});
+
+verifyForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const code = verifyForm.code.value;
+
+  try {
+    const res = await fetch('/api/email/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: signupEmail, code })
+    });
+
+    const result = await res.json();
+    if (res.ok) {
+      alert(result.message || '이메일 인증 성공!');
+      location.href = '/';
+    } else {
+      alert(result.message || '인증 실패');
+    }
+  } catch (err) {
+    alert('서버 오류');
     console.error(err);
   }
 });

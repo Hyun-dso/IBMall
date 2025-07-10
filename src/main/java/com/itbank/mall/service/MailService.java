@@ -1,12 +1,11 @@
 package com.itbank.mall.service;
 
-import java.util.Random;
-
+import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -14,30 +13,33 @@ public class MailService {
 
     private final JavaMailSender mailSender;
 
-    // 인증코드 생성 + 전송
-    public String sendVerificationCode(String toEmail) {
+    public String generateAndSendVerificationCode(String email) {
         String code = generate6DigitCode();
 
-        // 제목과 본문 내용은 여기서 작성
         String subject = "[IBMall] 이메일 인증코드";
         String text = "안녕하세요, IBMall입니다.\n\n"
-                    + "인증코드: " + code + "\n"
-                    + "유효시간: 15분\n\n";
+        			+ "15분 내에 받은 인증 코드를 입력 해 주세요"
+                    + "인증코드: " + code + "\n";
 
-        // 메일 작성 및 전송
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
+        message.setTo(email);
         message.setSubject(subject);
         message.setText(text);
 
         mailSender.send(message);
 
-        return code; // 이걸 DB에 저장하거나 세션에 저장하는 구조로 확장 가능
+        return code;
     }
 
-    // 코드 생성기
     private String generate6DigitCode() {
         return String.format("%06d", new Random().nextInt(999999));
     }
+    
+    public void sendEmail(String to, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
 }
-
