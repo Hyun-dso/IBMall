@@ -62,7 +62,7 @@ public class PasswordResetService {
         memberMapper.updatePassword(member.getEmail(), encoded);
 
         // 토큰 사용 완료 표시
-        tokenMapper.markAsUsed(found.getId());
+        tokenMapper.markAsUsed(found.getId());        
 
         return true;
     }
