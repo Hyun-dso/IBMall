@@ -22,8 +22,12 @@
 		<a th:href="@{/mypage}"><button>마이페이지</button></a>
 		<button onclick="logout()">로그아웃</button>
 	</div>
+	
+	<button id="pay-btn">결제하기</button>
 
 	<script src="/js/home.js"></script>
+	<script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>
+	<script src="/js/payment.js"></script> <!-- 외부 JS 연결 -->
 </body>
 
 </html>
