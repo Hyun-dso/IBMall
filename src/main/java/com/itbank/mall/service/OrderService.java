@@ -1,7 +1,8 @@
 package com.itbank.mall.service;
 
 import com.itbank.mall.dto.OrderDto;
-import com.itbank.mall.repository.OrderRepository;
+import com.itbank.mall.mapper.OrderMapper;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,11 +10,11 @@ import java.util.List;
 @Service
 public class OrderService {
 
-    private final OrderRepository orderRepository;
+    private final OrderMapper orderMapper;
 
     // 생성자 주입 (권장 방식)
-    public OrderService(OrderRepository orderRepository) {
-        this.orderRepository = orderRepository;
+    public OrderService(OrderMapper orderRepository) {
+        this.orderMapper = orderRepository;
     }
 
     /**
@@ -22,6 +23,6 @@ public class OrderService {
      * @return 주문 내역 리스트
      */
     public List<OrderDto> getOrderListByMemberId(Long memberId) {
-        return orderRepository.findOrdersByMemberId(memberId);
+        return orderMapper.findOrdersByMemberId(memberId);
     }
 }
