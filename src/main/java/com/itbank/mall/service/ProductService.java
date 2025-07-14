@@ -3,6 +3,7 @@ package com.itbank.mall.service;
 import com.itbank.mall.entity.Product;
 import com.itbank.mall.mapper.ProductMapper;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -34,3 +35,4 @@ public class ProductService {
         productMapper.delete(productId);
     }
 }
+

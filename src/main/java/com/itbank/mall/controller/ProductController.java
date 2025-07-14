@@ -19,13 +19,13 @@ public class ProductController {
     @GetMapping
     public String list(Model model) {
         model.addAttribute("products", productService.getAllProducts());
-        return "list";  // /WEB-INF/views/product/list.jsp
+        return "list";  // templates/list.html
     }
-    
+
     @GetMapping("/{id}")
     public String detail(@PathVariable("id") Long id, Model model) {
         model.addAttribute("product", productService.getProductById(id));
-        return "detail";  // /WEB-INF/views/product/detail.jsp
+        return "detail";  // templates/detail.html
     }
 
     @PostMapping

@@ -8,7 +8,7 @@
         th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
         th { background-color: #f5f5f5; }
         button { margin: 0 5px; }
-        form { margin-top: 30px; text-align: center; }
+        form.add-form { margin-top: 30px; text-align: center; }
     </style>
 </head>
 <body>
@@ -17,6 +17,7 @@
     <table>
         <thead>
             <tr>
+                <th>ID</th>
                 <th>상품명</th>
                 <th>가격</th>
                 <th>재고</th>
@@ -27,20 +28,21 @@
         </thead>
         <tbody>
             <tr th:each="product : ${products}">
+                <td th:text="${product.productId}">ID</td>
                 <td th:text="${product.name}">상품명</td>
                 <td th:text="${product.price}">0</td>
                 <td th:text="${product.stock}">0</td>
                 <td th:text="${product.categoryId}">카테고리ID</td>
                 <td th:text="${product.description}">설명</td>
                 <td>
-                    <a th:href="@{'/product/' + ${product.productId}}">
+                    <a th:href="@{/product/{id}(id=${product.productId})}" class="detail-link">
                         <button type="button">상세</button>
                     </a>
-                    <form th:action="@{/product/update}" method="post" style="display:inline;">
+                    <form th:action="@{/product/update}" method="post" style="display:inline;" class="update-form">
                         <input type="hidden" name="productId" th:value="${product.productId}">
                         <button type="submit">수정</button>
                     </form>
-                    <form th:action="@{/product/delete/{id}(id=${product.productId})}" method="post" style="display:inline;">
+                    <form th:action="@{/product/delete/{id}(id=${product.productId})}" method="post" style="display:inline;" class="delete-form">
                         <button type="submit">삭제</button>
                     </form>
                 </td>
@@ -49,7 +51,7 @@
     </table>
 
     <h2 style="text-align: center;">상품 추가</h2>
-    <form th:action="@{/product}" method="post">
+    <form th:action="@{/product}" method="post" class="add-form">
         <input type="text" name="name" placeholder="상품명" required>
         <input type="number" name="price" placeholder="가격" required>
         <input type="number" name="stock" placeholder="재고" required>
@@ -57,5 +59,8 @@
         <input type="text" name="description" placeholder="설명">
         <button type="submit">추가</button>
     </form>
+
+    <script src="/js/product-list.js"></script>
 </body>
 </html>
+
