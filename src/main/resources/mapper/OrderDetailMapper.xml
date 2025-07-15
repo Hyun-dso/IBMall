@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.OrderDetailMapper">
+
+    <!-- 주문 상세 조회 -->
+<select id="findOrderDetailById" resultType="com.itbank.mall.dto.OrderDetailDto">
+
+        SELECT
+            o.order_id,
+            o.created_at,
+            o.status AS order_status,
+
+            p.name AS product_name,
+            p.price AS product_price,
+ <!--           p.image_url,--> 
+            oi.quantity,
+            (oi.quantity * p.price) AS item_total,
+
+            d.address AS delivery_address,
+            d.recipient,
+            d.phone,
+            d.tracking_number,
+            d.status AS delivery_status
+
+        FROM `order` o
+        JOIN order_item oi ON o.order_id = oi.order_id
+        JOIN product p ON oi.product_id = p.product_id
+        JOIN delivery d ON o.order_id = d.order_id
+
+        WHERE o.order_id = #{orderId}
+    </select>
+
+</mapper>
