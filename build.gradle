@@ -25,9 +25,27 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+    // WebClient 사용을 위한 의존성
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	// 로깅
+	implementation 'org.springframework.boot:spring-boot-starter-logging'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// mariaDB
+	implementation 'org.mariadb.jdbc:mariadb-java-client:3.3.3'
+	// 비밀번호 암호화
+	implementation 'org.springframework.security:spring-security-crypto:6.3.0'
+	// mybatis
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
+	// 아임포트 Java REST Client (버전 호환으로 사용 X 라이브러리 안 쓰고 직접 만들어서 호출 할 예정)
+    // implementation 'com.github.iamport:iamport-rest-client-java:0.2.14'
+	// 롬복
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+	// 회원가입 확인 이메일
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	// 자동 업데이트
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

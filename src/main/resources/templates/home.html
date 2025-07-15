@@ -1,9 +1,49 @@
 <!DOCTYPE html>
-<html xmlns=th"http://www.thymeleaf.org">
-	<head>
-		<title>IB Mall</title>
-		<body>
-			<h1>Itbank Mall</h1>
-		</body>
-	</head>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<title>IB Mall</title>
+</head>
+
+<body>
+	<h1>Itbank Mall</h1>
+	
+	<!-- 로그인한 경우 닉네임 표시 -->
+	<div th:if="${nickname}">
+	  <p th:text="${nickname} + '님 어서오세요!'"></p>
+	</div>
+	
+	<div id="unauthenticated-buttons">
+		<a th:href="@{/signin}"><button>로그인</button></a>
+		<a th:href="@{/signup}"><button>회원가입</button></a>
+		<button id="google-signup-btn" type="button">구글로 회원가입</button>
+	</div>
+
+	<div id="authenticated-buttons" style="display:none;">
+		<a th:href="@{/mypage}"><button>마이페이지</button></a>
+		<button onclick="logout()">로그아웃</button>
+	</div>
+	
+	<!-- PG 선택 드롭다운 -->
+	<label for="pg-selector">결제 수단 선택:</label>
+	<select id="pg-selector">
+	  <option value="kakaopay.TC0ONETIME">카카오페이</option>
+	  <option value="tosspay.tosstest">토스페이</option>
+	  <option value="html5_inicis.INIBillTst">KG이니시스</option>
+	  <option value="nice_v2.iamport00m">나이스페이먼츠</option>
+	  <option value="payco.AUTOPAY">페이코</option>
+	  <option value="html5_inicis.INIpayTest">V2_KG이니시스</option>
+	</select>
+
+	<button id="pay-btn">결제하기</button>
+	
+	<a th:href="@{/payment-v2}">
+	  <button>V2 결제하기</button>
+	</a>
+
+	<script src="/js/home.js"></script>
+	<script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>
+	<script src="/js/payment.js"></script> <!-- 외부 JS 연결 -->
+</body>
+
 </html>
