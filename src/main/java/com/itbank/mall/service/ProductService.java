@@ -5,6 +5,7 @@ import com.itbank.mall.mapper.ProductMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 public class ProductService {
@@ -24,7 +25,10 @@ public class ProductService {
     }
 
     public void addProduct(Product product) {
-        productMapper.insert(product);
+    	 if (product.getCreatedAt() == null) {
+             product.setCreatedAt(LocalDateTime.now());
+        }
+    	productMapper.insert(product);
     }
 
     public void updateProduct(Product product) {

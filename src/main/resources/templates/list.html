@@ -36,12 +36,8 @@
                 <td th:text="${product.description}">설명</td>
                 <td>
                     <a th:href="@{/product/{id}(id=${product.productId})}" class="detail-link">
-                        <button type="button">상세</button>
+						<button type="button">상세/수정</button>
                     </a>
-                    <form th:action="@{/product/update}" method="post" style="display:inline;" class="update-form">
-                        <input type="hidden" name="productId" th:value="${product.productId}">
-                        <button type="submit">수정</button>
-                    </form>
                     <form th:action="@{/product/delete/{id}(id=${product.productId})}" method="post" style="display:inline;" class="delete-form">
                         <button type="submit">삭제</button>
                     </form>
