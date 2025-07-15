@@ -1,0 +1,16 @@
+package com.itbank.mall.entity;
+
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+public class Member {
+    private Long id;
+    private String email;
+    private String password;
+    private String nickname;
+    private String provider;       // "local", "google", "naver"
+    private String providerId;     // 소셜 로그인용 고유값 (일반 회원은 null)
+    private Boolean verified;    // 이메일 인증 여부
+    private LocalDateTime createdAt;
+}
