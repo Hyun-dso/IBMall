@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>구글 회원가입</title>
+</head>
+<body>
+  <h2>Google 계정으로 회원가입</h2>
+  <form id="google-signup-form">
+    <input type="email" name="email" th:value="${email}" readonly><br>
+    <input type="text" name="nickname" placeholder="닉네임" required><br>
+    <input type="password" name="password" placeholder="비밀번호" required><br>
+    <button type="submit">가입하기</button>
+  </form>
+
+  <script src="/js/signup-by-google.js"></script>
+</body>
+</html>

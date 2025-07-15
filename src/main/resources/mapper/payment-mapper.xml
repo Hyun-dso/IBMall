@@ -5,16 +5,30 @@
 
 <mapper namespace="com.itbank.mall.mapper.PaymentMapper">
 
-    <insert id="insertPayment" parameterType="com.itbank.mall.entity.Payment">
-        INSERT INTO payment
-        (member_id, order_id, amount, status, payment_method, transaction_id)
-        VALUES
-        (#{memberId}, #{orderId}, #{amount}, #{status}, #{paymentMethod}, #{transactionId})
-    </insert>
-    
-        <insert id="insert" parameterType="com.itbank.mall.entity.Payment" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO payment (order_id, member_id, amount, status, payment_method, transaction_id)
-        VALUES (#{orderId}, #{memberId}, #{amount}, #{status}, #{paymentMethod}, #{transactionId})
+    <insert id="insert" parameterType="com.itbank.mall.entity.Payment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payment (
+            member_id, 
+            order_uid, 
+            product_name, 
+            order_price, 
+            paid_amount, 
+            status,
+            pg_provider,
+            payment_method, 
+            transaction_id, 
+            created_at
+        ) VALUES (
+            #{memberId}, 
+            #{orderUid}, 
+            #{productName}, 
+            #{orderPrice}, 
+            #{paidAmount}, 
+            #{status}, 
+            #{pgProvider}, 
+            #{paymentMethod}, 
+            #{transactionId}, 
+            #{createdAt}
+        )
     </insert>
 
 </mapper>

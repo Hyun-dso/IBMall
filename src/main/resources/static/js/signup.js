@@ -81,3 +81,23 @@ verifyForm.addEventListener('submit', async (e) => {
     console.error(err);
   }
 });
+
+// ✨ 닉네임 중복 체크 로직 추가
+const nicknameInput = document.querySelector('input[name="nickname"]');
+
+nicknameInput.addEventListener('blur', async (e) => {
+  const nickname = e.target.value.trim();
+  if (!nickname) return;
+
+  try {
+    const res = await fetch(`/api/nickname/check?nickname=${encodeURIComponent(nickname)}`);
+    const result = await res.json();
+
+    if (result.exists) {
+      alert('이미 사용 중인 닉네임입니다.');
+      nicknameInput.focus();
+    }
+  } catch (err) {
+    console.error('닉네임 중복 검사 실패', err);
+  }
+});

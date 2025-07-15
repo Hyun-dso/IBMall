@@ -16,6 +16,7 @@
 	<div id="unauthenticated-buttons">
 		<a th:href="@{/signin}"><button>로그인</button></a>
 		<a th:href="@{/signup}"><button>회원가입</button></a>
+		<button id="google-signup-btn" type="button">구글로 회원가입</button>
 	</div>
 
 	<div id="authenticated-buttons" style="display:none;">
@@ -23,7 +24,22 @@
 		<button onclick="logout()">로그아웃</button>
 	</div>
 	
+	<!-- PG 선택 드롭다운 -->
+	<label for="pg-selector">결제 수단 선택:</label>
+	<select id="pg-selector">
+	  <option value="kakaopay.TC0ONETIME">카카오페이</option>
+	  <option value="tosspay.tosstest">토스페이</option>
+	  <option value="html5_inicis.INIBillTst">KG이니시스</option>
+	  <option value="nice_v2.iamport00m">나이스페이먼츠</option>
+	  <option value="payco.AUTOPAY">페이코</option>
+	  <option value="html5_inicis.INIpayTest">V2_KG이니시스</option>
+	</select>
+
 	<button id="pay-btn">결제하기</button>
+	
+	<a th:href="@{/payment-v2}">
+	  <button>V2 결제하기</button>
+	</a>
 
 	<script src="/js/home.js"></script>
 	<script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>

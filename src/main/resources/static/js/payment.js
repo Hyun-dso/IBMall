@@ -6,8 +6,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (payBtn) {
     payBtn.addEventListener("click", function () {
+      const pg = document.getElementById("pg-selector").value;
+
       IMP.request_pay({
-        pg: "kakaopay.TC0ONETIME",
+        pg: pg,
         pay_method: "card",
         merchant_uid: "order_" + new Date().getTime(),
         name: "테스트상품",
@@ -18,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }, function (rsp) {
         if (rsp.success) {
           alert("결제 성공: " + rsp.imp_uid);
+
           fetch("/api/pay", {
             method: "POST",
             headers: {
@@ -29,7 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
               amount: rsp.paid_amount,
               buyer_email: rsp.buyer_email,
               buyer_name: rsp.buyer_name,
-              buyer_tel: rsp.buyer_tel
+              buyer_tel: rsp.buyer_tel,
+              pgProvider: pg.includes("_v2") ? pg : pg.split('.')[0]  // ✅ v2면 그대로, 아니면 "kakaopay" 식
             })
           })
           .then(res => res.text())

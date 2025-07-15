@@ -2,11 +2,13 @@ package com.itbank.mall.controller;
 
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.itbank.mall.dto.LoginRequestDto;
@@ -38,8 +40,22 @@ public class MemberController {
     
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequestDto dto) {
-        memberService.signup(dto);
-        return ResponseEntity.ok(Map.of("message", "회원가입 성공! 이메일 인증번호를 확인하세요."));
+        try {
+            memberService.signup(dto);
+            return ResponseEntity.ok(Map.of("message", "회원가입 성공! 이메일 인증 링크를 확인하세요."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "서버 오류가 발생했습니다."));
+        }
+    }
+    
+    @GetMapping("/api/nickname/check")
+    public ResponseEntity<?> checkNickname(@RequestParam String nickname) {
+        boolean exists = memberService.existsByNickname(nickname);
+        return ResponseEntity.ok(Map.of("exists", exists));
     }
     
     @GetMapping("/member/me")

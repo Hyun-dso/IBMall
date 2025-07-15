@@ -9,11 +9,14 @@ import java.time.LocalDateTime;
 @Setter
 public class Payment {
     private Long id;
-    private String orderId;
     private Long memberId;
-    private int amount;
-    private String status;
+    private String orderUid;        // 🔁 orderId → orderUid
+    private String productName;     // 🔁 추가
+    private int orderPrice;         // 🔁 amount → orderPrice
+    private int paidAmount;         // 🔁 추가
     private String paymentMethod;
+    private String status;
     private String transactionId;
+    private String pgProvider;
     private LocalDateTime createdAt;
 }

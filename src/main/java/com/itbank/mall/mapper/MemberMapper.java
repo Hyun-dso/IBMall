@@ -9,6 +9,10 @@ import com.itbank.mall.entity.Member;
 public interface MemberMapper {
     void insertMember(Member member);
     Member findByEmail(String email);
+    int countByNickname(String nickname);
     void verifyMemberByEmail(@Param("email") String email);
     void updatePassword(@Param("email") String email, @Param("password") String encodedPassword);
+    int countByEmail(String email);
+    int insertByGoogle(Member member);
+    boolean existsByNickname(String nickname);
 }

@@ -12,4 +12,5 @@ public class PaymentRequestDto {
     private String buyer_email;
     private String buyer_name;
     private String buyer_tel;
+    private String pgProvider;  // ex: kakaopay, tosspay, html5_inicis
 }
