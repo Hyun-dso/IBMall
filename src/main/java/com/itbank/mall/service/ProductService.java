@@ -28,7 +28,19 @@ public class ProductService {
     	 if (product.getCreatedAt() == null) {
              product.setCreatedAt(LocalDateTime.now());
         }
-    	productMapper.insert(product);
+    	
+    	// 기본값 설정 (DB 제약 오류 방지)
+         if (product.getThumbnailUrl() == null) {
+             product.setThumbnailUrl("");
+         }
+         product.setViewCount(product.getViewCount());
+         product.setRecommendCount(product.getRecommendCount());
+         product.setNotRecommendCount(product.getNotRecommendCount());
+         if (product.getTimeSalePrice() == null) {
+             product.setTimeSalePrice(null);
+         }
+
+         productMapper.insert(product); 
     }
 
     public void updateProduct(Product product) {

@@ -64,14 +64,7 @@
             price = #{price},
             stock = #{stock},
             category_id = #{categoryId},
-            description = #{description},
-            thumbnail_url = #{thumbnailUrl},
-            view_count = #{viewCount},
-            recommend_count = #{recommendCount},
-            not_recommend_count = #{notRecommendCount},
-            is_time_sale = #{isTimeSale},
-            time_sale_price = #{timeSalePrice},
-            created_at = #{createdAt}
+        description = #{description}
         WHERE product_id = #{productId}
     </update>
 
