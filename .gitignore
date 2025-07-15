@@ -1,5 +1,8 @@
 HELP.md
 .gradle
+.metadata
+# 민감 정보 분리 파일
+src/main/resources/application-secret.properties
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
