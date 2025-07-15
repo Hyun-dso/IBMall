@@ -36,7 +36,7 @@
                 <td th:text="${product.description}">설명</td>
                 <td>
                     <a th:href="@{/product/{id}(id=${product.productId})}" class="detail-link">
-						<button type="button">상세/수정</button>
+                        <button type="button">상세/수정</button>
                     </a>
                     <form th:action="@{/product/delete/{id}(id=${product.productId})}" method="post" style="display:inline;" class="delete-form">
                         <button type="submit">삭제</button>
@@ -53,10 +53,52 @@
         <input type="number" name="stock" placeholder="재고" required>
         <input type="text" name="categoryId" placeholder="카테고리ID">
         <input type="text" name="description" placeholder="설명">
-        <button type="submit">추가</button>
+
+        <!-- ✅ 이미지 업로드 추가 -->
+        <input type="file" id="fileInput">
+        <button type="button" onclick="uploadImage()">이미지 업로드</button>
+        <input type="hidden" name="thumbnailUrl" id="thumbnailUrl">
+
+        <!-- ✅ 미리보기 -->
+        <div style="margin-top:10px;">
+            <img id="preview" src="" style="max-width:150px; display:none;">
+        </div>
+
+        <button type="submit" style="margin-top:10px;">추가</button>
     </form>
 
-    <script src="/js/product-list.js"></script>
+    <script>
+        function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length === 0) {
+                alert('업로드할 파일을 선택해주세요!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/image/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // hidden input에 이미지 URL 저장
+                document.getElementById('thumbnailUrl').value = data.imageUrl;
+
+                // 미리보기 표시
+                const img = document.getElementById('preview');
+                img.src = data.imageUrl;
+                img.style.display = 'block';
+
+                alert('이미지 업로드 성공!');
+            })
+            .catch(error => {
+                console.error('업로드 실패:', error);
+                alert('이미지 업로드 실패!');
+            });
+        }
+    </script>
 </body>
 </html>
-

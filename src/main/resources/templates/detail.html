@@ -12,27 +12,90 @@
 </head>
 <body>
 <h1 style="text-align: center;">상품 상세</h1>
+
+<!-- ✅ 현재 썸네일 이미지 표시 -->
+<div style="text-align: center; margin-bottom: 20px;">
+    <img th:src="@{${product.thumbnailUrl}}" alt="상품 이미지" style="max-width: 300px;">
+</div>
+
 <form th:action="@{/product/update}" method="post">
     <input type="hidden" name="productId" th:value="${product.productId}">
+
     <label>상품명</label>
     <input type="text" name="name" th:value="${product.name}" required>
+
     <label>가격</label>
     <input type="number" name="price" th:value="${product.price}" required>
+
     <label>재고</label>
     <input type="number" name="stock" th:value="${product.stock}" required>
+
     <label>카테고리ID</label>
     <input type="text" name="categoryId" th:value="${product.categoryId}">
+
     <label>설명</label>
     <textarea name="description" th:text="${product.description}"></textarea>
+
+    <!-- ✅ 이미지 업로드 -->
+    <label>이미지 업로드</label>
+    <input type="file" id="fileInput">
+    <button type="button" onclick="uploadImage()">이미지 업로드</button>
+    <input type="hidden" name="thumbnailUrl" id="thumbnailUrl" th:value="${product.thumbnailUrl}">
+
+    <!-- ✅ 업로드 후 미리보기 -->
+    <div style="text-align: center; margin-top: 10px;">
+        <img id="preview" th:src="@{${product.thumbnailUrl}}" style="max-width: 300px; display: none;">
+    </div>
+
     <div class="actions">
         <button type="submit">수정</button>
     </div>
 </form>
+
 <form th:action="@{/product/delete/{id}(id=${product.productId})}" method="post" style="text-align:center; margin-top:10px;">
     <button type="submit" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</button>
 </form>
+
 <div style="text-align:center; margin-top:20px;">
     <a href="/product">목록으로</a>
 </div>
+
+<script>
+    function uploadImage() {
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length === 0) {
+            alert('업로드할 파일을 선택해주세요!');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        fetch('/image/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // hidden input에 URL 저장
+                document.getElementById('thumbnailUrl').value = data.imageUrl;
+
+                // 미리보기 변경
+                const img = document.getElementById('preview');
+                img.src = data.imageUrl;
+                img.style.display = 'block';
+
+                alert('이미지 업로드 성공!');
+            } else {
+                alert('이미지 업로드 실패: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('업로드 실패:', error);
+            alert('업로드 중 오류 발생!');
+        });
+    }
+</script>
 </body>
 </html>

@@ -57,14 +57,15 @@
         )
     </insert>
 
-    <!-- 상품 수정 -->
+    <!-- ✅ 상품 수정 (thumbnail_url 추가됨) -->
     <update id="update" parameterType="com.itbank.mall.entity.Product">
         UPDATE product
         SET name = #{name},
             price = #{price},
             stock = #{stock},
             category_id = #{categoryId},
-        description = #{description}
+            description = #{description},
+            thumbnail_url = #{thumbnailUrl}
         WHERE product_id = #{productId}
     </update>
 
@@ -74,3 +75,4 @@
     </delete>
 
 </mapper>
+
