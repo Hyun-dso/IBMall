@@ -33,8 +33,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	// mariaDB
 	implementation 'org.mariadb.jdbc:mariadb-java-client:3.3.3'
-	// 비밀번호 암호화
-	implementation 'org.springframework.security:spring-security-crypto:6.3.0'
+	// 보안
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	// JWT 토큰 관련 라이브러리
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JSON 직렬화 지원
 	// mybatis
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
 	// 아임포트 Java REST Client (버전 호환으로 사용 X 라이브러리 안 쓰고 직접 만들어서 호출 할 예정)

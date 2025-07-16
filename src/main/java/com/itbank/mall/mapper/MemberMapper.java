@@ -15,4 +15,6 @@ public interface MemberMapper {
     int countByEmail(String email);
     int insertByGoogle(Member member);
     boolean existsByNickname(String nickname);
+    Member findById(Long id);
+    void updateMember(Member member);
 }

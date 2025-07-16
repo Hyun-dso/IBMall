@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.itbank.mall.dto.GoogleSignupRequestDto;
 import com.itbank.mall.dto.SignupRequestDto;
 import com.itbank.mall.dto.TempUserDto;
+import com.itbank.mall.dto.UpdateMemberRequestDto;
 import com.itbank.mall.entity.Member;
 import com.itbank.mall.mapper.MemberMapper;
 
@@ -17,7 +18,6 @@ public class MemberService {
 
     private final MemberMapper memberMapper;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final EmailVerificationService emailVerificationService; // 🔥 추가
 
     public Member signin(String email, String rawPassword) {
         Member member = memberMapper.findByEmail(email);
@@ -30,6 +30,10 @@ public class MemberService {
     }
     
     public void signup(SignupRequestDto dto) {
+        if (!dto.getPassword().equals(dto.getConfirmPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
+        }
+        
         if (memberMapper.findByEmail(dto.getEmail()) != null) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다");
         }
@@ -42,10 +46,14 @@ public class MemberService {
         Member member = new Member();
         member.setEmail(dto.getEmail());
         member.setPassword(passwordEncoder.encode(dto.getPassword()));
+        member.setName(dto.getName());
         member.setNickname(dto.getNickname());
+        member.setPhone(dto.getPhone());       // ✅ 추가
+        member.setAddress(dto.getAddress());   // ✅ 추가
         member.setProvider("local");
         member.setProviderId(null);
         member.setVerified(false);
+        member.setGrade("BASIC");
 
         memberMapper.insertMember(member);
     }
@@ -59,6 +67,10 @@ public class MemberService {
     }
     
     public Member signupByGoogle(GoogleSignupRequestDto dto, TempUserDto tempUser) {
+        if (!dto.getPassword().equals(dto.getConfirmPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
+        }
+        
         Member member = new Member();
         member.setEmail(dto.getEmail());
         member.setNickname(dto.getNickname());
@@ -66,9 +78,24 @@ public class MemberService {
         member.setProvider("google");
         member.setProviderId(tempUser.getProviderId());
         member.setVerified(true);
+        member.setGrade("BASIC");
 
         memberMapper.insertByGoogle(member);
         return member;
+    }
+    
+    public void updateMemberInfo(Long memberId, UpdateMemberRequestDto dto) {
+        Member member = memberMapper.findById(memberId);
+        if (member == null) {
+            throw new IllegalArgumentException("존재하지 않는 회원입니다");
+        }
+
+        if (dto.getName() != null) member.setName(dto.getName());
+        if (dto.getNickname() != null) member.setNickname(dto.getNickname());
+        if (dto.getPhone() != null) member.setPhone(dto.getPhone());
+        if (dto.getAddress() != null) member.setAddress(dto.getAddress());
+
+        memberMapper.updateMember(member);
     }
     
     public boolean existsByNickname(String nickname) {

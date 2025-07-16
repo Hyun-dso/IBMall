@@ -9,8 +9,9 @@ import com.itbank.mall.entity.EmailVerification;
 import com.itbank.mall.mapper.EmailVerificationMapper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
@@ -20,16 +21,18 @@ public class EmailVerificationService {
 
     @Async
     public void sendVerificationCode(String email) {
+        // 1. 기존 토큰 무효화
+        emailVerificationMapper.invalidatePreviousTokens(email);
+        
         String code = mailService.generateAndSendVerificationCode(email);
         LocalDateTime expiredAt = LocalDateTime.now().plusMinutes(15);
-
         
         EmailVerification entity = new EmailVerification();
         entity.setEmail(email);
         entity.setToken(code);
         entity.setExpiredAt(expiredAt);
         entity.setIsUsed(false);
-        System.out.println(">>> 이메일 전송 시도: " + email + " / 코드: " + code);
+        log.info("📨 인증메일 발송 → email: {}, code: {}", email, code);
 
         emailVerificationMapper.insertToken(entity);
     }
