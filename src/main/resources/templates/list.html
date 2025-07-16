@@ -9,6 +9,7 @@
         th { background-color: #f5f5f5; }
         button { margin: 0 5px; }
         form.add-form { margin-top: 30px; text-align: center; }
+        img.preview-img { max-width: 150px; margin: 5px; }
     </style>
 </head>
 <body>
@@ -47,36 +48,40 @@
     </table>
 
     <h2 style="text-align: center;">상품 추가</h2>
-    <form th:action="@{/product}" method="post" class="add-form">
+    <form th:action="@{/product}" method="post" class="add-form" enctype="multipart/form-data">
         <input type="text" name="name" placeholder="상품명" required>
         <input type="number" name="price" placeholder="가격" required>
         <input type="number" name="stock" placeholder="재고" required>
         <input type="text" name="categoryId" placeholder="카테고리ID">
         <input type="text" name="description" placeholder="설명">
 
-        <!-- ✅ 이미지 업로드 추가 -->
-        <input type="file" id="fileInput">
-        <button type="button" onclick="uploadImage()">이미지 업로드</button>
+        <!-- ✅ multiple 추가 -->
+        <input type="file" id="fileInput" multiple>
+        <button type="button" onclick="uploadImages()">이미지 업로드</button>
+
+        <!-- ✅ 대표 이미지 hidden -->
         <input type="hidden" name="thumbnailUrl" id="thumbnailUrl">
 
-        <!-- ✅ 미리보기 -->
-        <div style="margin-top:10px;">
-            <img id="preview" src="" style="max-width:150px; display:none;">
-        </div>
+        <!-- ✅ 여러 미리보기 -->
+        <div id="previewArea" style="margin-top:10px; text-align:center;"></div>
 
         <button type="submit" style="margin-top:10px;">추가</button>
     </form>
 
     <script>
-        function uploadImage() {
+        function uploadImages() {
             const fileInput = document.getElementById('fileInput');
-            if (fileInput.files.length === 0) {
+            const files = fileInput.files;
+
+            if (files.length === 0) {
                 alert('업로드할 파일을 선택해주세요!');
                 return;
             }
 
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);  // 서버에서 files[]로 받음
+            }
 
             fetch('/image/upload', {
                 method: 'POST',
@@ -84,19 +89,30 @@
             })
             .then(response => response.json())
             .then(data => {
-                // hidden input에 이미지 URL 저장
-                document.getElementById('thumbnailUrl').value = data.imageUrl;
+                if (data.status === 'success') {
+                    const previewArea = document.getElementById('previewArea');
+                    previewArea.innerHTML = '';  // 기존 초기화
 
-                // 미리보기 표시
-                const img = document.getElementById('preview');
-                img.src = data.imageUrl;
-                img.style.display = 'block';
+                    data.imageUrls.forEach((url, index) => {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.className = 'preview-img';
+                        previewArea.appendChild(img);
 
-                alert('이미지 업로드 성공!');
+                        // 첫 번째 이미지를 thumbnailUrl로 설정
+                        if (index === 0) {
+                            document.getElementById('thumbnailUrl').value = url;
+                        }
+                    });
+
+                    alert('이미지 업로드 성공!');
+                } else {
+                    alert('이미지 업로드 실패: ' + data.message);
+                }
             })
             .catch(error => {
                 console.error('업로드 실패:', error);
-                alert('이미지 업로드 실패!');
+                alert('업로드 중 오류 발생!');
             });
         }
     </script>

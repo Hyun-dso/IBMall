@@ -8,6 +8,7 @@
         label { display: block; margin-top: 10px; }
         input, textarea { width: 100%; }
         .actions { margin-top: 20px; text-align: center; }
+        img.preview-img { max-width: 150px; margin: 5px; }
     </style>
 </head>
 <body>
@@ -36,16 +37,16 @@
     <label>설명</label>
     <textarea name="description" th:text="${product.description}"></textarea>
 
-    <!-- ✅ 이미지 업로드 -->
-    <label>이미지 업로드</label>
-    <input type="file" id="fileInput">
-    <button type="button" onclick="uploadImage()">이미지 업로드</button>
+    <!-- ✅ multiple 이미지 업로드 -->
+    <label>이미지 업로드 (여러 개 선택 가능)</label>
+    <input type="file" id="fileInput" multiple>
+    <button type="button" onclick="uploadImages()">이미지 업로드</button>
+
+    <!-- ✅ hidden: 대표 이미지 -->
     <input type="hidden" name="thumbnailUrl" id="thumbnailUrl" th:value="${product.thumbnailUrl}">
 
-    <!-- ✅ 업로드 후 미리보기 -->
-    <div style="text-align: center; margin-top: 10px;">
-        <img id="preview" th:src="@{${product.thumbnailUrl}}" style="max-width: 300px; display: none;">
-    </div>
+    <!-- ✅ 여러 미리보기 영역 -->
+    <div id="previewArea" style="text-align: center; margin-top: 10px;"></div>
 
     <div class="actions">
         <button type="submit">수정</button>
@@ -61,15 +62,19 @@
 </div>
 
 <script>
-    function uploadImage() {
+    function uploadImages() {
         const fileInput = document.getElementById('fileInput');
-        if (fileInput.files.length === 0) {
+        const files = fileInput.files;
+
+        if (files.length === 0) {
             alert('업로드할 파일을 선택해주세요!');
             return;
         }
 
         const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);  // 서버에서 files[]로 받아야 함
+        }
 
         fetch('/image/upload', {
             method: 'POST',
@@ -78,13 +83,20 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                // hidden input에 URL 저장
-                document.getElementById('thumbnailUrl').value = data.imageUrl;
+                const previewArea = document.getElementById('previewArea');
+                previewArea.innerHTML = '';  // 초기화
 
-                // 미리보기 변경
-                const img = document.getElementById('preview');
-                img.src = data.imageUrl;
-                img.style.display = 'block';
+                data.imageUrls.forEach((url, index) => {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.className = 'preview-img';
+                    previewArea.appendChild(img);
+
+                    // 첫 번째 이미지를 대표 이미지로 설정
+                    if (index === 0) {
+                        document.getElementById('thumbnailUrl').value = url;
+                    }
+                });
 
                 alert('이미지 업로드 성공!');
             } else {
