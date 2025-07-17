@@ -12,6 +12,7 @@ public class PaymentRequestDto {
     private String buyer_email;    // 이메일
     private String buyer_name;     // 이름
     private String buyer_tel;      // 전화번호
-    private String guest_address;  // 비회원만 사용
+    private String buyer_address;  // 주소
     private String pgProvider;     // ex: kakaopay, tosspay, html5_inicis
+    private Long productId;  // 상품번호
 }

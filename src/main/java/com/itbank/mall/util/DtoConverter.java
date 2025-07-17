@@ -11,9 +11,16 @@ public class DtoConverter {
         dto.setName(v2.getOrderName());
         dto.setPgProvider(v2.getPgProvider());
         dto.setMerchant_uid("order_" + System.currentTimeMillis());
-        dto.setBuyer_email("v2test@example.com"); // 테스트용 임시 값
-        dto.setBuyer_name("V2 유저");
-        dto.setBuyer_tel("010-0000-0000");
+
+        // 기본값 설정 (비회원용)
+        dto.setBuyer_address(v2.getCustomerAddress());  // ✅ 통합 주소 필드 사용
+        dto.setBuyer_tel(v2.getCustomerIdentityNumber());  // ✅ tel도 그대로
+        dto.setBuyer_name(v2.getCustomerName());
+        dto.setBuyer_email(v2.getCustomerEmail());
+
+        dto.setProductId(v2.getProductId());         // ✅ 상품 ID
+
         return dto;
     }
 }
+

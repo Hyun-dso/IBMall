@@ -37,7 +37,9 @@ public class SecurityConfig {
 					    "/api/password/**",     // 비밀번호 재설정
 					    "/api/auth/**",         // 로그인/로그아웃
 					    "/api/oauth2/**",       // 구글 인증 진입/콜백
-					    "/api/oauth2/signup"    // 소셜 회원가입 (이거 꼭 필요!)
+					    "/api/oauth2/signup",    // 소셜 회원가입 (이거 꼭 필요!)
+					    "/api/payments/v1/**",  // ✅ V1 결제 경로 허용
+					    "/api/payments/v2/**"  // ✅ (선택) V2 결제도 허용할지 여부
 						).permitAll()
 			            .anyRequest().authenticated()
 			        )
