@@ -46,16 +46,6 @@
 		SELECT * FROM member WHERE id = #{id}
 	</select>
 
-	<update id="updateMember" parameterType="com.itbank.mall.entity.Member">
-		UPDATE member
-		SET
-		name = #{name},
-		nickname = #{nickname},
-		phone = #{phone},
-		address = #{address}
-		WHERE id = #{id}
-	</update>
-
 	<update id="verifyMemberByEmail">
 		UPDATE member
 		SET verified = 1
