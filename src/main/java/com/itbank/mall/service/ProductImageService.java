@@ -24,4 +24,9 @@ public class ProductImageService {
     public List<ProductImage> getImagesByProductId(Long productId) {
         return productImageMapper.findByProductId(productId);
     }
+
+   // 특정 상품의 이미지 모두 삭제 후 개수 반환
+    public int deleteImagesByProductId(Long productId) {
+       return productImageMapper.deleteByProductId(productId);
+   }
 }

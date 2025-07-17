@@ -13,4 +13,7 @@ public interface ProductImageMapper {
 
     // 특정 상품의 이미지들 모두 조회
     List<ProductImage> findByProductId(Long productId);
+
+    // 특정 상품 이미지 모두 삭제
+    int deleteByProductId(Long productId);
 }

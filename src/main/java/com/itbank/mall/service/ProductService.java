@@ -1,5 +1,6 @@
 package com.itbank.mall.service;
 
+
 import com.itbank.mall.entity.Product;
 import com.itbank.mall.mapper.ProductMapper;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class ProductService {
         return productMapper.findById(productId);
     }
 
-    public void addProduct(Product product) {
+    public Long addProduct(Product product) {
     	 if (product.getCreatedAt() == null) {
              product.setCreatedAt(LocalDateTime.now());
         }
@@ -40,7 +41,8 @@ public class ProductService {
              product.setTimeSalePrice(null);
          }
 
-         productMapper.insert(product); 
+         productMapper.insert(product);
+         return product.getProductId();
     }
 
     public void updateProduct(Product product) {
@@ -51,4 +53,3 @@ public class ProductService {
         productMapper.delete(productId);
     }
 }
-
