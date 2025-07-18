@@ -96,6 +96,10 @@ function uploadImages(fileInputId, previewAreaId, thumbnailInputId) {
             });
 
             alert('이미지 업로드 성공!');
+
+            // ✅ form submit 시 MultipartData 안 넘어가게 input 비우기
+            fileInput.value = '';
+
         } else {
             alert('이미지 업로드 실패: ' + data.message);
         }
@@ -105,3 +109,4 @@ function uploadImages(fileInputId, previewAreaId, thumbnailInputId) {
         alert('업로드 중 오류 발생!');
     });
 }
+
