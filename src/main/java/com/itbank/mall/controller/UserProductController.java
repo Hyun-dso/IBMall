@@ -37,6 +37,8 @@ public class UserProductController {
 
     @GetMapping("/{id}")
     public String detail(@PathVariable("id") Long id, Model model) {
+    	System.out.println("상세페이지 id: " + id);  // 로그로 확인
+    	
         Product product = userProductService.getVisibleProductById(id);
         if (product == null) {
             return "redirect:/shop/product";

@@ -38,10 +38,13 @@
 
 <div class="container">
     <img th:src="${product.thumbnailUrl}" alt="상품 이미지">
-    <h2 th:text="${product.name}">상품명</h2>
-    <p th:text="'가격: ' + ${product.price} + '원'">가격</p>
-    <p th:text="'재고: ' + ${product.stock} + '개'">재고</p>
-    <p th:text="${product.description}">상품 설명</p>
+	<h2 th:text="${product != null ? product.name : '상품명 없음'}">상품명</h2>
+	<p th:text="${product != null ? '가격: ' + product.price + '원' : '가격 정보 없음'}">가격</p>
+	<p th:text="${product != null ? '재고: ' + product.stock + '개' : '재고 정보 없음'}">재고</p>
+	<p th:text="${product != null && product.description != null ? product.description : '설명 없음'}">상품 설명</p>
+	<img th:if="${product != null && product.thumbnailUrl != null}"
+	     th:src="${product.thumbnailUrl}"
+	     alt="상품 이미지">
 
     <!-- 필요시 다른 정보 추가 가능 -->
 
