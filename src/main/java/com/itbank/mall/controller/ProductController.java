@@ -1,15 +1,18 @@
 package com.itbank.mall.controller;
 
+import com.itbank.mall.dto.ProductRequestDTO;
 import com.itbank.mall.entity.Product;
 import com.itbank.mall.entity.ProductImage;
 import com.itbank.mall.service.ProductService;
 import com.itbank.mall.service.ProductImageService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
-@RequestMapping("product")  // ✅ 관리자용 prefix
+import java.util.*;
+
+@RestController
+@RequestMapping("/api/admin/products")
 public class ProductController {
 
     private final ProductService productService;
@@ -20,76 +23,88 @@ public class ProductController {
         this.productImageService = productImageService;
     }
 
-    // ✅ 관리자용 상품 목록
+    // ✅ 상품 목록
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("products", productService.getAllProducts());
-        return "list";  // ✅ templates/list.html (관리자용)
+    public ResponseEntity<Map<String, Object>> list() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", "SUCCESS");
+        response.put("products", productService.getAllProducts());
+        return ResponseEntity.ok(response);
     }
 
-    // ✅ 관리자용 상품 상세
+    // ✅ 상품 상세
     @GetMapping("/{id}")
-    public String detail(@PathVariable("id") Long id, Model model) {
-        model.addAttribute("product", productService.getProductById(id));
-        model.addAttribute("images", productImageService.getImagesByProductId(id));
-        return "detail";  // ✅ templates/detail.html (관리자용)
+    public ResponseEntity<Map<String, Object>> detail(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        Product product = productService.getProductById(id);
+        if (product == null) {
+            response.put("code", "FAIL_NOT_FOUND");
+            response.put("message", "상품을 찾을 수 없습니다.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+        response.put("code", "SUCCESS");
+        response.put("product", product);
+        response.put("images", productImageService.getImagesByProductId(id));
+        return ResponseEntity.ok(response);
     }
 
     // ✅ 상품 추가
     @PostMapping
-    public String add(@ModelAttribute Product product,
-                      @RequestParam(name = "imageUrls", required = false) String imageUrls) {
+    public ResponseEntity<Map<String, Object>> add(@RequestBody ProductRequestDTO productRequest) {
+        Map<String, Object> response = new HashMap<>();
+        Long productId = productService.addProduct(productRequest.toProduct());
 
-        Long productId = productService.addProduct(product);
-
-        if (imageUrls != null && !imageUrls.isBlank()) {
-            String[] urls = imageUrls.split(",");
-            for (String url : urls) {
-                if (url.isBlank()) continue;
+        if (productRequest.getImageUrls() != null) {
+            for (String url : productRequest.getImageUrls()) {
                 ProductImage img = new ProductImage();
                 img.setProductId(productId);
-                img.setImageUrl(url.trim());
+                img.setImageUrl(url);
                 productImageService.saveProductImage(img);
             }
         }
-        return "redirect:/product";
+
+        response.put("code", "SUCCESS");
+        response.put("productId", productId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // ✅ 상품 수정
-    @PostMapping("/update")
-    public String update(@ModelAttribute Product product,
-                         @RequestParam(name = "imageUrls", required = false) String imageUrls) {
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @RequestBody ProductRequestDTO productRequest) {
+        Map<String, Object> response = new HashMap<>();
 
-        productService.updateProduct(product);
-        productImageService.deleteImagesByProductId(product.getProductId());
+        productRequest.setProductId(id);
+        productService.updateProduct(productRequest.toProduct());
+        productImageService.deleteImagesByProductId(id);
 
-        if (imageUrls != null && !imageUrls.isBlank()) {
-            String[] urls = imageUrls.split(",");
-            for (String url : urls) {
-                if (url.isBlank()) continue;
+        if (productRequest.getImageUrls() != null) {
+            for (String url : productRequest.getImageUrls()) {
                 ProductImage img = new ProductImage();
-                img.setProductId(product.getProductId());
-                img.setImageUrl(url.trim());
+                img.setProductId(id);
+                img.setImageUrl(url);
                 productImageService.saveProductImage(img);
             }
         }
-        return "redirect:/product";
+
+        response.put("code", "SUCCESS");
+        return ResponseEntity.ok(response);
     }
 
     // ✅ 상품 삭제
-    @PostMapping("/delete/{id}")
-    public String delete(@PathVariable("id") Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
         productService.deleteProduct(id);
-        return "redirect:/product";
+        response.put("code", "SUCCESS");
+        return ResponseEntity.ok(response);
     }
 
-//✅ 상품 상태만 변경 (예: ACTIVE, INACTIVE, SOLD_OUT, HIDDEN)
-@PostMapping("/updateStatus")
-public String updateStatus(@RequestParam("productId") Long productId,
-                        @RequestParam("status") String status) {
- productService.updateProductStatus(productId, status);
- return "redirect:/product";
- }
+    // ✅ 상품 상태 변경
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Map<String, Object>> updateStatus(@PathVariable Long id, @RequestParam String status) {
+        Map<String, Object> response = new HashMap<>();
+        productService.updateProductStatus(id, status);
+        response.put("code", "SUCCESS");
+        return ResponseEntity.ok(response);
+    }
 }
-
-
