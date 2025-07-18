@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.UserProductMapper">
+
+    <!-- ✅ 카테고리별 상품 조회 -->
+    <select id="findByCategoryId" resultType="com.itbank.mall.entity.Product">
+        SELECT *
+        FROM product
+        WHERE category_id = #{categoryId}
+          AND status = 'ACTIVE'
+    </select>
+
+    <!-- ✅ 전체 ACTIVE 상품 조회 -->
+    <select id="findVisibleProducts" resultType="com.itbank.mall.entity.Product">
+        SELECT *
+        FROM product
+        WHERE status = 'ACTIVE'
+    </select>
+
+    <!-- ✅ 단일 ACTIVE 상품 조회 -->
+    <select id="findVisibleById" resultType="com.itbank.mall.entity.Product">
+        SELECT *
+        FROM product
+        WHERE product_id = #{productId}
+          AND status = 'ACTIVE'
+    </select>
+
+</mapper>
