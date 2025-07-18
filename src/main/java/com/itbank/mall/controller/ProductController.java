@@ -82,4 +82,14 @@ public class ProductController {
         productService.deleteProduct(id);
         return "redirect:/product";
     }
+
+//✅ 상품 상태만 변경 (예: ACTIVE, INACTIVE, SOLD_OUT, HIDDEN)
+@PostMapping("/updateStatus")
+public String updateStatus(@RequestParam("productId") Long productId,
+                        @RequestParam("status") String status) {
+ productService.updateProductStatus(productId, status);
+ return "redirect:/product";
+ }
 }
+
+

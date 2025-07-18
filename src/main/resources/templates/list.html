@@ -16,35 +16,52 @@
 <h1 style="text-align: center;">상품 목록</h1>
 
 <table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>상품명</th>
-            <th>가격</th>
-            <th>재고</th>
-            <th>카테고리ID</th>
-            <th>설명</th>
-            <th>액션</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr th:each="product : ${products}">
-            <td th:text="${product.productId}">ID</td>
-            <td th:text="${product.name}">상품명</td>
-            <td th:text="${product.price}">0</td>
-            <td th:text="${product.stock}">0</td>
-            <td th:text="${product.categoryId}">카테고리ID</td>
-            <td th:text="${product.description}">설명</td>
-            <td>
-                <a th:href="@{/product/{id}(id=${product.productId})}" class="detail-link">
-                    <button type="button">상세/수정</button>
-                </a>
-                <form th:action="@{/product/delete/{id}(id=${product.productId})}" method="post" style="display:inline;" class="delete-form">
-                    <button type="submit">삭제</button>
-                </form>
-            </td>
-        </tr>
-    </tbody>
+	<thead>
+	    <tr>
+	        <th>ID</th>
+	        <th>상품명</th>
+	        <th>가격</th>
+	        <th>재고</th>
+	        <th>카테고리ID</th>
+	        <th>설명</th>
+	        <th>상태</th>   <!-- ✅ 추가 -->
+	        <th>액션</th>
+	    </tr>
+	</thead>
+	<tbody>
+	    <tr th:each="product : ${products}">
+	        <td th:text="${product.productId}">ID</td>
+	        <td th:text="${product.name}">상품명</td>
+	        <td th:text="${product.price}">0</td>
+	        <td th:text="${product.stock}">0</td>
+	        <td th:text="${product.categoryId}">카테고리ID</td>
+	        <td th:text="${product.description}">설명</td>
+	        
+	        <!-- ✅ 상태 select + form -->
+	        <td>
+	            <form th:action="@{/product/updateStatus}" method="post" style="display:inline;">
+	                <input type="hidden" name="productId" th:value="${product.productId}">
+	                <select name="status">
+	                    <option value="ACTIVE" th:selected="${product.status == 'ACTIVE'}">ACTIVE</option>
+	                    <option value="INACTIVE" th:selected="${product.status == 'INACTIVE'}">INACTIVE</option>
+	                    <option value="SOLD_OUT" th:selected="${product.status == 'SOLD_OUT'}">SOLD_OUT</option>
+	                    <option value="HIDDEN" th:selected="${product.status == 'HIDDEN'}">HIDDEN</option>
+	                </select>
+	                <button type="submit">변경</button>
+	            </form>
+	        </td>
+
+	        <td>
+	            <a th:href="@{/product/{id}(id=${product.productId})}" class="detail-link">
+	                <button type="button">상세/수정</button>
+	            </a>
+	            <form th:action="@{/product/delete/{id}(id=${product.productId})}" method="post" style="display:inline;" class="delete-form">
+	                <button type="submit">삭제</button>
+	            </form>
+	        </td>
+	    </tr>
+	</tbody>
+
 </table>
 
 <h2 style="text-align: center;">상품 추가</h2>

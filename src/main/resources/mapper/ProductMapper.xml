@@ -77,6 +77,13 @@
         WHERE product_id = #{productId}
     </update>
 
+    <!-- ✅ 상품 상태만 수정 (관리자용) -->
+    <update id="updateStatus" parameterType="map">
+        UPDATE product
+        SET status = #{status}
+        WHERE product_id = #{productId}
+    </update>
+
     <!-- ✅ 상품 삭제 -->
     <delete id="delete" parameterType="long">
         DELETE FROM product WHERE product_id = #{productId}

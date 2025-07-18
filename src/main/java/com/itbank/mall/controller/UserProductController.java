@@ -2,6 +2,7 @@ package com.itbank.mall.controller;
 
 import com.itbank.mall.entity.Product;
 import com.itbank.mall.service.UserProductService;
+import com.itbank.mall.service.ProductImageService;  // ✅ 요거 추가!!!
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -9,16 +10,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Controller
-@RequestMapping("/shop/product")  // ✅ 사용자용 prefix
+@RequestMapping("/shop/product")
 public class UserProductController {
 
     private final UserProductService userProductService;
+    private final ProductImageService productImageService;  // ✅ 추가
 
-    public UserProductController(UserProductService userProductService) {
+    public UserProductController(UserProductService userProductService, ProductImageService productImageService) {
         this.userProductService = userProductService;
+        this.productImageService = productImageService;  // ✅ 주입
     }
 
-    // ✅ 사용자용 상품 목록 페이지
     @GetMapping
     public String list(@RequestParam(name = "categoryId", required = false) Long categoryId, Model model) {
         List<Product> products;
@@ -30,10 +32,9 @@ public class UserProductController {
         }
 
         model.addAttribute("products", products);
-        return "shop/list";  // templates/shop/list.html
+        return "shop/list";
     }
 
-    // ✅ 사용자용 상품 상세 페이지
     @GetMapping("/{id}")
     public String detail(@PathVariable("id") Long id, Model model) {
         Product product = userProductService.getVisibleProductById(id);
@@ -42,6 +43,12 @@ public class UserProductController {
         }
 
         model.addAttribute("product", product);
-        return "shop/detail";  // templates/shop/detail.html
+        model.addAttribute("images", productImageService.getImagesByProductId(id));
+        return "shop/detail";
     }
 }
+
+
+
+    
+    

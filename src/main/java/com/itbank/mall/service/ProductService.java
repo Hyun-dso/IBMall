@@ -57,4 +57,9 @@ public class ProductService {
     public void deleteProduct(Long productId) {
         productMapper.delete(productId);
     }
+
+    // ✅ 상품 상태만 업데이트 (예: ACTIVE, INACTIVE, SOLD_OUT, HIDDEN)
+    public void updateProductStatus(Long productId, String status) {
+        productMapper.updateStatus(productId, status);
+    }
 }
