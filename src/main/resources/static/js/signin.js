@@ -25,6 +25,8 @@ document.getElementById('signin-form').addEventListener('submit', async function
 	  }
 
 	  alert(result.message || '로그인 성공!');
+	  console.log('📦 저장한 토큰:', localStorage.getItem('jwtToken'));
+	  console.log('📥 로드된 토큰:', token);
 	  location.href = '/';
     } else {
       alert(result.message || '로그인 실패');
