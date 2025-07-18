@@ -14,4 +14,5 @@ public interface GradeUpdateMapper {
     List<GradeRuleEntity> findGradeRules();
     void updateMemberGrade(@Param("memberId") Long memberId,
                            @Param("grade") String grade);
+    MemberGradeDto findMemberWithTotalSpentById(Long memberId);
 }
