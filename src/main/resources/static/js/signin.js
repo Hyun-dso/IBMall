@@ -10,7 +10,7 @@ document.getElementById('signin-form').addEventListener('submit', async function
   };
 
   try {
-    const res = await fetch('/api/signin', {
+    const res = await fetch('/api/auth/signin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -18,9 +18,14 @@ document.getElementById('signin-form').addEventListener('submit', async function
 
     const result = await res.json();
 
-    if (res.ok) {
-      alert(result.message || '로그인 성공!');
-      location.href = '/';  // 홈으로 이동
+	if (res.ok) {
+	  // ⬇️ 토큰 저장 추가!
+	  if (result.token) {
+	    localStorage.setItem('jwtToken', result.token);
+	  }
+
+	  alert(result.message || '로그인 성공!');
+	  location.href = '/';
     } else {
       alert(result.message || '로그인 실패');
     }

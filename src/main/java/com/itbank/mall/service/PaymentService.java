@@ -33,18 +33,18 @@ public class PaymentService {
     	    throw new IllegalArgumentException("상품 ID가 누락되었습니다");
     	}
 
-    	if (dto.getBuyer_tel() == null || dto.getBuyer_tel().isBlank()) {
+    	if (dto.getBuyerPhone() == null || dto.getBuyerPhone().isBlank()) {
     	    throw new IllegalArgumentException("구매자 전화번호는 필수입니다");
     	}
 
-    	if (dto.getBuyer_address() == null || dto.getBuyer_address().isBlank()) {
+    	if (dto.getBuyerAddress() == null || dto.getBuyerAddress().isBlank()) {
     	    throw new IllegalArgumentException("배송지 주소는 필수입니다");
     	}
 
         // ✅ 결제 정보 저장
         Payment payment = new Payment();
         payment.setMemberId(memberId);
-        payment.setOrderUid(dto.getMerchant_uid());
+        payment.setOrderUid(dto.getMerchantUid());
         payment.setProductName(dto.getName());
         payment.setOrderPrice(dto.getAmount());
         payment.setPaidAmount(dto.getAmount());
@@ -52,6 +52,10 @@ public class PaymentService {
         payment.setStatus("paid");
         payment.setTransactionId(transactionId);
         payment.setPgProvider(dto.getPgProvider());
+        payment.setBuyerName(dto.getBuyerName());
+        payment.setBuyerEmail(dto.getBuyerEmail());
+        payment.setBuyerPhone(dto.getBuyerPhone());
+        payment.setBuyerAddress(dto.getBuyerAddress());
         payment.setCreatedAt(LocalDateTime.now());
 
         paymentMapper.insert(payment);
@@ -60,8 +64,8 @@ public class PaymentService {
         OrderEntity order = new OrderEntity();
         order.setMemberId(memberId);
         order.setTotalPrice(dto.getAmount());
-        order.setBuyerPhone(dto.getBuyer_tel());
-        order.setBuyerAddress(dto.getBuyer_Address());  // 회원도 주소 직접 입력 가능
+        order.setBuyerPhone(dto.getBuyerPhone());
+        order.setBuyerAddress(dto.getBuyerAddress());  // 회원도 주소 직접 입력 가능
         order.setOrderType(memberId != null ? "MEMBER" : "GUEST");
 
         OrderItemEntity item = new OrderItemEntity();

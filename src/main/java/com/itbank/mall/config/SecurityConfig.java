@@ -25,27 +25,44 @@ public class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
-	// 비회원 허용
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
-				.csrf(csrf -> csrf.disable())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/members/**", // ✅ 회원가입, 내 정보 조회, 수정 포함
-					    "/api/members/**",      // 회원가입, 내 정보
-					    "/api/email/**",        // 이메일 인증
-					    "/api/password/**",     // 비밀번호 재설정
-					    "/api/auth/**",         // 로그인/로그아웃
-					    "/api/oauth2/**",       // 구글 인증 진입/콜백
-					    "/api/oauth2/signup",    // 소셜 회원가입 (이거 꼭 필요!)
-					    "/api/payments/v1/**",  // ✅ V1 결제 경로 허용
-					    "/api/payments/v2/**"  // ✅ (선택) V2 결제도 허용할지 여부
-						).permitAll()
-			            .anyRequest().authenticated()
-			        )
-			        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)  // ✅ 이 줄 추가
-			        .build();
-			}
+			.csrf(csrf -> csrf.disable())
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.authorizeHttpRequests(auth -> auth
+				// ✅ 비회원 접근 허용 경로
+				.requestMatchers(
+					"/",                          // 홈
+					"/js/**",                     // JS 정적 리소스
+					"/css/**",                    // CSS 정적 리소스
+					"/images/**",                 // 이미지 정적 리소스
+					"/api/auth/**",               // 로그인/로그아웃
+					"/api/members/signup",        // 회원가입
+					"/api/members/check-nickname",// 닉네임 중복확인
+					"/api/email/**",              // 이메일 인증
+					"/api/password/**",           // 비밀번호 재설정
+					"/api/oauth2/**",             // 구글 OAuth
+					"/api/payments/**",           // V1, V2 결제 모두
+					"/api/products/**",            // (선택) 상품 목록
+					"/signin",
+					"/signup",
+					"/payment-v2"
+				).permitAll()
+
+				// ✅ 인증 필요한 경로
+				.requestMatchers(
+					"/api/members/me",
+					"/api/mypage/**",
+					"/api/orders/me"
+				).authenticated()
+
+				// ✅ 그 외 모든 요청 인증 필요
+				.anyRequest().authenticated()
+			)
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+			.build();
+	}
 
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

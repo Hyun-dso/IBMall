@@ -23,12 +23,13 @@ public class IamportV2Service {
         // 🔄 클라이언트에서 받은 응답을 기존 방식 DTO로 변환
         PaymentRequestDto convertedDto = DtoConverter.toPaymentRequestDto(dto);
 
-        // ✅ 비회원이라면 이름, 이메일, 전화번호 주소 반영
+        // ✅ 비회원이라면 주소 포함 모든 buyer 정보가 반드시 클라이언트에서 넘어와야 함
+        // 이 로직은 사실상 생략 가능하나, 명시적으로 보강할 수도 있음
         if (memberId == null) {
-            convertedDto.setBuyer_name(dto.getCustomerName());
-            convertedDto.setBuyer_email(dto.getCustomerEmail());
-            convertedDto.setBuyer_tel(dto.getCustomerIdentityNumber());
-            convertedDto.setBuyer_Address("비회원 주소 없음");  // ⚠️ 이후 프론트에서 받으면 여기에 세팅
+        	convertedDto.setBuyerName(dto.getCustomerName());
+        	convertedDto.setBuyerEmail(dto.getCustomerEmail());
+        	convertedDto.setBuyerPhone(dto.getCustomerIdentityNumber());
+        	convertedDto.setBuyerAddress(dto.getCustomerAddress()); // 프론트 받으면 여기에 세팅
         }
 
         // 🧾 결제 내역 + 주문 정보 저장

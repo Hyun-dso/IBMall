@@ -52,13 +52,13 @@ public class IamportService {
                     .header("Authorization", token)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(Map.of(
-                        "merchant_uid", dto.getMerchant_uid(),
+                        "merchant_uid", dto.getMerchantUid(),
                         "amount", dto.getAmount()
                     ))
                     .retrieve()
                     .bodyToMono(Map.class)
                     .map(result -> {
-                        String transactionId = dto.getMerchant_uid(); // 예시로 사용
+                        String transactionId = dto.getMerchantUid(); // 예시로 사용
                         paymentService.savePaymentLog(dto, transactionId, memberId);
                         return transactionId;
                     });
