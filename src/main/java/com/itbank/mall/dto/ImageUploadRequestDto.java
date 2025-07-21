@@ -7,6 +7,7 @@ import java.util.List;
 
 @Data
 public class ImageUploadRequestDto {
+	private Long productId;
     private List<MultipartFile> files;
 
     // 추후 확장 가능 예시
