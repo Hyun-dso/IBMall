@@ -8,7 +8,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableScheduling
 @EnableAsync
-@MapperScan("com.itbank.mall.mapper")
 @SpringBootApplication
 @MapperScan("com.itbank.mall.mapper")
 public class IbmallApplication {

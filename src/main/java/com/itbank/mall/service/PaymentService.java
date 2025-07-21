@@ -1,10 +1,14 @@
 package com.itbank.mall.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.itbank.mall.dto.PaymentRequestDto;
+import com.itbank.mall.entity.OrderEntity;
+import com.itbank.mall.entity.OrderItemEntity;
 import com.itbank.mall.entity.Payment;
 import com.itbank.mall.mapper.PaymentMapper;
 
@@ -15,19 +19,63 @@ import lombok.RequiredArgsConstructor;
 public class PaymentService {
 
     private final PaymentMapper paymentMapper;
-    
+    private final OrderService orderService;
+
+    @Transactional
     public void savePaymentLog(PaymentRequestDto dto, String transactionId, Long memberId) {
+        
+        // ✅ 유효성 검사
+    	if (dto.getAmount() < 0) {
+    	    throw new IllegalArgumentException("결제 금액은 0원 이상이어야 합니다");
+    	}
+
+    	if (dto.getProductId() == null) {
+    	    throw new IllegalArgumentException("상품 ID가 누락되었습니다");
+    	}
+
+    	if (dto.getBuyerPhone() == null || dto.getBuyerPhone().isBlank()) {
+    	    throw new IllegalArgumentException("구매자 전화번호는 필수입니다");
+    	}
+
+    	if (dto.getBuyerAddress() == null || dto.getBuyerAddress().isBlank()) {
+    	    throw new IllegalArgumentException("배송지 주소는 필수입니다");
+    	}
+
+        // ✅ 결제 정보 저장
         Payment payment = new Payment();
         payment.setMemberId(memberId);
-        payment.setOrderUid(dto.getMerchant_uid());     // ✅ order_uid로 일치
-        payment.setProductName(dto.getName());          // ✅ product_name 추가
-        payment.setOrderPrice(dto.getAmount());         // ✅ order_price로 변경
-        payment.setPaidAmount(dto.getAmount());         // ✅ paid_amount 추가
-        payment.setPaymentMethod("card");               // TODO: 실제 결제 수단 사용 가능
-        payment.setStatus("paid");                      // TODO: 실제 결제 상태 활용 가능
+        payment.setOrderUid(dto.getMerchantUid());
+        payment.setProductName(dto.getName());
+        payment.setOrderPrice(dto.getAmount());
+        payment.setPaidAmount(dto.getAmount());
+        payment.setPaymentMethod("card");
+        payment.setStatus("paid");
         payment.setTransactionId(transactionId);
-        payment.setCreatedAt(LocalDateTime.now());      // ✅ created_at 명시적으로 저장
+        payment.setPgProvider(dto.getPgProvider());
+        payment.setBuyerName(dto.getBuyerName());
+        payment.setBuyerEmail(dto.getBuyerEmail());
+        payment.setBuyerPhone(dto.getBuyerPhone());
+        payment.setBuyerAddress(dto.getBuyerAddress());
+        payment.setCreatedAt(LocalDateTime.now());
 
-        paymentMapper.insert(payment);  // 매퍼 XML과 1:1 매칭됨
+        paymentMapper.insert(payment);
+
+        // ✅ 주문 정보 저장
+        OrderEntity order = new OrderEntity();
+        order.setMemberId(memberId);
+        order.setTotalPrice(dto.getAmount());
+        order.setBuyerPhone(dto.getBuyerPhone());
+        order.setBuyerAddress(dto.getBuyerAddress());  // 회원도 주소 직접 입력 가능
+        order.setOrderType(memberId != null ? "MEMBER" : "GUEST");
+
+        OrderItemEntity item = new OrderItemEntity();
+        item.setProductId(dto.getProductId());
+        item.setQuantity(1);
+        item.setPrice(dto.getAmount());
+
+        order.setOrderItems(List.of(item));
+
+        orderService.createOrder(order);
     }
+
 }

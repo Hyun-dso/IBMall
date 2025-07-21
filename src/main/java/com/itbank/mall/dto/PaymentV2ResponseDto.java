@@ -16,4 +16,6 @@ public class PaymentV2ResponseDto {
 	private String pgProvider;
 	private String customerEmail;
 	private String customerName;
+	private String customerAddress;
+	private Long productId;  // 주문한 상품 ID
 }

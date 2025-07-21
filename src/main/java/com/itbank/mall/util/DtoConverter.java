@@ -10,10 +10,17 @@ public class DtoConverter {
         dto.setAmount(Integer.parseInt(v2.getAmount()));
         dto.setName(v2.getOrderName());
         dto.setPgProvider(v2.getPgProvider());
-        dto.setMerchant_uid("order_" + System.currentTimeMillis());
-        dto.setBuyer_email("v2test@example.com"); // 테스트용 임시 값
-        dto.setBuyer_name("V2 유저");
-        dto.setBuyer_tel("010-0000-0000");
+        dto.setMerchantUid("order_" + System.currentTimeMillis());
+
+        // 기본값 설정 (비회원용)
+        dto.setBuyerAddress(v2.getCustomerAddress());
+        dto.setBuyerPhone(v2.getCustomerIdentityNumber());
+        dto.setBuyerName(v2.getCustomerName());
+        dto.setBuyerEmail(v2.getCustomerEmail());
+
+        dto.setProductId(v2.getProductId());         // ✅ 상품 ID
+
         return dto;
     }
 }
+

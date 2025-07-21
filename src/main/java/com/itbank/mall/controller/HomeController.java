@@ -12,16 +12,10 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 public class HomeController {
 
-    @GetMapping("/")
-    public String home(HttpSession session, Model model) {
-        Member loginUser = (Member) session.getAttribute("loginUser");
-
-        if (loginUser != null) {
-            model.addAttribute("nickname", loginUser.getNickname());
-        }
-
-        return "home"; // templates/home.html
-    }
+	@GetMapping("/")
+	public String home() {
+	    return "home";  // nickname은 JS가 fetch로 직접 받아옴
+	}
 
 	@GetMapping("signin")
 	public String signin() {

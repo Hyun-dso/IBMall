@@ -25,8 +25,11 @@ public class PasswordResetService {
 
     @Async
     public void sendResetLink(String email) {
+        // ✅ 기존 토큰 모두 무효화
+        tokenMapper.invalidatePreviousTokens(email);
+        
         String token = UUID.randomUUID().toString();
-        LocalDateTime expiredAt = LocalDateTime.now().plusMinutes(30);
+        LocalDateTime expiredAt = LocalDateTime.now().plusMinutes(15);
 
         PasswordResetToken reset = new PasswordResetToken();
         reset.setEmail(email);
@@ -39,7 +42,7 @@ public class PasswordResetService {
         // ✅ 이메일 전송
         String link = "http://localhost:8080/reset-password?token=" + token;
         String subject = "[IB Mall] 비밀번호 재설정 링크";
-        String body = "비밀번호를 재설정하려면 아래 링크를 클릭하세요 (30분간 유효):\n" + link;
+        String body = "비밀번호를 재설정하려면 아래 링크를 클릭하세요 (15분간 유효):\n" + link;
 
         mailService.sendEmail(email, subject, body);
     }
