@@ -4,16 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.itbank.mall.dto.ProductAdminResponseDto;
 import com.itbank.mall.dto.ProductRequestDto;
@@ -56,7 +47,7 @@ public class ProductController {
 
     // ✅ 상품 상세
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductAdminResponseDto>> detail(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<ProductAdminResponseDto>> detail(@PathVariable("id") Long id) {
         Product product = adminProductService.getProductById(id);
         if (product == null) {
             return ResponseEntity
@@ -72,7 +63,6 @@ public class ProductController {
         ProductAdminResponseDto dto = ProductDtoConverter.toAdminResponse(product, imageUrls);
         return ResponseEntity.ok(ApiResponse.ok(dto));
     }
-
 
     // ✅ 상품 추가
     @PostMapping
@@ -91,10 +81,10 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(productId, "상품이 등록되었습니다."));
     }
-    
+
     // ✅ 상품 수정
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id, @RequestBody ProductRequestDto productRequest) {
+    public ResponseEntity<ApiResponse<Void>> update(@PathVariable("id") Long id, @RequestBody ProductRequestDto productRequest) {
         productRequest.setProductId(id);
         adminProductService.updateProduct(productRequest.toProduct());
         productImageService.deleteImagesByProductId(id);
@@ -113,23 +103,21 @@ public class ProductController {
 
     // ✅ 상품 삭제
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
-    	adminProductService.deleteProduct(id);
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable("id") Long id) {
+        adminProductService.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "상품이 삭제되었습니다."));
     }
 
     // ✅ 상품 상태 변경
     @PatchMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<Void>> updateStatus(@PathVariable Long id, @RequestParam String status) {
-    	adminProductService.updateProductStatus(id, status);
+    public ResponseEntity<ApiResponse<Void>> updateStatus(@PathVariable("id") Long id, @RequestParam(name = "status") String status) {
+        adminProductService.updateProductStatus(id, status);
         return ResponseEntity.ok(ApiResponse.ok(null, "상품 상태가 변경되었습니다."));
     }
-    
-    // 상품 상태별 목록 확인
-    @GetMapping("/status")
-    public ResponseEntity<ApiResponse<List<ProductAdminResponseDto>>> getByStatus(
-            @RequestParam("status") String status) {
 
+    // ✅ 상품 상태별 목록 확인
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<List<ProductAdminResponseDto>>> getByStatus(@RequestParam(name = "status") String status) {
         List<Product> products = adminProductService.getProductsByStatus(status);
 
         List<ProductAdminResponseDto> dtos = products.stream()
