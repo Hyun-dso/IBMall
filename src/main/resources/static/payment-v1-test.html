@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>V1 결제 테스트</title>
+</head>
+<body>
+  <h2>V1 결제 테스트 (1원 결제)</h2>
+
+  <label>상품명: <input type="text" id="productName" value="테스트상품" /></label><br />
+  <label>결제금액: <input type="number" id="amount" value="1" /></label><br />
+  <label>이메일: <input type="email" id="buyerEmail" value="test@example.com" /></label><br />
+  <label>이름: <input type="text" id="buyerName" value="홍길동" /></label><br />
+  <label>전화번호: <input type="text" id="buyerTel" value="01012345678" /></label><br />
+  <label>주소: <input type="text" id="buyerAddress" value="서울시 테스트구" /></label><br />
+  <label>상품번호: <input type="number" id="productId" value="1" /></label><br />
+  <label>JWT (회원일 경우): <input type="text" id="jwt" style="width: 400px;" /></label><br />
+  <button id="payBtn">V1 결제 요청</button>
+
+  <script>
+    document.getElementById("payBtn").addEventListener("click", function () {
+      const data = {
+        merchantUid: "order_" + new Date().getTime(),
+        name: document.getElementById("productName").value,
+        amount: parseInt(document.getElementById("amount").value),
+        buyerEmail: document.getElementById("buyerEmail").value,
+        buyerName: document.getElementById("buyerName").value,
+        buyerTel: document.getElementById("buyerTel").value,
+        buyerAddress: document.getElementById("buyerAddress").value,
+        pgProvider: "html5_inicis",
+        productId: parseInt(document.getElementById("productId").value)
+      };
+
+      const jwt = document.getElementById("jwt").value;
+
+      fetch("/api/payments/v1/pay", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(jwt ? { "Authorization": "Bearer " + jwt } : {})
+        },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.text())
+      .then(msg => alert("✅ 응답: " + msg))
+      .catch(err => alert("❌ 에러: " + err));
+    });
+  </script>
+</body>
+</html>

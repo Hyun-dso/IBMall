@@ -17,4 +17,5 @@ public interface EmailVerificationMapper {
     void markAsUsed(@Param("id") Long id);
     
     void updateMemberVerified(@Param("email") String email);
+    void invalidatePreviousTokens(@Param("email") String email);
 }

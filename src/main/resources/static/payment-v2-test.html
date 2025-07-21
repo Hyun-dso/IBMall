@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>V2 결제 테스트</title>
+  <script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>
+</head>
+<body>
+  <h2>V2 결제 테스트 (SDK → 서버 전송)</h2>
+
+  <label>이름: <input type="text" id="buyerName" value="홍길동" /></label><br />
+  <label>이메일: <input type="email" id="buyerEmail" value="guest@example.com" /></label><br />
+  <label>전화번호: <input type="tel" id="buyerTel" value="01012345678" /></label><br />
+  <label>주소: <input type="text" id="buyerAddr" value="서울시 테스트구" /></label><br />
+  <label>상품명: <input type="text" id="productName" value="테스트상품" /></label><br />
+  <label>상품번호(productId): <input type="number" id="productId" value="1" /></label><br />
+  <label>JWT (선택): <input type="text" id="jwtToken" style="width:400px;" /></label><br />
+  <button id="payBtn">V2 결제하기</button>
+
+  <script>
+    const IMP = window.IMP;
+    IMP.init("imp16763668");
+
+    document.getElementById("payBtn").addEventListener("click", function () {
+      const buyerName = document.getElementById("buyerName").value;
+      const buyerEmail = document.getElementById("buyerEmail").value;
+      const buyerTel = document.getElementById("buyerTel").value;
+      const buyerAddr = document.getElementById("buyerAddr").value;
+      const productName = document.getElementById("productName").value;
+      const productId = document.getElementById("productId").value;
+      const jwtToken = document.getElementById("jwtToken").value;
+
+      IMP.request_pay({
+        pg: "kakaopay.TC0ONETIME",
+        pay_method: "card",
+        merchant_uid: "order_" + new Date().getTime(),
+        name: productName,
+        amount: 1,
+        buyer_email: buyerEmail,
+        buyer_name: buyerName,
+        buyer_tel: buyerTel,
+        buyer_addr: buyerAddr,
+      }, function (rsp) {
+        if (rsp.success) {
+          fetch("/api/payments/v2/success", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(jwtToken ? { Authorization: "Bearer " + jwtToken } : {})
+            },
+            body: JSON.stringify({
+              id: rsp.imp_uid,
+              orderName: rsp.name,
+              amount: rsp.paid_amount.toString(),
+              status: rsp.status,
+              requestedAt: new Date(rsp.paid_at * 1000).toISOString(),
+              approvedAt: new Date().toISOString(),
+              paymentMethod: rsp.pay_method,
+              cardNumber: rsp.card_number || "****-****-****-****",
+              customerIdentityNumber: rsp.buyer_tel,
+              pgProvider: rsp.pg_provider,
+              customerEmail: rsp.buyer_email,
+              customerName: rsp.buyer_name,
+              customerAddress: rsp.buyer_addr,
+              productId: parseInt(productId)
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log("서버 응답:", data);
+            alert("✅ 결제 성공! 서버 응답 확인: " + JSON.stringify(data));
+          });
+        } else {
+          alert("❌ 결제 실패: " + rsp.error_msg);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

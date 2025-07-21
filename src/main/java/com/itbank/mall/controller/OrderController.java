@@ -1,32 +1,31 @@
 package com.itbank.mall.controller;
 
 import com.itbank.mall.dto.OrderDto;
+import com.itbank.mall.security.CustomUserDetails;
 import com.itbank.mall.service.OrderService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
+@RequestMapping("/api/orders")
+@RequiredArgsConstructor
 public class OrderController {
 
     private final OrderService orderService;
 
-    // 생성자 주입
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
+    @GetMapping("/me")
+    public ResponseEntity<List<OrderDto>> getMyOrders(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-    /**
-     * 주문 내역 조회 페이지
-     * ex: /order/list?memberId=1
-     */
-    @GetMapping("/order/list")
-    public String getOrderList(@RequestParam("memberId") Long memberId, Model model) {
+        Long memberId = userDetails.getId();
         List<OrderDto> orderList = orderService.getOrderListByMemberId(memberId);
-        model.addAttribute("orderList", orderList);
-        return "order/order_list";  // templates/order/order_list.html
+        return ResponseEntity.ok(orderList);
     }
 }

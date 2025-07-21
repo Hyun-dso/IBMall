@@ -16,6 +16,10 @@
             pg_provider,
             payment_method, 
             transaction_id, 
+            buyer_name,
+        	buyer_email,
+        	buyer_phone,
+        	buyer_address,
             created_at
         ) VALUES (
             #{memberId}, 
@@ -27,6 +31,10 @@
             #{pgProvider}, 
             #{paymentMethod}, 
             #{transactionId}, 
+            #{buyerName},
+      		#{buyerEmail},
+      		#{buyerPhone},
+        	#{buyerAddress},
             #{createdAt}
         )
     </insert>

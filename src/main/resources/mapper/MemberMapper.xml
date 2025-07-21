@@ -3,28 +3,47 @@
 
 <mapper namespace="com.itbank.mall.mapper.MemberMapper">
 
-	<!-- Boolean 매핑을 명확하게 지정하는 resultMap -->
 	<resultMap id="memberMap" type="com.itbank.mall.entity.Member">
 		<id property="id" column="id" />
 		<result property="email" column="email" />
 		<result property="password" column="password" />
+		<result property="name" column="name" />
 		<result property="nickname" column="nickname" />
+		<result property="phone" column="phone" />
+		<result property="address" column="address" />
 		<result property="provider" column="provider" />
 		<result property="providerId" column="provider_id" />
 		<result property="verified" column="is_verified" javaType="boolean" />
+		<result property="grade" column="grade" />
 		<result property="createdAt" column="created_at" />
 	</resultMap>
 
 	<insert id="insertMember">
-		INSERT INTO member (email, password, nickname, provider, is_verified,
-		created_at)
-		VALUES (#{email}, #{password}, #{nickname}, #{provider}, #{verified},
-		NOW())
+		INSERT INTO member (
+		email, password, name, nickname, phone, address,
+		provider, provider_id, is_verified, role, grade
+		) VALUES (
+		#{email}, #{password}, #{name}, #{nickname}, #{phone}, #{address},
+		#{provider}, #{providerId}, false, 'USER', #{grade}
+		)
 	</insert>
 
-	<!-- resultMap 적용해서 boolean 잘 변환되도록 처리 -->
+	<update id="updateMember" parameterType="com.itbank.mall.entity.Member">
+		UPDATE member
+		SET
+		name = #{name},
+		nickname = #{nickname},
+		phone = #{phone},
+		address = #{address}
+		WHERE id = #{id}
+	</update>
+
 	<select id="findByEmail" resultMap="memberMap">
 		SELECT * FROM member WHERE email = #{email}
+	</select>
+
+	<select id="findById" parameterType="long" resultMap="memberMap">
+		SELECT * FROM member WHERE id = #{id}
 	</select>
 
 	<update id="verifyMemberByEmail">
@@ -44,9 +63,13 @@
 	</select>
 
 	<insert id="insertByGoogle" parameterType="com.itbank.mall.entity.Member">
-		INSERT INTO member (email, password, nickname, provider, provider_id,
-		is_verified)
-		VALUES (#{email}, #{password}, #{nickname}, 'google', #{providerId}, 1)
+		INSERT INTO member (
+		email, password, name, nickname, phone, address,
+		provider, provider_id, is_verified, role, grade
+		) VALUES (
+		#{email}, #{password}, #{name}, #{nickname}, #{phone}, #{address},
+		'google', #{providerId}, 1, 'USER', #{grade}
+		)
 	</insert>
 
 	<select id="countByNickname" resultType="int" parameterType="string">

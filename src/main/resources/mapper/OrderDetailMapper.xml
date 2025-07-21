@@ -6,24 +6,23 @@
 <mapper namespace="com.itbank.mall.mapper.OrderDetailMapper">
 
     <!-- 주문 상세 조회 -->
-<select id="findOrderDetailById" resultType="com.itbank.mall.dto.OrderDetailDto">
-
+    <select id="findOrderDetailById" resultType="com.itbank.mall.dto.OrderDetailDto">
         SELECT
-            o.order_id,
-            o.created_at,
-            o.status AS order_status,
+            o.order_id AS orderId,
+            o.created_at AS createdAt,
+            o.status AS orderStatus,
 
-            p.name AS product_name,
-            p.price AS product_price,
- <!--           p.image_url,--> 
+            p.name AS productName,
+            p.price AS productPrice,
+         <!--   p.image_url AS imageUrl, -->
             oi.quantity,
-            (oi.quantity * p.price) AS item_total,
+            (oi.quantity * p.price) AS itemTotal,
 
-            d.address AS delivery_address,
+            d.address AS deliveryAddress,
             d.recipient,
             d.phone,
-            d.tracking_number,
-            d.status AS delivery_status
+            d.tracking_number AS trackingNumber,
+            d.status AS deliveryStatus
 
         FROM `order` o
         JOIN order_item oi ON o.order_id = oi.order_id

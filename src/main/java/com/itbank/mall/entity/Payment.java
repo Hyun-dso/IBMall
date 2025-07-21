@@ -18,5 +18,9 @@ public class Payment {
     private String status;
     private String transactionId;
     private String pgProvider;
+    private String buyerName;
+    private String buyerEmail;
+    private String buyerPhone;
+    private String buyerAddress;
     private LocalDateTime createdAt;
 }

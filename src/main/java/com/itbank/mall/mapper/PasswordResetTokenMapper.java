@@ -12,4 +12,6 @@ public interface PasswordResetTokenMapper {
     PasswordResetToken findValidToken(@Param("token") String token, @Param("now") LocalDateTime now);
 
     void markAsUsed(@Param("id") int id);
+    void invalidatePreviousTokens(@Param("email") String email);
+
 }
