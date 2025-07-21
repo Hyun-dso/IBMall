@@ -50,6 +50,7 @@ public class SecurityConfig {
 					"/payment-v2",
 					"/api/admin/**",
 					"/api/admin/images",
+					"/api/images/**",
 					"/api/admin/product",
 					"/product/**",
 					"/shop/**",
