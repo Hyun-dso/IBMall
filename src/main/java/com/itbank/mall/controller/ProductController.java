@@ -1,58 +1,83 @@
 package com.itbank.mall.controller;
 
-import com.itbank.mall.dto.ProductRequestDTO;
-import com.itbank.mall.entity.Product;
-import com.itbank.mall.entity.ProductImage;
-import com.itbank.mall.service.ProductService;
-import com.itbank.mall.service.ProductImageService;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import com.itbank.mall.dto.ProductAdminResponseDto;
+import com.itbank.mall.dto.ProductRequestDto;
+import com.itbank.mall.entity.Product;
+import com.itbank.mall.entity.ProductImage;
+import com.itbank.mall.response.ApiResponse;
+import com.itbank.mall.service.AdminProductService;
+import com.itbank.mall.service.ProductImageService;
+import com.itbank.mall.util.ProductDtoConverter;
 
 @RestController
 @RequestMapping("/api/admin/products")
 public class ProductController {
 
-    private final ProductService productService;
+    private final AdminProductService adminProductService;
     private final ProductImageService productImageService;
 
-    public ProductController(ProductService productService, ProductImageService productImageService) {
-        this.productService = productService;
+    public ProductController(AdminProductService adminProductService, ProductImageService productImageService) {
+        this.adminProductService = adminProductService;
         this.productImageService = productImageService;
     }
 
     // ✅ 상품 목록
     @GetMapping
-    public ResponseEntity<Map<String, Object>> list() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("code", "SUCCESS");
-        response.put("products", productService.getAllProducts());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<List<ProductAdminResponseDto>>> list() {
+        List<Product> products = adminProductService.getAllProducts();
+
+        List<ProductAdminResponseDto> dtos = products.stream()
+            .map(p -> ProductDtoConverter.toAdminResponse(
+                p,
+                productImageService.getImagesByProductId(p.getProductId())
+                                   .stream()
+                                   .map(ProductImage::getImageUrl)
+                                   .toList()
+            ))
+            .toList();
+
+        return ResponseEntity.ok(ApiResponse.ok(dtos));
     }
 
     // ✅ 상품 상세
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> detail(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
-        Product product = productService.getProductById(id);
+    public ResponseEntity<ApiResponse<ProductAdminResponseDto>> detail(@PathVariable Long id) {
+        Product product = adminProductService.getProductById(id);
         if (product == null) {
-            response.put("code", "FAIL_NOT_FOUND");
-            response.put("message", "상품을 찾을 수 없습니다.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.fail("상품을 찾을 수 없습니다."));
         }
-        response.put("code", "SUCCESS");
-        response.put("product", product);
-        response.put("images", productImageService.getImagesByProductId(id));
-        return ResponseEntity.ok(response);
+
+        List<String> imageUrls = productImageService.getImagesByProductId(id)
+            .stream()
+            .map(ProductImage::getImageUrl)
+            .toList();
+
+        ProductAdminResponseDto dto = ProductDtoConverter.toAdminResponse(product, imageUrls);
+        return ResponseEntity.ok(ApiResponse.ok(dto));
     }
+
 
     // ✅ 상품 추가
     @PostMapping
-    public ResponseEntity<Map<String, Object>> add(@RequestBody ProductRequestDTO productRequest) {
-        Map<String, Object> response = new HashMap<>();
-        Long productId = productService.addProduct(productRequest.toProduct());
+    public ResponseEntity<ApiResponse<Long>> add(@RequestBody ProductRequestDto productRequest) {
+        Long productId = adminProductService.addProduct(productRequest.toProduct());
 
         if (productRequest.getImageUrls() != null) {
             for (String url : productRequest.getImageUrls()) {
@@ -63,18 +88,15 @@ public class ProductController {
             }
         }
 
-        response.put("code", "SUCCESS");
-        response.put("productId", productId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(productId, "상품이 등록되었습니다."));
     }
-
+    
     // ✅ 상품 수정
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @RequestBody ProductRequestDTO productRequest) {
-        Map<String, Object> response = new HashMap<>();
-
+    public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id, @RequestBody ProductRequestDto productRequest) {
         productRequest.setProductId(id);
-        productService.updateProduct(productRequest.toProduct());
+        adminProductService.updateProduct(productRequest.toProduct());
         productImageService.deleteImagesByProductId(id);
 
         if (productRequest.getImageUrls() != null) {
@@ -86,25 +108,40 @@ public class ProductController {
             }
         }
 
-        response.put("code", "SUCCESS");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(null, "상품이 수정되었습니다."));
     }
 
     // ✅ 상품 삭제
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
-        productService.deleteProduct(id);
-        response.put("code", "SUCCESS");
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+    	adminProductService.deleteProduct(id);
+        return ResponseEntity.ok(ApiResponse.ok(null, "상품이 삭제되었습니다."));
     }
 
     // ✅ 상품 상태 변경
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Map<String, Object>> updateStatus(@PathVariable Long id, @RequestParam String status) {
-        Map<String, Object> response = new HashMap<>();
-        productService.updateProductStatus(id, status);
-        response.put("code", "SUCCESS");
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<Void>> updateStatus(@PathVariable Long id, @RequestParam String status) {
+    	adminProductService.updateProductStatus(id, status);
+        return ResponseEntity.ok(ApiResponse.ok(null, "상품 상태가 변경되었습니다."));
+    }
+    
+    // 상품 상태별 목록 확인
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<List<ProductAdminResponseDto>>> getByStatus(
+            @RequestParam("status") String status) {
+
+        List<Product> products = adminProductService.getProductsByStatus(status);
+
+        List<ProductAdminResponseDto> dtos = products.stream()
+            .map(p -> ProductDtoConverter.toAdminResponse(
+                p,
+                productImageService.getImagesByProductId(p.getProductId())
+                                   .stream()
+                                   .map(ProductImage::getImageUrl)
+                                   .toList()
+            ))
+            .toList();
+
+        return ResponseEntity.ok(ApiResponse.ok(dtos));
     }
 }

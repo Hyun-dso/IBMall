@@ -1,5 +1,7 @@
 package com.itbank.mall.controller;
 
+import com.itbank.mall.dto.ImageUploadRequestDto;
+import com.itbank.mall.response.ApiResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,54 +20,46 @@ public class ImageController {
     private String uploadPath;
 
     @PostMapping("/upload")
-    public ResponseEntity<Map<String, Object>> uploadImages(@RequestParam("files") MultipartFile[] files) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse<List<String>>> uploadImages(@ModelAttribute ImageUploadRequestDto dto) {
+        List<MultipartFile> files = dto.getFiles();
 
-        if (files == null || files.length == 0) {
-            response.put("code", "FAIL_NO_FILES");
-            response.put("message", "업로드할 파일이 없습니다.");
-            return ResponseEntity.badRequest().body(response);
+        if (files == null || files.isEmpty()) {
+            return ResponseEntity
+                .badRequest()
+                .body(ApiResponse.fail("업로드할 파일이 없습니다."));
         }
 
         File uploadDir = new File(uploadPath);
-        if (!uploadDir.exists()) {
-            boolean created = uploadDir.mkdirs();
-            if (!created) {
-                response.put("code", "FAIL_DIR_CREATION");
-                response.put("message", "업로드 디렉토리 생성 실패.");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-            }
+        if (!uploadDir.exists() && !uploadDir.mkdirs()) {
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.fail("업로드 디렉토리 생성 실패"));
         }
 
         List<String> imageUrls = new ArrayList<>();
 
         for (MultipartFile file : files) {
-            if (file.isEmpty()) {
-                continue;
-            }
+            if (file.isEmpty()) continue;
 
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             File destFile = new File(uploadDir, fileName);
 
             try {
                 file.transferTo(destFile);
-                String imageUrl = "/upload/productImg/" + fileName;
-                imageUrls.add(imageUrl);
+                imageUrls.add("/upload/productImg/" + fileName);
             } catch (IOException e) {
-                response.put("code", "FAIL_UPLOAD");
-                response.put("message", "파일 업로드 실패: " + file.getOriginalFilename());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+                return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.fail("파일 업로드 실패: " + file.getOriginalFilename()));
             }
         }
 
         if (imageUrls.isEmpty()) {
-            response.put("code", "FAIL_EMPTY_FILES");
-            response.put("message", "업로드된 파일이 없습니다.");
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity
+                .badRequest()
+                .body(ApiResponse.fail("업로드된 파일이 없습니다."));
         }
 
-        response.put("code", "SUCCESS");
-        response.put("imageUrls", imageUrls);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(imageUrls, "이미지 업로드 성공"));
     }
 }

@@ -1,29 +1,30 @@
 package com.itbank.mall.service;
 
-import com.itbank.mall.entity.Product;
-import com.itbank.mall.mapper.ProductMapper;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
+import com.itbank.mall.entity.Product;
+import com.itbank.mall.mapper.AdminProductMapper;
+
 @Service
-public class ProductService {
+public class AdminProductService {
 
-    private final ProductMapper productMapper;
+    private final AdminProductMapper adminProductMapper;
 
-    public ProductService(ProductMapper productMapper) {
-        this.productMapper = productMapper;
+    public AdminProductService(AdminProductMapper productMapper) {
+        this.adminProductMapper = productMapper;
     }
 
     // ✅ 전체 상품 조회 (관리자용)
     public List<Product> getAllProducts() {
-        return productMapper.findAll();
+        return adminProductMapper.findAll();
     }
 
     // ✅ 단일 상품 조회 (관리자용)
     public Product getProductById(Long productId) {
-        return productMapper.findById(productId);
+        return adminProductMapper.findById(productId);
     }
 
     // ✅ 상품 추가
@@ -44,22 +45,27 @@ public class ProductService {
             product.setNotRecommendCount(0);
         }
 
-        productMapper.insert(product);
+        adminProductMapper.insert(product);
         return product.getProductId();
     }
 
     // ✅ 상품 수정
     public void updateProduct(Product product) {
-        productMapper.update(product);
+    	adminProductMapper.update(product);
     }
 
     // ✅ 상품 삭제
     public void deleteProduct(Long productId) {
-        productMapper.delete(productId);
+    	adminProductMapper.delete(productId);
     }
 
     // ✅ 상품 상태만 업데이트 (예: ACTIVE, INACTIVE, SOLD_OUT, HIDDEN)
     public void updateProductStatus(Long productId, String status) {
-        productMapper.updateStatus(productId, status);
+    	adminProductMapper.updateStatus(productId, status);
+    }
+    
+    // 상품 상태별 목록 확인
+    public List<Product> getProductsByStatus(String status) {
+        return adminProductMapper.findByStatus(status);
     }
 }

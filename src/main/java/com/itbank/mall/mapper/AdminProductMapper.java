@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 @Mapper
-public interface ProductMapper {
+public interface AdminProductMapper {
 
     List<Product> findAll();
     Product findById(Long productId);
@@ -17,4 +17,6 @@ public interface ProductMapper {
 
     // ✅ 추가: 상품 상태만 업데이트 (예: ACTIVE, INACTIVE, SOLD_OUT, HIDDEN)
     int updateStatus(@Param("productId") Long productId, @Param("status") String status);
+    //✅ 상품 상태로 조회
+    List<Product> findByStatus(@Param("status") String status);
 }

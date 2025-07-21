@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ProductRequestDTO{
+public class ProductRequestDto{
     private Long productId;
     private String name;
     private int price;

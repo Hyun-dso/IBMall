@@ -1,13 +1,22 @@
 package com.itbank.mall.controller;
 
-import com.itbank.mall.entity.Product;
-import com.itbank.mall.service.UserProductService;
-import com.itbank.mall.service.ProductImageService;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import com.itbank.mall.dto.ProductDetailResponseDto;
+import com.itbank.mall.dto.ProductUserResponseDto;
+import com.itbank.mall.entity.Product;
+import com.itbank.mall.response.ApiResponse;
+import com.itbank.mall.service.ProductImageService;
+import com.itbank.mall.service.UserProductService;
+import com.itbank.mall.util.ProductDtoConverter;
 
 @RestController
 @RequestMapping("/api/member/products")
@@ -21,38 +30,37 @@ public class UserProductController {
         this.productImageService = productImageService;
     }
 
-    // ✅ 전체 or 카테고리별 상품 조회
     @GetMapping
-    public ResponseEntity<Map<String, Object>> list(@RequestParam(name = "categoryId", required = false) Long categoryId) {
-        Map<String, Object> response = new HashMap<>();
-        List<Product> products;
+    public ResponseEntity<ApiResponse<List<ProductUserResponseDto>>> list(
+            @RequestParam(name = "categoryId", required = false) Long categoryId) {
 
-        if (categoryId != null) {
-            products = userProductService.getProductsByCategory(categoryId);
-        } else {
-            products = userProductService.getAllVisibleProducts();
-        }
+        List<Product> products = (categoryId != null)
+            ? userProductService.getProductsByCategory(categoryId)
+            : userProductService.getAllVisibleProducts();
 
-        response.put("code", "SUCCESS");
-        response.put("products", products);
-        return ResponseEntity.ok(response);
+        List<ProductUserResponseDto> dtos = products.stream()
+            .map(ProductDtoConverter::toUserResponse)
+            .toList();
+
+        return ResponseEntity.ok(ApiResponse.ok(dtos));
     }
 
-    // ✅ 상품 상세 조회
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> detail(@PathVariable("id") Long id) {
-        Map<String, Object> response = new HashMap<>();
-
+    public ResponseEntity<ApiResponse<ProductDetailResponseDto>> detail(@PathVariable("id") Long id) {
         Product product = userProductService.getVisibleProductById(id);
         if (product == null) {
-            response.put("code", "FAIL_NOT_FOUND");
-            response.put("message", "상품을 찾을 수 없습니다.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.fail("상품을 찾을 수 없습니다."));
         }
 
-        response.put("code", "SUCCESS");
-        response.put("product", product);
-        response.put("images", productImageService.getImagesByProductId(id));
-        return ResponseEntity.ok(response);
+        ProductUserResponseDto dto = ProductDtoConverter.toUserResponse(product);
+        List<String> imageUrls = productImageService.getImagesByProductId(id)
+            .stream()
+            .map(img -> img.getImageUrl())
+            .toList();
+
+        ProductDetailResponseDto data = new ProductDetailResponseDto(dto, imageUrls);
+        return ResponseEntity.ok(ApiResponse.ok(data));
     }
 }
