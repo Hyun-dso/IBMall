@@ -48,9 +48,13 @@ public class SecurityConfig {
 					"/signin",
 					"/signup",
 					"/payment-v2",
-					"/product",
+					"/api/admin/**",
+					"/api/admin/images",
+					"/api/images/**",
+					"/api/admin/product",
 					"/product/**",
-					"/shop/**"
+					"/shop/**",
+					"/api/**"
 				).permitAll()
 
 				// ✅ 인증 필요한 경로
