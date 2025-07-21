@@ -2,27 +2,29 @@ package com.itbank.mall.controller;
 
 import com.itbank.mall.entity.Product;
 import com.itbank.mall.service.UserProductService;
-import com.itbank.mall.service.ProductImageService;  // ✅ 요거 추가!!!
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import com.itbank.mall.service.ProductImageService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.*;
 
-@Controller
-@RequestMapping("/shop/product")
+@RestController
+@RequestMapping("/api/member/products")
 public class UserProductController {
 
     private final UserProductService userProductService;
-    private final ProductImageService productImageService;  // ✅ 추가
+    private final ProductImageService productImageService;
 
     public UserProductController(UserProductService userProductService, ProductImageService productImageService) {
         this.userProductService = userProductService;
-        this.productImageService = productImageService;  // ✅ 주입
+        this.productImageService = productImageService;
     }
 
+    // ✅ 전체 or 카테고리별 상품 조회
     @GetMapping
-    public String list(@RequestParam(name = "categoryId", required = false) Long categoryId, Model model) {
+    public ResponseEntity<Map<String, Object>> list(@RequestParam(name = "categoryId", required = false) Long categoryId) {
+        Map<String, Object> response = new HashMap<>();
         List<Product> products;
 
         if (categoryId != null) {
@@ -31,24 +33,26 @@ public class UserProductController {
             products = userProductService.getAllVisibleProducts();
         }
 
-        model.addAttribute("products", products);
-        return "shop/list";
+        response.put("code", "SUCCESS");
+        response.put("products", products);
+        return ResponseEntity.ok(response);
     }
 
+    // ✅ 상품 상세 조회
     @GetMapping("/{id}")
-    public String detail(@PathVariable("id") Long id, Model model) {
+    public ResponseEntity<Map<String, Object>> detail(@PathVariable("id") Long id) {
+        Map<String, Object> response = new HashMap<>();
+
         Product product = userProductService.getVisibleProductById(id);
         if (product == null) {
-            return "redirect:/shop/product";
+            response.put("code", "FAIL_NOT_FOUND");
+            response.put("message", "상품을 찾을 수 없습니다.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
 
-        model.addAttribute("product", product);
-        model.addAttribute("images", productImageService.getImagesByProductId(id));
-        return "shop/detail";
+        response.put("code", "SUCCESS");
+        response.put("product", product);
+        response.put("images", productImageService.getImagesByProductId(id));
+        return ResponseEntity.ok(response);
     }
 }
-
-
-
-    
-    
