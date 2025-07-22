@@ -31,7 +31,8 @@ public class AuthController {
                                      .body(Map.of("message", "이메일 또는 비밀번호가 틀렸습니다"));
             }
 
-            String token = jwtUtil.generateToken(member.getEmail());
+            // ✅ ID + EMAIL 함께 토큰에 넣기
+            String token = jwtUtil.generateToken(member.getId(), member.getEmail());
 
             return ResponseEntity.ok(Map.of(
                 "message", "로그인 성공",
@@ -45,7 +46,6 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
-        // JWT는 클라이언트 저장 방식이므로 서버에 별도 로직은 없음
         return ResponseEntity.ok(Map.of("message", "로그아웃 완료 (프론트에서 토큰 삭제 필요)"));
     }
 }

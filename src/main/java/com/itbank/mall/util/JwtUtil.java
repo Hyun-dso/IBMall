@@ -26,11 +26,12 @@ public class JwtUtil {
         }
     }
 
-    public String generateToken(String email) {
+    public String generateToken(Long id, String email) {
         long now = System.currentTimeMillis();
         long expirationTime = now + expirationSeconds * 1000L;
 
         return Jwts.builder()
+        		.claim("id", id)
                 .setSubject(email)
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(expirationTime))
@@ -57,5 +58,15 @@ public class JwtUtil {
         } catch (JwtException e) {
             return false;
         }
+    }
+    
+    public Long getIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+            .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+
+        return Long.valueOf(claims.get("id").toString());
     }
 }
