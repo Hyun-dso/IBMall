@@ -1,6 +1,6 @@
 package com.itbank.mall.service;
 
-import com.itbank.mall.entity.Product;
+import com.itbank.mall.entity.product.Product;
 import com.itbank.mall.mapper.UserProductMapper;
 import org.springframework.stereotype.Service;
 

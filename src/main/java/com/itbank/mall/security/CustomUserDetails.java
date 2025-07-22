@@ -1,9 +1,10 @@
 package com.itbank.mall.security;
 
-import com.itbank.mall.entity.Member;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.itbank.mall.entity.member.Member;
 
 import java.util.Collection;
 import java.util.Collections;

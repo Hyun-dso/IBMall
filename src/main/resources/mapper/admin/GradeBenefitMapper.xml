@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.admin.GradeBenefitMapper">
+
+    <!-- 전체 등급 혜택 조회 -->
+    <select id="findAll" resultType="com.itbank.mall.entity.grade.GradeBenefit">
+        SELECT * FROM grade_benefit
+    </select>
+
+    <!-- 특정 등급 혜택 조회 -->
+    <select id="findByGrade" parameterType="string" resultType="com.itbank.mall.entity.grade.GradeBenefit">
+        SELECT * FROM grade_benefit
+        WHERE grade_name = #{gradeName}
+    </select>
+
+    <!-- 혜택 수정 -->
+    <update id="updateBenefit" parameterType="com.itbank.mall.entity.grade.GradeBenefit">
+        UPDATE grade_benefit
+        SET discount_percent = #{discountPercent},
+            mileage_rate = #{mileageRate}
+        WHERE grade_name = #{gradeName}
+    </update>
+
+</mapper>

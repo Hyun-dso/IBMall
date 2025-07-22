@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="com.itbank.mall.mapper.admin.GradeRuleMapper">
+  
+  <select id="selectAllRules" resultType="com.itbank.mall.entity.grade.GradeRuleEntity">
+    SELECT grade_name AS gradeName, min_spending AS minSpending FROM grade_rule ORDER BY min_spending DESC
+</select>
+
+<update id="updateRule" parameterType="com.itbank.mall.entity.grade.GradeRuleEntity">
+    UPDATE grade_rule
+    SET min_spending = #{minSpending}
+    WHERE grade_name = #{gradeName}
+</update>
+
+</mapper>

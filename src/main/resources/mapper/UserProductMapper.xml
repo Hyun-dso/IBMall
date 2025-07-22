@@ -4,7 +4,7 @@
 <mapper namespace="com.itbank.mall.mapper.UserProductMapper">
 
 	<!-- ✅ 카테고리별 상품 조회 -->
-	<select id="findByCategoryId" resultType="com.itbank.mall.entity.Product">
+	<select id="findByCategoryId" resultType="com.itbank.mall.entity.product.Product">
 		SELECT
 		product_id AS productId,
 		name,
@@ -26,7 +26,7 @@
 	</select>
 
 	<!-- ✅ 전체 ACTIVE 상품 조회 -->
-	<select id="findVisibleProducts" resultType="com.itbank.mall.entity.Product">
+	<select id="findVisibleProducts" resultType="com.itbank.mall.entity.product.Product">
 		SELECT
 		product_id AS productId,
 		name,
@@ -47,7 +47,7 @@
 	</select>
 
 	<!-- ✅ 단일 ACTIVE 상품 조회 -->
-	<select id="findVisibleById" resultType="com.itbank.mall.entity.Product">
+	<select id="findVisibleById" resultType="com.itbank.mall.entity.product.Product">
 		SELECT
 		product_id AS productId,
 		name,

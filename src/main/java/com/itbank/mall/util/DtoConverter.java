@@ -1,7 +1,7 @@
 package com.itbank.mall.util;
 
-import com.itbank.mall.dto.PaymentRequestDto;
-import com.itbank.mall.dto.PaymentV2ResponseDto;
+import com.itbank.mall.dto.payment.PaymentRequestDto;
+import com.itbank.mall.dto.payment.PaymentV2ResponseDto;
 
 public class DtoConverter {
 

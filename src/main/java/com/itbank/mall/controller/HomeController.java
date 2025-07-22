@@ -4,8 +4,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import com.itbank.mall.dto.TempUserDto;
-import com.itbank.mall.entity.Member;
+import com.itbank.mall.dto.oauth.TempUserDto;
+import com.itbank.mall.entity.member.Member;
 
 import jakarta.servlet.http.HttpSession;
 
