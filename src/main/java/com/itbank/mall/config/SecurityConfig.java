@@ -54,7 +54,9 @@ public class SecurityConfig {
 					"/api/admin/product",
 					"/product/**",
 					"/shop/**",
-					"/api/**"
+					"/api/**",
+					"/api/admin/images/set-thumbnail",
+					"/api/admin/images/set-thumbnail/**"
 				).permitAll()
 
 				// ✅ 인증 필요한 경로
