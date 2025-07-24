@@ -2,9 +2,13 @@ package com.itbank.mall.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
-import com.itbank.mall.entity.GradeRuleEntity;
 import com.itbank.mall.mapper.GradeRuleMapper;
 
 @RestController
@@ -21,15 +25,16 @@ public class AdminGradeRuleController {
     }
 
     // 등급 커트라인 수정 (JSON 요청)
-    @PostMapping("/update")
-    public ResponseEntity<?> updateGradeRule(@RequestBody GradeRuleEntity rule) {
-        try {
-            System.out.println("🔧 등급 수정됨 → " + rule.getGradeName() + " : " + rule.getMinSpending());
-            gradeRuleMapper.updateRule(rule);
-            return ResponseEntity.ok("등급 수정 완료");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body("등급 수정 실패");
-        }
+    @PostMapping("/send")
+    public ResponseEntity<?> testMultipart(
+        @RequestParam("receiverId") Long receiverId,
+        @RequestParam("title") String title,
+        @RequestParam("content") String content,
+        @RequestParam(value = "image_url", required = false) MultipartFile image
+    ) {
+        System.out.println("✅ title: " + title);
+        System.out.println("✅ image: " + (image != null ? image.getOriginalFilename() : "null"));
+        return ResponseEntity.ok("성공!");
     }
+    
 }

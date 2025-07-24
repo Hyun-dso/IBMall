@@ -1,9 +1,9 @@
 package com.itbank.mall.entity;
 
+import java.time.LocalDateTime;
+
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -15,4 +15,6 @@ public class AdminMessageEntity {
     private String content;
     private boolean isRead;
     private LocalDateTime createdAt;
+    private String imageUrl;		//이미지
+    private LocalDateTime scheduledAt;	//예약기능
 }

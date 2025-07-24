@@ -11,19 +11,32 @@ import java.io.File;
 public class WebConfig implements WebMvcConfigurer {
 
     @Value("${file.upload.path}")
-    private String uploadPath;
+    private String productUploadPath;
+
+    @Value("${file.messageimg.path}")
+    private String messageImgUploadPath;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 폴더 없으면 생성
-        File folder = new File(uploadPath);
-        if (!folder.exists()) {
-            folder.mkdirs();
+        // 상품 이미지 디렉토리 생성
+        File productFolder = new File(productUploadPath);
+        if (!productFolder.exists()) {
+            productFolder.mkdirs();
         }
 
-        // 리소스 핸들러 등록
+        // 쪽지 이미지 디렉토리 생성
+        File messageFolder = new File(messageImgUploadPath);
+        if (!messageFolder.exists()) {
+            messageFolder.mkdirs();
+        }
+
+        // 상품 이미지 접근 경로 등록
         registry.addResourceHandler("/upload/productImg/**")
-                .addResourceLocations("file:///" + uploadPath.replace("\\", "/"));
+                .addResourceLocations("file:///" + productUploadPath.replace("\\", "/"));
+
+        // 쪽지 이미지 접근 경로 등록
+        registry.addResourceHandler("/upload/messageImg/**")
+                .addResourceLocations("file:///" + messageImgUploadPath.replace("\\", "/"));
     }
 }
 

@@ -11,15 +11,19 @@
             sender,
             title,
             content,
+            image_url,
             is_read,
-            created_at
+            created_at,
+            scheduled_at
         ) VALUES (
             #{receiverId},
             'admin',
             #{title},
             #{content},
+            #{imageUrl},
             0,
-            NOW()
+            NOW(),
+            #{scheduledAt}
         )
     </insert>
 

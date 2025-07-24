@@ -1,23 +1,19 @@
 package com.itbank.mall.mapper;
 
-import com.itbank.mall.entity.MemberMessageEntity;
-import com.itbank.mall.dto.MemberMessageDto;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 
-import java.util.List;
+import com.itbank.mall.dto.MemberMessageDto;
 
 @Mapper
 public interface MemberMessageMapper {
 
-    // 쪽지 목록 (최신순)
-    List<MemberMessageDto> selectMessagesByReceiverId(long receiverId);
+    List<MemberMessageDto> selectMessagesByReceiverId(Long receiverId);
 
-    // 쪽지 상세
-    MemberMessageEntity selectMessageById(int messageId);
+    MemberMessageDto selectMessageById(int messageId);  // ✅ DTO로 반환 통일
 
-    // 읽음 처리
-    int updateReadStatus(int messageId);
+    void updateReadStatus(int messageId);
 
-    // 쪽지 등록
-    int insertMessage(MemberMessageEntity message);
+    void insertMessage(MemberMessageDto dto);  // insert도 DTO로 변경 가능
 }
