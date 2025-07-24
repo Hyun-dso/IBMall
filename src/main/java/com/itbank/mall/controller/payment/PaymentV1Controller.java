@@ -37,8 +37,11 @@ public class PaymentV1Controller {
     // ✅ 아임포트 1원 테스트 결제
     @PostMapping("/pay")
     public Mono<ResponseEntity<String>> pay(@RequestBody PaymentRequestDto dto, Authentication auth) {
-        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-        Long memberId = userDetails.getId();
+        Long memberId = null;
+        if (auth != null && auth.isAuthenticated()) {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            memberId = userDetails.getId();
+        }
 
         return iamportService.requestOneWonPayment(dto, memberId)
                 .map(txId -> ResponseEntity.ok("✅ V1 결제 성공! TX ID: " + txId))

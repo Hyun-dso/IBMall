@@ -43,4 +43,9 @@ public class HomeController {
     public String paymentV2Page() {
         return "payment-v2";  // → templates/payment-v2.html 로 연결
     }
+    
+    @GetMapping("/paymenttest")
+    public String paymenttest() {
+        return "paymenttest";  // → templates/payment-v2.html 로 연결
+    }
 }

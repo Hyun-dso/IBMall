@@ -1,18 +1,37 @@
 package com.itbank.mall.dto.payment;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class PaymentRequestDto {
-    private String merchantUid;     // 주문 고유 번호
-    private String name;            // 상품명
-    private int amount;             // 결제금액
-    private String buyerEmail;      // 이메일
-    private String buyerName;       // 이름
-    private String buyerPhone;        // 전화번호
-    private String buyerAddress;    // 주소
-    private String pgProvider;      // ex: kakaopay, tosspay, html5_inicis
-    private Long productId;         // 상품번호
+
+    @JsonProperty("imp_uid")
+    private String impUid; // (선택) 저장할지 말지 결정
+
+    @JsonProperty("merchant_uid")
+    private String merchantUid;
+
+    @JsonProperty("paid_amount")
+    private int amount;
+
+    private String name;
+
+    @JsonProperty("buyer_email")
+    private String buyerEmail;
+
+    @JsonProperty("buyer_name")
+    private String buyerName;
+
+    @JsonProperty("buyer_tel")
+    private String buyerPhone;
+
+    private String pgProvider;
+
+    private String buyerAddress;
+
+    private Long productId;
 }

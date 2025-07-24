@@ -44,17 +44,19 @@ public class SecurityConfig {
 					"/api/password/**",           // 비밀번호 재설정
 					"/api/oauth2/**",             // 구글 OAuth
 					"/api/payments/**",           // V1, V2 결제 모두
+					"/api/payments/guest",
 					"/api/products/**",            // (선택) 상품 목록
 					"/signin",
 					"/signup",
-					"/payment-v2",
+					"/api/payments/v2/**",
+					"/api/payments/v1/**",
 					"/api/admin/**",
 					"/api/admin/images",
 					"/api/images/**",
 					"/api/admin/product",
 					"/product/**",
 					"/shop/**",
-					"/api/**"
+					"/paymenttest"
 				).permitAll()
 
 				// ✅ 인증 필요한 경로
