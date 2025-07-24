@@ -1,0 +1,1 @@
+package com.itbank.mall.entity.wishlist;
