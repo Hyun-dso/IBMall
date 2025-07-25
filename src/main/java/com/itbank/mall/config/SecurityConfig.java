@@ -44,12 +44,10 @@ public class SecurityConfig {
 					"/api/password/**",           // 비밀번호 재설정
 					"/api/oauth2/**",             // 구글 OAuth
 					"/api/payments/**",           // V1, V2 결제 모두
-					"/api/payments/guest",
+					"/api/payments/v2-result",   // 👈 이거 명시적으로 추가
 					"/api/products/**",            // (선택) 상품 목록
 					"/signin",
 					"/signup",
-					"/api/payments/v2/**",
-					"/api/payments/v1/**",
 					"/api/admin/**",
 					"/api/admin/images",
 					"/api/images/**",

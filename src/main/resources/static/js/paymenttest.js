@@ -39,64 +39,55 @@ function purchaseProduct(productId, productOptionId, price, name) {
   }).then(response => {
     console.log('✅ 결제 성공 응답:', response);
 
-    const txId = response.txId;
+	if (!response.paymentId || !response.txId) {
+	  alert('결제 응답이 올바르지 않습니다.');
+	  return;
+	}
 
-    // 📌 서버에 txId로 결제 결과 조회 요청
-    fetch(`/api/payments/v2-result?txId=${txId}`)
+    const body = {
+      orderUid: response.paymentId,
+      productName: name,
+      orderPrice: price,
+      paidAmount: response.totalAmount,
+      paymentMethod: response.payMethod,
+      status: response.status,
+      transactionId: response.txId,
+      pgProvider: response.pgProvider,
+
+      productId: productId,
+      productOptionId: productOptionId,
+      quantity: 1,
+
+      buyerName,
+      buyerEmail,
+      buyerPhone,
+      buyerAddress,
+
+      recipientName,
+      recipientPhone,
+      recipientAddress
+    };
+
+    // 🔁 서버에 주문 저장 요청
+    fetch('/api/payments/guest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
       .then(res => res.json())
-      .then(result => {
-        if (result.status !== 'paid') {
-          alert('결제가 완료되지 않았습니다.');
-          return;
-        }
-
-        const body = {
-          orderUid: response.paymentId,
-          productName: name,
-          orderPrice: price,
-          paidAmount: result.amount,
-          paymentMethod: result.method,
-          status: result.status,
-          transactionId: result.id,
-          pgProvider: result.pgProvider,
-
-          productId: productId,
-          productOptionId: productOptionId,
-          quantity: 1,
-
-          buyerName,
-          buyerEmail,
-          buyerPhone,
-          buyerAddress,
-
-          recipientName,
-          recipientPhone,
-          recipientAddress
-        };
-
-        // 🔁 서버에 주문 저장 요청
-        fetch('/api/payments/guest', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        })
-          .then(res => res.json())
-          .then(json => {
-            alert(json.message || '서버 저장 완료');
-            console.log(json);
-          })
-          .catch(err => {
-            console.error('❌ 서버 저장 실패:', err);
-          });
+      .then(json => {
+        alert(json.message || '서버 저장 완료');
+        console.log(json);
       })
       .catch(err => {
-        console.error('❌ 결제 상세 조회 실패:', err);
+        console.error('❌ 서버 저장 실패:', err);
       });
 
   }).catch(err => {
     console.error('❌ 결제 실패:', err);
   });
 }
+
 // 상품 목록 불러오기
 window.addEventListener('DOMContentLoaded', () => {
   fetch('/api/products')
@@ -105,31 +96,29 @@ window.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('productTableBody');
       const products = json.data;
 
-	  products.forEach(p => {
-	    const tr = document.createElement('tr');
+      products.forEach(p => {
+        const tr = document.createElement('tr');
 
-	    const nameTd = document.createElement('td');
-	    nameTd.textContent = p.name;
+        const nameTd = document.createElement('td');
+        nameTd.textContent = p.name;
 
-	    const priceTd = document.createElement('td');
-	    priceTd.textContent = p.price + '원';
+        const priceTd = document.createElement('td');
+        priceTd.textContent = p.price + '원';
 
-	    const buttonTd = document.createElement('td');
-	    const btn = document.createElement('button');
-	    btn.textContent = '결제하기';
+        const buttonTd = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.textContent = '결제하기';
 
-	    // 여기에 옵션 ID 추가
-	    const productOptionId = 1;  // 지금은 기본값 하드코딩 (DB 확인 결과 1번만 있음)
+        const productOptionId = 1;  // 현재는 임시로 1번
 
-	    btn.onclick = () => purchaseProduct(p.productId, productOptionId, p.price, p.name);
+        btn.onclick = () => purchaseProduct(p.productId, productOptionId, p.price, p.name);
 
-	    buttonTd.appendChild(btn);
-
-	    tr.appendChild(nameTd);
-	    tr.appendChild(priceTd);
-	    tr.appendChild(buttonTd);
-	    tbody.appendChild(tr);
-	  });
+        buttonTd.appendChild(btn);
+        tr.appendChild(nameTd);
+        tr.appendChild(priceTd);
+        tr.appendChild(buttonTd);
+        tbody.appendChild(tr);
+      });
     })
     .catch(err => {
       console.error('상품 불러오기 실패:', err);
