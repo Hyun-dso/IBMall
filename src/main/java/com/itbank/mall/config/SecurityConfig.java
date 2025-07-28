@@ -2,6 +2,7 @@ package com.itbank.mall.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -56,7 +57,9 @@ public class SecurityConfig {
 					"/shop/**",
 					"/api/**"
 				).permitAll()
-
+			    // ✅ DELETE 요청 허용
+			    .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()
+				
 				// ✅ 인증 필요한 경로
 				.requestMatchers(
 					"/api/members/me",
@@ -64,7 +67,8 @@ public class SecurityConfig {
 					"/api/orders/me",
 					"/api/message",
 					"/api/admin/message/send",			//이거 테스트용임 메세지보내는거 (관리자)
-					"/api/admin/**"
+					"/api/admin/**",
+					"/admin/grade-rule/delete"
 				).authenticated()
 
 				// ✅ 그 외 모든 요청 인증 필요
