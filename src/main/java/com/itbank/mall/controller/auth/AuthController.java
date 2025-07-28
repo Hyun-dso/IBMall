@@ -31,7 +31,7 @@ public class AuthController {
                                      .body(Map.of("message", "이메일 또는 비밀번호가 틀렸습니다"));
             }
 
-            String token = jwtUtil.generateToken(member.getEmail());
+            String token = jwtUtil.generateToken(member.getId(), member.getEmail());
 
             return ResponseEntity.ok(Map.of(
                 "message", "로그인 성공",

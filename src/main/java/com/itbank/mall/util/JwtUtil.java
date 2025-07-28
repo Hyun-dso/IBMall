@@ -26,12 +26,13 @@ public class JwtUtil {
         }
     }
 
-    public String generateToken(String email) {
+    public String generateToken(Long memberId, String email) {
         long now = System.currentTimeMillis();
         long expirationTime = now + expirationSeconds * 1000L;
 
         return Jwts.builder()
                 .setSubject(email)
+                .claim("memberId", memberId)
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(expirationTime))
                 .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()), SignatureAlgorithm.HS256)
@@ -57,5 +58,15 @@ public class JwtUtil {
         } catch (JwtException e) {
             return false;
         }
+    }
+    
+    public Long getMemberId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.get("memberId", Long.class);
     }
 }
