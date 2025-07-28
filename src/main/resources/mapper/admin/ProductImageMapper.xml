@@ -3,31 +3,32 @@
 
 <mapper namespace="com.itbank.mall.mapper.admin.ProductImageMapper">
 
-    <!-- 이미지 1개 추가 -->
+    <!-- ✅ 1. 이미지 1개 추가 -->
     <insert id="insert" parameterType="com.itbank.mall.entity.product.ProductImage">
-        INSERT INTO product_image (product_id, image_url, is_thumbnail, sort_order)
-        VALUES (#{productId}, #{imageUrl}, #{isThumbnail}, #{sortOrder})
+        INSERT INTO product_image (product_id, image_url, sort_order)
+        VALUES (#{productId}, #{imageUrl}, #{sortOrder})
     </insert>
 
-    <!-- 특정 상품의 이미지들 모두 조회 (썸네일 우선 + 정렬 순) -->
-    <select id="findByProductId" parameterType="long" resultType="com.itbank.mall.entity.product.ProductImage">
-        SELECT image_id AS imageId,
-               product_id AS productId,
-               image_url AS imageUrl,
-               is_thumbnail AS isThumbnail,
-               sort_order AS sortOrder,
-               created_at AS createdAt
+    <!-- ✅ 2. 특정 상품의 이미지들 조회 (정렬 순서 기준) -->
+    <select id="findByProductId" parameterType="long"
+            resultType="com.itbank.mall.entity.product.ProductImage">
+        SELECT image_id     AS imageId,
+               product_id   AS productId,
+               image_url    AS imageUrl,
+               sort_order   AS sortOrder,
+               created_at   AS createdAt
         FROM product_image
         WHERE product_id = #{productId}
-        ORDER BY is_thumbnail DESC, sort_order ASC
+        ORDER BY sort_order ASC
     </select>
 
-    <!-- 특정 상품 이미지들 삭제 -->
+    <!-- ✅ 3. 특정 상품 이미지들 전체 삭제 -->
     <delete id="deleteByProductId" parameterType="long">
-        DELETE FROM product_image WHERE product_id = #{productId}
+        DELETE FROM product_image
+        WHERE product_id = #{productId}
     </delete>
 
-    <!-- 썸네일 설정 (product 테이블의 thumbnail_url 업데이트) -->
+    <!-- ✅ 4. 썸네일 설정 (product 테이블의 thumbnail_url 컬럼에 image_url 저장) -->
     <update id="updateProductThumbnail">
         UPDATE product
         SET thumbnail_url = (
@@ -39,7 +40,7 @@
         WHERE product_id = #{productId}
     </update>
 
-    <!-- 이미지 정렬 순서 변경 -->
+    <!-- ✅ 5. 이미지 정렬 순서 변경 -->
     <update id="updateSortOrder">
         UPDATE product_image
         SET sort_order = #{sortOrder}

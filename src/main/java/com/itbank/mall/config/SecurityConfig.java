@@ -51,7 +51,6 @@ public class SecurityConfig {
 					"/api/admin/**",
 					"/api/admin/images",
 					"/api/images/**",
-					"/api/admin/product",
 					"/product/**",
 					"/shop/**",
 					"/api/**",

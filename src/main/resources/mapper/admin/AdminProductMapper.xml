@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -20,6 +19,8 @@
             not_recommend_count AS notRecommendCount,
             is_time_sale AS isTimeSale,
             time_sale_price AS timeSalePrice,
+            time_sale_start AS timeSaleStart,
+            time_sale_end AS timeSaleEnd,
             created_at AS createdAt,
             status
         FROM product
@@ -40,6 +41,8 @@
             not_recommend_count AS notRecommendCount,
             is_time_sale AS isTimeSale,
             time_sale_price AS timeSalePrice,
+            time_sale_start AS timeSaleStart,
+            time_sale_end AS timeSaleEnd,
             created_at AS createdAt,
             status
         FROM product
@@ -61,6 +64,8 @@
             not_recommend_count AS notRecommendCount,
             is_time_sale AS isTimeSale,
             time_sale_price AS timeSalePrice,
+            time_sale_start AS timeSaleStart,
+            time_sale_end AS timeSaleEnd,
             created_at AS createdAt,
             status
         FROM product
@@ -71,12 +76,14 @@
     <insert id="insert" parameterType="com.itbank.mall.entity.product.Product" useGeneratedKeys="true" keyProperty="productId">
         INSERT INTO product (
             name, price, stock, category_id, description, thumbnail_url,
-            view_count, recommend_count, not_recommend_count, is_time_sale,
-            time_sale_price, created_at, status
+            view_count, recommend_count, not_recommend_count,
+            is_time_sale, time_sale_price, time_sale_start, time_sale_end,
+            created_at, status
         ) VALUES (
             #{name}, #{price}, #{stock}, #{categoryId}, #{description}, #{thumbnailUrl},
-            #{viewCount}, #{recommendCount}, #{notRecommendCount}, #{isTimeSale},
-            #{timeSalePrice}, #{createdAt}, #{status}
+            #{viewCount}, #{recommendCount}, #{notRecommendCount},
+            #{isTimeSale}, #{timeSalePrice}, #{timeSaleStart}, #{timeSaleEnd},
+            #{createdAt}, #{status}
         )
     </insert>
 
@@ -94,6 +101,8 @@
             not_recommend_count = #{notRecommendCount},
             is_time_sale = #{isTimeSale},
             time_sale_price = #{timeSalePrice},
+            time_sale_start = #{timeSaleStart},
+            time_sale_end = #{timeSaleEnd},
             status = #{status}
         WHERE product_id = #{productId}
     </update>
