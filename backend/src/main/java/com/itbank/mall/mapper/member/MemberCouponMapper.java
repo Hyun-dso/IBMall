@@ -1,11 +1,11 @@
 package com.itbank.mall.mapper.member;
 
-import com.itbank.mall.dto.member.coupon.MemberCouponDto;
-import com.itbank.mall.entity.coupon.MemberCouponEntity;
+import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 
-import java.util.List;
+import com.itbank.mall.dto.member.coupon.MemberCouponDto;
+import com.itbank.mall.entity.coupon.MemberCouponEntity;
 
 @Mapper
 public interface MemberCouponMapper {

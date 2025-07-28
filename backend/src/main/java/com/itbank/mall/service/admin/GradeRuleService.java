@@ -18,6 +18,6 @@ public class GradeRuleService {
         GradeRuleEntity entity = new GradeRuleEntity();
         entity.setGradeName(dto.getGradeName());
         entity.setMinSpending(dto.getMinSpending());
-        return gradeRuleMapper.updateRule(entity);
+        return gradeRuleMapper.updateRuleById(entity);
     }
 }

@@ -82,4 +82,13 @@ public class JwtUtil {
         }
         return null;
     }
+    public Long getIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+            .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+
+        return Long.valueOf(claims.get("id").toString());
+    }
 }
