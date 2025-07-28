@@ -1,5 +1,12 @@
 package com.itbank.mall.controller.payment;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.itbank.mall.dto.payment.MemberPaymentRequestDto;
 import com.itbank.mall.response.ApiResponse;
 import com.itbank.mall.service.payment.MemberPaymentService;
@@ -7,10 +14,6 @@ import com.itbank.mall.util.JwtUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/payments/member")

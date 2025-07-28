@@ -1,0 +1,44 @@
+HELP.md
+# 민감 정보 분리 파일
+# ==== Spring Boot Backend ====
+/backend/.classpath
+/backend/.project
+/backend/.settings/
+/backend/.apt_generated
+/backend/.factorypath
+/backend/.springBeans
+/backend/.sts4-cache
+/backend/build/
+/backend/bin/
+!/backend/src/main/**/build/
+/backend/HELP.md
+/backend/src/main/resources/application-secret.properties
+
+# Gradle
+/backend/.gradle
+/backend/gradle/
+!/backend/gradle/wrapper/gradle-wrapper.jar
+
+# ==== React Frontend ====
+/frontend/node_modules/
+/frontend/build/
+/frontend/dist/
+/frontend/.env
+/frontend/.DS_Store
+
+# ==== IDE/Editor Config ====
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+out/
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# OS 파일
+.DS_Store
+Thumbs.db
