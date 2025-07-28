@@ -1,7 +1,8 @@
 package com.itbank.mall.security;
 
-import com.itbank.mall.entity.Member;
-import com.itbank.mall.mapper.MemberMapper;
+import com.itbank.mall.entity.member.Member;
+import com.itbank.mall.mapper.member.MemberMapper;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

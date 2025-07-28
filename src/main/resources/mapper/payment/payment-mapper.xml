@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.payment.PaymentMapper">
+
+    <insert id="insert" parameterType="com.itbank.mall.entity.payment.Payment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payment (
+            member_id, 
+            order_uid, 
+            product_name, 
+            order_price, 
+            paid_amount, 
+            status,
+            pg_provider,
+            payment_method, 
+            transaction_id, 
+            buyer_name,
+        	buyer_email,
+        	buyer_phone,
+        	buyer_address,
+            created_at
+        ) VALUES (
+            #{memberId}, 
+            #{orderUid}, 
+            #{productName}, 
+            #{orderPrice}, 
+            #{paidAmount}, 
+            #{status}, 
+            #{pgProvider}, 
+            #{paymentMethod}, 
+            #{transactionId}, 
+            #{buyerName},
+      		#{buyerEmail},
+      		#{buyerPhone},
+        	#{buyerAddress},
+            #{createdAt}
+        )
+    </insert>
+
+</mapper>

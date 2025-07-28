@@ -45,17 +45,17 @@ public class SecurityConfig {
 					"/api/password/**",           // 비밀번호 재설정
 					"/api/oauth2/**",             // 구글 OAuth
 					"/api/payments/**",           // V1, V2 결제 모두
+					"/api/payments/v2-result",   // 👈 이거 명시적으로 추가
 					"/api/products/**",            // (선택) 상품 목록
 					"/signin",
 					"/signup",
-					"/payment-v2",
 					"/api/admin/**",
 					"/api/admin/images",
 					"/api/images/**",
 					"/api/admin/product",
 					"/product/**",
 					"/shop/**",
-					"/api/**"
+					"/paymenttest"
 				).permitAll()
 			    // ✅ DELETE 요청 허용
 			    .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()

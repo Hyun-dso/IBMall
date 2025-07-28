@@ -4,8 +4,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import com.itbank.mall.dto.TempUserDto;
-import com.itbank.mall.entity.Member;
+import com.itbank.mall.dto.oauth.TempUserDto;
+import com.itbank.mall.entity.member.Member;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -42,5 +42,10 @@ public class HomeController {
     @GetMapping("/payment-v2")
     public String paymentV2Page() {
         return "payment-v2";  // → templates/payment-v2.html 로 연결
+    }
+    
+    @GetMapping("/paymenttest")
+    public String paymenttest() {
+        return "paymenttest";  // → templates/payment-v2.html 로 연결
     }
 }

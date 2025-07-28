@@ -27,8 +27,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
     // WebClient 사용을 위한 의존성
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	// 자동 업데이트
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	// 로깅
 	implementation 'org.springframework.boot:spring-boot-starter-logging'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'

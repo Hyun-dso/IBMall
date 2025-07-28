@@ -2,9 +2,9 @@ package com.itbank.mall.util;
 
 import java.util.List;
 
-import com.itbank.mall.dto.ProductAdminResponseDto;
-import com.itbank.mall.dto.ProductUserResponseDto;
-import com.itbank.mall.entity.Product;
+import com.itbank.mall.dto.admin.product.ProductAdminResponseDto;
+import com.itbank.mall.dto.user.product.ProductUserResponseDto;
+import com.itbank.mall.entity.product.Product;
 
 public class ProductDtoConverter {
 

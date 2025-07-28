@@ -1,7 +1,9 @@
 package com.itbank.mall.mapper;
 
-import com.itbank.mall.entity.Product;
 import org.apache.ibatis.annotations.Mapper;
+
+import com.itbank.mall.entity.product.Product;
+
 import java.util.List;
 
 @Mapper

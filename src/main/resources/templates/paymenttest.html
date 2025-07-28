@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>V2 카드결제 테스트</title>
+  <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
+</head>
+<body>
+  <h2>아임포트 V2 결제 테스트</h2>
+
+  <table border="1">
+    <thead>
+      <tr>
+        <th>상품명</th>
+        <th>가격</th>
+        <th>구매</th>
+      </tr>
+    </thead>
+	<tbody id="productTableBody">
+	  <!-- JS에서 동적으로 렌더링 -->
+	</tbody>
+  </table>
+
+  <br>
+  <button id="pay-btn">SDK 단독 결제 테스트 버튼</button>
+
+  <script src="/js/paymenttest.js"></script>
+</body>
+</html>
