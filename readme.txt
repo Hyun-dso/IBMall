@@ -1,3 +1,11 @@
+### Git 인코딩 깨짐 방지를 위한 필수 설정
+
+아래 명령어를 터미널에서 한 번 실행해 주세요:
+
+```bash
+git config --global i18n.commitEncoding utf-8
+git config --global i18n.logOutputEncoding utf-8
+
 # 📦 IB Mall 프로젝트 - 회원/로그인/결제 관련 DB 구조
 
 본 문서는 쇼핑몰 프로젝트 `ib_mall`의 로그인, 회원가입, 소셜 연동, 이메일 인증, 결제, 쪽지 관련 DB 테이블 구조를 문서화한 내용입니다.
