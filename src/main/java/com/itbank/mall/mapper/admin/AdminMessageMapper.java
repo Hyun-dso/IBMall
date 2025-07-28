@@ -1,7 +1,8 @@
-package com.itbank.mall.mapper;
+package com.itbank.mall.mapper.admin;
 
-import com.itbank.mall.dto.AdminMessageDto;
 import org.apache.ibatis.annotations.Mapper;
+
+import com.itbank.mall.dto.admin.AdminMessageDto;
 
 @Mapper
 public interface AdminMessageMapper {

@@ -1,11 +1,11 @@
-package com.itbank.mall.service;
+package com.itbank.mall.service.member;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.itbank.mall.dto.MemberMessageDto;
-import com.itbank.mall.mapper.MemberMessageMapper;
+import com.itbank.mall.dto.member.MemberMessageDto;
+import com.itbank.mall.mapper.member.MemberMessageMapper;
 
 import lombok.RequiredArgsConstructor;
 

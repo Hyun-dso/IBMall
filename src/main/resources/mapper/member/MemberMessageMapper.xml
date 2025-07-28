@@ -6,7 +6,7 @@
 <mapper namespace="com.itbank.mall.mapper.MemberMessageMapper">
 
     <!-- 쪽지 리스트 조회 -->
-    <select id="selectMessagesByReceiverId" resultType="com.itbank.mall.dto.MemberMessageDto">
+    <select id="selectMessagesByReceiverId" resultType="com.itbank.mall.dto.member.MemberMessageDto">
     SELECT 
         message_id AS messageId,
         receiver_id AS receiverId,
@@ -23,7 +23,7 @@ AND (scheduled_at IS NULL OR scheduled_at &lt;= NOW())
 </select>
 
     <!-- 쪽지 상세 조회 -->
-<select id="selectMessageById" resultType="com.itbank.mall.dto.MemberMessageDto">
+<select id="selectMessageById" resultType="com.itbank.mall.dto.member.MemberMessageDto">
     SELECT 
         message_id AS messageId,
         receiver_id AS receiverId,

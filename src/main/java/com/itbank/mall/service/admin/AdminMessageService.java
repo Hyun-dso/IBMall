@@ -1,9 +1,11 @@
-package com.itbank.mall.service;
+package com.itbank.mall.service.admin;
 
-import com.itbank.mall.dto.AdminMessageDto;
-import com.itbank.mall.mapper.AdminMessageMapper;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import com.itbank.mall.dto.admin.AdminMessageDto;
+import com.itbank.mall.mapper.admin.AdminMessageMapper;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

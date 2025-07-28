@@ -1,10 +1,10 @@
-package com.itbank.mall.mapper;
+package com.itbank.mall.mapper.member;
 
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 
-import com.itbank.mall.dto.MemberMessageDto;
+import com.itbank.mall.dto.member.MemberMessageDto;
 
 @Mapper
 public interface MemberMessageMapper {

@@ -1,10 +1,11 @@
-package com.itbank.mall.controller;
+package com.itbank.mall.controller.member;
 
-import com.itbank.mall.service.MessageImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.itbank.mall.service.admin.MessageImageService;
 
 @RestController
 @RequestMapping("/api/admin/message")

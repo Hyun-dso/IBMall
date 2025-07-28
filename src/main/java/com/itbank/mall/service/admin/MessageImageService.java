@@ -1,4 +1,4 @@
-package com.itbank.mall.service;
+package com.itbank.mall.service.admin;
 
 import java.io.File;
 import java.io.IOException;

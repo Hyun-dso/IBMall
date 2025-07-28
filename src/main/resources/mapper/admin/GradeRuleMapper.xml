@@ -3,7 +3,7 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.itbank.mall.mapper.GradeRuleMapper">
+<mapper namespace="com.itbank.mall.mapper.admin.GradeRuleMapper">
 
   <!-- 전체 조회 -->
   <select id="selectAllRules" resultType="com.itbank.mall.entity.GradeRuleEntity">
@@ -17,13 +17,13 @@
   </select>
 
   <!-- 등급 추가 -->
-  <insert id="insertRule" parameterType="com.itbank.mall.entity.GradeRuleEntity">
+  <insert id="insertRule" parameterType="com.itbank.mall.entity.admin.GradeRuleEntity">
     INSERT INTO grade_rule (grade_name, min_spending, display_order)
     VALUES (#{gradeName}, #{minSpending}, #{displayOrder})
   </insert>
 
   <!-- 등급 수정: grade_id 기준 -->
-  <update id="updateRuleById" parameterType="com.itbank.mall.entity.GradeRuleEntity">
+  <update id="updateRuleById" parameterType="com.itbank.mall.entity.admin.GradeRuleEntity">
     UPDATE grade_rule
     SET grade_name = #{gradeName},
         min_spending = #{minSpending},

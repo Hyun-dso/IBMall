@@ -1,4 +1,4 @@
-package com.itbank.mall.controller;
+package com.itbank.mall.controller.admin;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.itbank.mall.dto.AdminMessageDto;
-import com.itbank.mall.service.AdminMessageService;
+import com.itbank.mall.dto.admin.AdminMessageDto;
+import com.itbank.mall.service.admin.AdminMessageService;
 
 import lombok.RequiredArgsConstructor;
 

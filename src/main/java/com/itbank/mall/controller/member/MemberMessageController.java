@@ -1,4 +1,4 @@
-package com.itbank.mall.controller;
+package com.itbank.mall.controller.member;
 
 import java.util.List;
 
@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.itbank.mall.dto.MemberMessageDto;
-import com.itbank.mall.service.MemberMessageService;
+import com.itbank.mall.dto.member.MemberMessageDto;
+import com.itbank.mall.service.member.MemberMessageService;
 import com.itbank.mall.util.JwtUtil;
 
 import jakarta.servlet.http.HttpServletRequest;

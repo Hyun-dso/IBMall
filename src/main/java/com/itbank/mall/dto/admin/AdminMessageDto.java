@@ -1,4 +1,4 @@
-package com.itbank.mall.dto;
+package com.itbank.mall.dto.admin;
 
 import java.time.LocalDateTime;
 
