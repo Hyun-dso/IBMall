@@ -52,10 +52,12 @@ public class SecurityConfig {
 					"/api/admin/**",
 					"/api/admin/images",
 					"/api/images/**",
-					"/api/admin/product",
 					"/product/**",
 					"/shop/**",
-					"/paymenttest"
+					"/api/admin/images/set-thumbnail",
+					"/api/admin/images/set-thumbnail/**",
+					"/api/reviews",
+					"/api/reviews/**"
 				).permitAll()
 			    // ✅ DELETE 요청 허용
 			    .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()

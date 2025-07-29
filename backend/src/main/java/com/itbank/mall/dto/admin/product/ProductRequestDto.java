@@ -1,13 +1,13 @@
 package com.itbank.mall.dto.admin.product;
 
+import com.itbank.mall.entity.product.Product;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-import com.itbank.mall.entity.product.Product;
-
 @Data
-public class ProductRequestDto{
+public class ProductRequestDto {
     private Long productId;
     private String name;
     private int price;
@@ -15,6 +15,12 @@ public class ProductRequestDto{
     private Long categoryId;
     private String description;
     private String status;
+
+    private Boolean isTimeSale;               // ✅ 추가
+    private Integer timeSalePrice;            // ✅ 추가
+    private LocalDateTime timeSaleStart;      // ✅ 추가
+    private LocalDateTime timeSaleEnd;        // ✅ 추가
+
     private List<String> imageUrls;
 
     public Product toProduct() {
@@ -26,6 +32,10 @@ public class ProductRequestDto{
         product.setCategoryId(categoryId);
         product.setDescription(description);
         product.setStatus(status);
+        product.setIsTimeSale(isTimeSale);
+        product.setTimeSalePrice(timeSalePrice);
+        product.setTimeSaleStart(timeSaleStart);
+        product.setTimeSaleEnd(timeSaleEnd);
         return product;
     }
 }
