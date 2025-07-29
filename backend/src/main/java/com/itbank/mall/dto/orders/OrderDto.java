@@ -16,5 +16,4 @@ public class OrderDto {
     private String status;                  // 주문 상태
     private LocalDateTime createdAt;        // 주문 일시
     private List<OrderItemDto> orderItems;  // 주문 상세 목록
-
 }
