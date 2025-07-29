@@ -42,6 +42,7 @@ public class OrderDetailDto {
     private String imageUrl;
 
     // 배송 정보 -------------------------
+    private String buyerName;
 
     /** 배송지 주소 */
     private String deliveryAddress;

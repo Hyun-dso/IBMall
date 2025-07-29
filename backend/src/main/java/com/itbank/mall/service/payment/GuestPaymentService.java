@@ -1,6 +1,8 @@
 package com.itbank.mall.service.payment;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import com.itbank.mall.entity.orders.OrderItemEntity;
 import com.itbank.mall.entity.payment.Payment;
 import com.itbank.mall.mapper.orders.OrderMapper;
 import com.itbank.mall.mapper.payment.PaymentMapper;
+import com.itbank.mall.service.MailService;
 import com.itbank.mall.service.orders.DeliveryService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ public class GuestPaymentService {
     private final PaymentMapper paymentMapper;
     private final OrderMapper orderMapper;
     private final DeliveryService deliveryService;
+    private final MailService mailService;
 
     @Transactional
     public void processGuestPayment(GuestPaymentRequestDto dto) {
@@ -48,8 +52,8 @@ public class GuestPaymentService {
         // 2. orders 저장
         OrderEntity order = new OrderEntity();
         order.setMemberId(null); // 비회원
+        order.setBuyerName(dto.getBuyerAddress());
         order.setBuyerPhone(dto.getBuyerPhone());
-        order.setBuyerAddress(dto.getBuyerAddress());
         order.setTotalPrice(dto.getPaidAmount());
         order.setOrderType("GUEST");
         order.setStatus("주문완료");
@@ -71,6 +75,13 @@ public class GuestPaymentService {
         delivery.setAddress(dto.getRecipientAddress());
         delivery.setStatus("배송준비중");
         deliveryService.saveDelivery(delivery);
+        
+        mailService.sendGuestPaymentCompleteEmail(
+        	    dto.getBuyerEmail(),
+        	    dto.getOrderUid(),
+        	    List.of(dto.getProductName() + " x " + dto.getQuantity() + "개"),
+        	    dto.getPaidAmount()
+        	);
     }
     
     @Transactional
@@ -95,8 +106,8 @@ public class GuestPaymentService {
         // 2. orders 저장
         OrderEntity order = new OrderEntity();
         order.setMemberId(null); // 비회원
+        order.setBuyerName(dto.getBuyerAddress());
         order.setBuyerPhone(dto.getBuyerPhone());
-        order.setBuyerAddress(dto.getBuyerAddress());
         order.setTotalPrice(dto.getPaidAmount());  // 총 금액
         order.setOrderType("GUEST");
         order.setStatus("주문완료");
@@ -120,6 +131,17 @@ public class GuestPaymentService {
         delivery.setAddress(dto.getRecipientAddress());
         delivery.setStatus("배송준비중");
         deliveryService.saveDelivery(delivery);
-    }
 
+    
+        List<String> productLines = dto.getItems().stream()
+        	    .map(i -> i.getProductName() + " x " + i.getQuantity() + "개")
+        	    .collect(Collectors.toList());
+
+    	mailService.sendGuestPaymentCompleteEmail(
+    	    dto.getBuyerEmail(),
+    	    dto.getOrderUid(),
+    	    productLines,
+    	    dto.getPaidAmount()
+    	);
+    }
 }

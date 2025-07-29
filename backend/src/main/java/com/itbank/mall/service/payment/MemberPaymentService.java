@@ -43,8 +43,8 @@ public class MemberPaymentService {
         // 2. orders 저장
         OrderEntity order = new OrderEntity();
         order.setMemberId(memberId);
+        order.setBuyerName(null);
         order.setBuyerPhone(null);  // 회원의 기본 정보 DB에 따로 있을 경우 생략 가능
-        order.setBuyerAddress(null);
         order.setTotalPrice(dto.getPaidAmount());
         order.setOrderType("MEMBER");
         order.setStatus("주문완료");

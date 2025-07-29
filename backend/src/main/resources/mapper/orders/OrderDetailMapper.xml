@@ -11,6 +11,7 @@
             o.order_id AS orderId,
             o.created_at AS createdAt,
             o.status AS orderStatus,
+            o.buyer_name AS buyerName,
 
             p.name AS productName,
             p.price AS productPrice,
