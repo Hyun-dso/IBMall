@@ -70,7 +70,8 @@ public class SecurityConfig {
 					"/api/message",
 					"/api/admin/message/send",			//이거 테스트용임 메세지보내는거 (관리자)
 					"/api/admin/**",
-					"/admin/grade-rule/delete"
+					"/admin/grade-rule/delete",
+					"/api/admin/order/*/status"
 				).authenticated()
 
 				// ✅ 그 외 모든 요청 인증 필요
