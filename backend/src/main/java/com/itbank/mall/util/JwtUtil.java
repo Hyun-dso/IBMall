@@ -11,6 +11,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
@@ -76,12 +77,16 @@ public class JwtUtil {
     }
     
     public String resolveToken(HttpServletRequest request) {
-        String bearer = request.getHeader("Authorization");
-        if (bearer != null && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7);
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("access_token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
         }
         return null;
     }
+    
     public Long getIdFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
             .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
@@ -90,5 +95,18 @@ public class JwtUtil {
             .getBody();
 
         return Long.valueOf(claims.get("id").toString());
+    }
+    
+    public String generateRefreshToken(Long memberId, String email) {
+        long now = System.currentTimeMillis();
+        long expirationTime = now + (7 * 24 * 60 * 60 * 1000L);  // 7일
+
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("memberId", memberId)
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(expirationTime))
+                .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()), SignatureAlgorithm.HS256)
+                .compact();
     }
 }

@@ -1,11 +1,6 @@
 package com.itbank.mall.security;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import lombok.RequiredArgsConstructor;
+import java.io.IOException;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,7 +10,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.itbank.mall.util.JwtUtil;
 
-import java.io.IOException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -30,20 +29,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain)
             throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
+        // ✅ JwtUtil에서 access_token 쿠키 추출
+        String token = jwtUtil.resolveToken(request);
 
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);  // "Bearer " 제거
-            if (jwtUtil.validateToken(token)) {
-                String email = jwtUtil.getEmailFromToken(token);
+        if (token != null && jwtUtil.validateToken(token)) {
+            String email = jwtUtil.getEmailFromToken(token);
 
-                var userDetails = userDetailsService.loadUserByUsername(email);
-                var auth = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            }
+            var userDetails = userDetailsService.loadUserByUsername(email);
+            var auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities()
+            );
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         chain.doFilter(request, response);
