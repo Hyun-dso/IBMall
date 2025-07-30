@@ -65,8 +65,8 @@ public class PaymentService {
         OrderEntity order = new OrderEntity();
         order.setMemberId(memberId);
         order.setTotalPrice(dto.getAmount());
+        order.setBuyerName(dto.getBuyerAddress());  // 회원도 주소 직접 입력 가능
         order.setBuyerPhone(dto.getBuyerPhone());
-        order.setBuyerAddress(dto.getBuyerAddress());  // 회원도 주소 직접 입력 가능
         order.setOrderType(memberId != null ? "MEMBER" : "GUEST");
 
         OrderItemEntity item = new OrderItemEntity();

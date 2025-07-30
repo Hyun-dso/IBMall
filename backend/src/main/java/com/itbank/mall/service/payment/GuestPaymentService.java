@@ -52,7 +52,7 @@ public class GuestPaymentService {
         // 2. orders 저장
         OrderEntity order = new OrderEntity();
         order.setMemberId(null); // 비회원
-        order.setBuyerName(dto.getBuyerAddress());
+        order.setBuyerName(dto.getBuyerName());
         order.setBuyerPhone(dto.getBuyerPhone());
         order.setTotalPrice(dto.getPaidAmount());
         order.setOrderType("GUEST");
@@ -106,7 +106,7 @@ public class GuestPaymentService {
         // 2. orders 저장
         OrderEntity order = new OrderEntity();
         order.setMemberId(null); // 비회원
-        order.setBuyerName(dto.getBuyerAddress());
+        order.setBuyerName(dto.getBuyerName());
         order.setBuyerPhone(dto.getBuyerPhone());
         order.setTotalPrice(dto.getPaidAmount());  // 총 금액
         order.setOrderType("GUEST");
