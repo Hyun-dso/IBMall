@@ -79,7 +79,7 @@ public class JwtUtil {
     public String resolveToken(HttpServletRequest request) {
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
-                if ("access_token".equals(cookie.getName())) {
+                if ("accessToken".equals(cookie.getName())) {
                     return cookie.getValue();
                 }
             }

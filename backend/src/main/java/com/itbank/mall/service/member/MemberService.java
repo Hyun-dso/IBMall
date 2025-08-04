@@ -101,4 +101,8 @@ public class MemberService {
     public boolean existsByNickname(String nickname) {
         return memberMapper.countByNickname(nickname) > 0;
     }
+    
+    public boolean existsByPhone(String phone) {
+        return memberMapper.existsByPhone(phone);
+    }
 }

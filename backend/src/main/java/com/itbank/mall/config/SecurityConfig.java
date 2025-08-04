@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -29,6 +30,7 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
+			.cors(Customizer.withDefaults())
 			.csrf(csrf -> csrf.disable())
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
@@ -41,6 +43,8 @@ public class SecurityConfig {
 					"/api/auth/**",               // 로그인/로그아웃
 					"/api/members/signup",        // 회원가입
 					"/api/members/check-nickname",// 닉네임 중복확인
+					"/api/members/check-email",
+					"/api/members/check-phone",
 					"/api/email/**",              // 이메일 인증
 					"/api/password/**",           // 비밀번호 재설정
 					"/api/oauth2/**",             // 구글 OAuth
@@ -48,8 +52,9 @@ public class SecurityConfig {
 					"/api/payments/v2-result",   // 👈 이거 명시적으로 추가
 					"/api/products/**",            // (선택) 상품 목록
 					"/api/products",            // (선택) 상품 목록
-					"/signin",
-					"/signup",
+					"/api/members/me",
+					"/auth/signin",
+					"/auth/signup",
 					"/api/admin/**",
 					"/api/admin/images",
 					"/api/images/**",

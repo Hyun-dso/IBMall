@@ -17,4 +17,5 @@ public interface MemberMapper {
     boolean existsByNickname(String nickname);
     Member findById(Long id);
     void updateMember(Member member);
+    boolean existsByPhone(String phone);
 }

@@ -48,6 +48,20 @@ public class MemberController {
         boolean exists = memberService.existsByNickname(nickname);
         return ApiResponse.ok(Map.of("exists", exists));
     }
+    
+    // ✅ 이메일 중복 확인
+    @GetMapping("/check-email")
+    public ApiResponse<Map<String, Boolean>> checkEmail(@RequestParam String email) {
+        boolean exists = memberService.existsByEmail(email);
+        return ApiResponse.ok(Map.of("exists", exists));
+    }
+
+    // ✅ 휴대폰 중복 확인
+    @GetMapping("/check-phone")
+    public ApiResponse<Map<String, Boolean>> checkPhone(@RequestParam String phone) {
+        boolean exists = memberService.existsByPhone(phone);
+        return ApiResponse.ok(Map.of("exists", exists));
+    }
 
     // ✅ 3. 로그인 유저 정보 조회
     @GetMapping("/me")

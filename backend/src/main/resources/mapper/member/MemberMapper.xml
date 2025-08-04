@@ -81,5 +81,11 @@
 		SELECT 1 FROM member WHERE nickname = #{nickname}
 		)
 	</select>
+	
+	<select id="existsByPhone" parameterType="string" resultType="boolean">
+    SELECT EXISTS (
+        SELECT 1 FROM member WHERE phone = #{phone}
+    )
+	</select>
 
 </mapper>

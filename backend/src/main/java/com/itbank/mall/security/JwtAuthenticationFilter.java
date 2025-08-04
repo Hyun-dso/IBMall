@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain)
             throws ServletException, IOException {
 
-        // ✅ JwtUtil에서 access_token 쿠키 추출
+        // ✅ JwtUtil에서 accesstoken 쿠키 추출
         String token = jwtUtil.resolveToken(request);
 
         if (token != null && jwtUtil.validateToken(token)) {
