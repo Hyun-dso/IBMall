@@ -1,10 +1,11 @@
 package com.itbank.mall.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,79 +16,70 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.itbank.mall.security.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-	@Bean
-	public BCryptPasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		return http
-			.cors(Customizer.withDefaults())
-			.csrf(csrf -> csrf.disable())
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.authorizeHttpRequests(auth -> auth
-				// ✅ 비회원 접근 허용 경로
-				.requestMatchers(
-					"/",                          // 홈
-					"/js/**",                     // JS 정적 리소스
-					"/css/**",                    // CSS 정적 리소스
-					"/images/**",                 // 이미지 정적 리소스
-					"/api/auth/**",               // 로그인/로그아웃
-					"/api/members/signup",        // 회원가입
-					"/api/members/check-nickname",// 닉네임 중복확인
-					"/api/members/check-email",
-					"/api/members/check-phone",
-					"/api/email/**",              // 이메일 인증
-					"/api/password/**",           // 비밀번호 재설정
-					"/api/oauth2/**",             // 구글 OAuth
-					"/api/payments/**",           // V1, V2 결제 모두
-					"/api/payments/v2-result",   // 👈 이거 명시적으로 추가
-					"/api/products/**",            // (선택) 상품 목록
-					"/api/products",            // (선택) 상품 목록
-					"/api/members/me",
-					"/auth/signin",
-					"/auth/signup",
-					"/api/admin/**",
-					"/api/admin/images",
-					"/api/images/**",
-					"/product/**",
-					"/shop/**",
-					"/api/admin/images/set-thumbnail",
-					"/api/admin/images/set-thumbnail/**",
-					"/api/reviews",
-					"/api/reviews/**"
-				).permitAll()
-			    // ✅ DELETE 요청 허용
-			    .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()
-				
-				// ✅ 인증 필요한 경로
-				.requestMatchers(
-					"/api/members/me",
-					"/api/mypage/**",
-					"/api/orders/me",
-					"/api/message",
-					"/api/admin/message/send",			//이거 테스트용임 메세지보내는거 (관리자)
-					"/api/admin/**",
-					"/admin/grade-rule/delete"
-				).authenticated()
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // 💡 여기!
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/", "/js/**", "/css/**", "/images/**",
+                    "/api/auth/**", "/api/members/signup",
+                    "/api/members/check-nickname", "/api/members/check-email", "/api/members/check-phone",
+                    "/api/email/**", "/api/password/**", "/api/oauth2/**",
+                    "/api/payments/**", "/api/payments/v2-result",
+                    "/api/products/**", "/api/products",
+                    "/paymenttest", "/api/members/me",
+                    "/auth/signin", "/auth/signup",
+                    "/api/admin/**", "/api/admin/images", "/api/images/**",
+                    "/product/**", "/shop/**",
+                    "/api/admin/images/set-thumbnail", "/api/admin/images/set-thumbnail/**",
+                    "/api/reviews", "/api/reviews/**"
+                ).permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()
+                .requestMatchers(
+                    "/api/members/me", "/api/mypage/**", "/api/orders/me",
+                    "/api/message", "/api/admin/message/send",
+                    "/admin/grade-rule/delete"
+                ).authenticated()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
+    }
 
-				// ✅ 그 외 모든 요청 인증 필요
-				.anyRequest().authenticated()
-			)
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-			.build();
-	}
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:3000", "http://192.168.52.212:3000", "http://192.168.10.2:3000"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);  // 캐시 시간 (초)
 
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-		return config.getAuthenticationManager();
-	}
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);  // 모든 경로에 적용
+        return source;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
 }
