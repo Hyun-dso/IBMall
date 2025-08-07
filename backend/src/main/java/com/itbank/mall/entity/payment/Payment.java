@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class Payment {
     private Long id;
     private Long memberId;
-    private String orderUid;        // 🔁 orderId → orderUid
+    private String orderUid;
     private String productName;     // 🔁 추가
     private int orderPrice;         // 🔁 amount → orderPrice
     private int paidAmount;         // 🔁 추가
@@ -21,6 +21,7 @@ public class Payment {
     private String buyerName;
     private String buyerEmail;
     private String buyerPhone;
-    private String buyerAddress;
     private LocalDateTime createdAt;
+    private Long orderId;
+    
 }

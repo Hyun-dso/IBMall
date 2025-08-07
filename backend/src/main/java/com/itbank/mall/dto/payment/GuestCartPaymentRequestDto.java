@@ -23,7 +23,6 @@ public class GuestCartPaymentRequestDto {
     private String buyerName;
     private String buyerEmail;
     private String buyerPhone;
-    private String buyerAddress;
 
     // 수령자 정보
     private String recipientName;
