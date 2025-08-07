@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.orders.DeliveryMapper">
+
+    <insert id="insertDelivery" parameterType="com.itbank.mall.entity.orders.DeliveryEntity">
+        INSERT INTO deliveries (
+            order_id,
+            address,
+            recipient,
+            phone,
+            tracking_number,
+            status
+        ) VALUES (
+            #{orderId},
+            #{address},
+            #{recipient},
+            #{phone},
+            #{trackingNumber},
+            #{status}
+        )
+    </insert>
+
+</mapper>

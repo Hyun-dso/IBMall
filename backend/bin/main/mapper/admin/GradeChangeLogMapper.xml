@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.admin.GradeChangeLogMapper">
+
+    <insert id="insertGradeChangeLog" parameterType="com.itbank.mall.dto.admin.grade.GradeChangeLogDto">
+        INSERT INTO grade_log (member_id, before_grade, after_grade)
+        VALUES (#{memberId}, #{previousGrade}, #{newGrade})
+    </insert>
+
+    <select id="selectGradeChangeLogs" resultType="com.itbank.mall.dto.admin.grade.GradeChangeLogDto">
+        SELECT
+            member_id,
+            before_grade AS previousGrade,
+            after_grade AS newGrade,
+            changed_at
+        FROM grade_log
+        ORDER BY changed_at DESC
+    </select>
+
+</mapper>
