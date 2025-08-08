@@ -20,7 +20,6 @@
             buyer_name,
             buyer_email,
             buyer_phone,
-            buyer_address,
             created_at
         ) VALUES (
             #{memberId}, 
@@ -35,7 +34,6 @@
             #{buyerName},
             #{buyerEmail},
             #{buyerPhone},
-            #{buyerAddress},
             #{createdAt}
         )
     </insert>
@@ -53,6 +51,12 @@
         FROM payment
         WHERE id = #{paymentId}
     </select>
+    
+    <update id="updateOrderId" parameterType="com.itbank.mall.entity.payment.Payment">
+    UPDATE payment
+    SET order_id = #{orderId}
+    WHERE id = #{id}
+	</update>
 
 </mapper>
 

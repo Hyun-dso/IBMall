@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.itbank.mall.dto.orders.MemberOrderItemDto;
+import com.itbank.mall.dto.payment.MemberCartPaymentRequestDto;
 import com.itbank.mall.dto.payment.MemberPaymentRequestDto;
 import com.itbank.mall.entity.orders.DeliveryEntity;
 import com.itbank.mall.entity.orders.OrderEntity;
@@ -46,6 +48,7 @@ public class MemberPaymentService {
         order.setBuyerName(null);
         order.setBuyerPhone(null);  // 회원의 기본 정보 DB에 따로 있을 경우 생략 가능
         order.setTotalPrice(dto.getPaidAmount());
+        order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("MEMBER");
         order.setStatus("주문완료");
         orderMapper.insertOrder(order);
@@ -66,5 +69,60 @@ public class MemberPaymentService {
         delivery.setAddress(dto.getRecipientAddress());
         delivery.setStatus("배송준비중");
         deliveryService.saveDelivery(delivery);
+        
+        payment.setOrderId(order.getOrderId());
+        payment.setId(payment.getId());
+        paymentMapper.updateOrderId(payment);
+    }
+    
+    @Transactional
+    public void processCartPayment(MemberCartPaymentRequestDto dto, Long memberId) {
+        // 1. payment 저장
+        Payment payment = new Payment();
+        payment.setOrderUid(dto.getOrderUid());
+        payment.setProductName("장바구니 결제");
+        payment.setOrderPrice(dto.getOriginalAmount());  // 할인 전 총액
+        payment.setPaidAmount(dto.getPaidAmount());      // 실제 결제액
+        payment.setPaymentMethod(dto.getPaymentMethod());
+        payment.setStatus(dto.getStatus());
+        payment.setTransactionId(dto.getTransactionId());
+        payment.setPgProvider(dto.getPgProvider());
+        payment.setMemberId(memberId);
+        payment.setCreatedAt(LocalDateTime.now());
+        paymentMapper.insert(payment);
+
+        // 2. orders 저장
+        OrderEntity order = new OrderEntity();
+        order.setMemberId(memberId);
+        order.setBuyerName(null);  // 회원 정보는 생략
+        order.setBuyerPhone(null);
+        order.setTotalPrice(dto.getPaidAmount());
+        order.setCreatedAt(LocalDateTime.now());
+        order.setOrderType("MEMBER");
+        order.setStatus("주문완료");
+        orderMapper.insertOrder(order);
+
+        // 3. order_items 저장 (여러 개)
+        for (MemberOrderItemDto i : dto.getItems()) {
+            OrderItemEntity item = new OrderItemEntity();
+            item.setOrderId(order.getOrderId());
+            item.setProductId(i.getProductId());
+            item.setQuantity(i.getQuantity());
+            item.setPrice(i.getPrice());  // 단일 상품의 결제 금액
+            orderMapper.insertOrderItem(item);
+        }
+
+        // 4. deliveries 저장
+        DeliveryEntity delivery = new DeliveryEntity();
+        delivery.setOrderId(order.getOrderId());
+        delivery.setRecipient(dto.getRecipientName());
+        delivery.setPhone(dto.getRecipientPhone());
+        delivery.setAddress(dto.getRecipientAddress());
+        delivery.setStatus("배송준비중");
+        deliveryService.saveDelivery(delivery);
+        
+        payment.setOrderId(order.getOrderId());
+        payment.setId(payment.getId());
+        paymentMapper.updateOrderId(payment);
     }
 }

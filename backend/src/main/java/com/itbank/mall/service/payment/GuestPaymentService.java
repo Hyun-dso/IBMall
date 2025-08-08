@@ -45,7 +45,6 @@ public class GuestPaymentService {
         payment.setBuyerName(dto.getBuyerName());
         payment.setBuyerEmail(dto.getBuyerEmail());
         payment.setBuyerPhone(dto.getBuyerPhone());
-        payment.setBuyerAddress(dto.getBuyerAddress());
         payment.setCreatedAt(LocalDateTime.now());
         paymentMapper.insert(payment);
 
@@ -55,6 +54,7 @@ public class GuestPaymentService {
         order.setBuyerName(dto.getBuyerName());
         order.setBuyerPhone(dto.getBuyerPhone());
         order.setTotalPrice(dto.getPaidAmount());
+        order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("GUEST");
         order.setStatus("주문완료");
         orderMapper.insertOrder(order); // order_id 생성
@@ -75,6 +75,10 @@ public class GuestPaymentService {
         delivery.setAddress(dto.getRecipientAddress());
         delivery.setStatus("배송준비중");
         deliveryService.saveDelivery(delivery);
+        
+        payment.setOrderId(order.getOrderId());
+        payment.setId(payment.getId()); // 이미 insert에서 keyProperty로 세팅됨
+        paymentMapper.updateOrderId(payment);
         
         mailService.sendGuestPaymentCompleteEmail(
         	    dto.getBuyerEmail(),
@@ -99,7 +103,6 @@ public class GuestPaymentService {
         payment.setBuyerName(dto.getBuyerName());
         payment.setBuyerEmail(dto.getBuyerEmail());
         payment.setBuyerPhone(dto.getBuyerPhone());
-        payment.setBuyerAddress(dto.getBuyerAddress());
         payment.setCreatedAt(LocalDateTime.now());
         paymentMapper.insert(payment);
 
@@ -109,6 +112,7 @@ public class GuestPaymentService {
         order.setBuyerName(dto.getBuyerName());
         order.setBuyerPhone(dto.getBuyerPhone());
         order.setTotalPrice(dto.getPaidAmount());  // 총 금액
+        order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("GUEST");
         order.setStatus("주문완료");
         orderMapper.insertOrder(order);  // order_id 생성됨
@@ -132,6 +136,9 @@ public class GuestPaymentService {
         delivery.setStatus("배송준비중");
         deliveryService.saveDelivery(delivery);
 
+        payment.setOrderId(order.getOrderId());
+        payment.setId(payment.getId()); // 이미 insert에서 keyProperty로 세팅됨
+        paymentMapper.updateOrderId(payment);
     
         List<String> productLines = dto.getItems().stream()
         	    .map(i -> i.getProductName() + " x " + i.getQuantity() + "개")

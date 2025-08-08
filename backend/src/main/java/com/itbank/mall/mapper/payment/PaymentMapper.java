@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 public interface PaymentMapper {
 
     int insert(Payment payment);
+    int updateOrderId(Payment payment);
     
     // ✅ 추가: 결제 ID로 회원 ID 조회
     long findMemberIdByPaymentId(@Param("paymentId") Long paymentId);

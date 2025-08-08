@@ -1,57 +1,81 @@
-# Java (Spring Boot)
+# === Java (Spring Boot) ===
 *.class
 *.jar
 *.war
 *.log
-*.iml
-/.idea/
-/target/
-/build/
+HELP.md
 
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# 민감 정보 분리
+/backend/src/main/resources/application-secret.properties
 
-# dotenv 환경 변수
-.env
-.env.local
-.env.*.local
+# === Spring Boot Backend ===
+/backend/.classpath
+/backend/.project
+/backend/.settings/
+/backend/.apt_generated
+/backend/.factorypath
+/backend/.springBeans
+/backend/.sts4-cache
+/backend/build/
+/backend/bin/
+/backend/HELP.md
 
-# Next.js
-.next/
-out/
-.cache/
-dist/
+# Gradle
+/backend/.gradle
+/backend/gradle/
+!/backend/gradle/wrapper/gradle-wrapper.jar
+!/backend/src/main/**/build/
 
-# Logs
-logs/
-*.log
+# === React Frontend ===
+/frontend/node_modules/
+/frontend/build/
+/frontend/dist/
+/frontend/.env
+/frontend/.DS_Store
 
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
+# === IDE/Editor Config ===
 .vscode/
 .idea/
+*.iml
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 
-# Optional: macOS zip에서 생기는 파일
-__MACOSX/
+# === Logs ===
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Optional: local data
-*.local
-*.tgz
+# === dotenv 환경 변수 ===
+.env
+.env.local
+.env.*.local
 
-# TypeScript
+# === Next.js / Node / TypeScript ===
+.next/
+node_modules/
 *.tsbuildinfo
 
-# 기타 백업
+# === OS 및 백업 파일 ===
+.DS_Store
+Thumbs.db
+__MACOSX/
 *.bak
 *.tmp
+
+# === NetBeans / 기타 빌드 폴더 ===
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# === 기타 ===
+*.local
+*.tgz
+out/
+.cache/
