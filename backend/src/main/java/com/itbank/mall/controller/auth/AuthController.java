@@ -76,15 +76,26 @@ public class AuthController {
 
     @PostMapping("/signout")
     public ResponseEntity<?> signout(HttpServletResponse response) {
-        ResponseCookie expiredCookie = ResponseCookie.from("accessToken", "")
+        // accessToken 제거
+        ResponseCookie expiredAccess = ResponseCookie.from("accessToken", "")
                 .httpOnly(true)
-                .secure(false)  // 운영 환경에서는 true
+                .secure(false)
                 .path("/")
-                .maxAge(0)      // ★ 쿠키 즉시 만료
+                .maxAge(0)
                 .sameSite("Lax")
                 .build();
 
-        response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
+        // refresh_token 제거
+        ResponseCookie expiredRefresh = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, expiredAccess.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, expiredRefresh.toString());
 
         return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
     }
