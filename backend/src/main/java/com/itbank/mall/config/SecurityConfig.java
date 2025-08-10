@@ -50,7 +50,7 @@ public class SecurityConfig {
                     "/api/admin/**", "/api/admin/images", "/api/images/**",
                     "/product/**", "/shop/**",
                     "/api/admin/images/set-thumbnail", "/api/admin/images/set-thumbnail/**",
-                    "/api/reviews", "/api/reviews/**"
+                    "/api/reviews", "/api/reviews/**", "/actuator/health"
                 ).permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()
                 .requestMatchers(
