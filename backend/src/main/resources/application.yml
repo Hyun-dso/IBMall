@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: ib-mall
+  profiles:
+    group:
+      prod: prod
+      local: local
+spring.config.import: optional:application-secret.properties
+
+logging:
+  level:
+    org.springframework.security: INFO
+    org.springframework.web: INFO
