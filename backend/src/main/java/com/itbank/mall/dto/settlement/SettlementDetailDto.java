@@ -13,7 +13,7 @@ public class SettlementDetailDto {
     private Long orderId;
     private Long productId;
     private Long memberId;
-    private Long categoryId;
+    private Integer categoryId;
 
     private int quantity;
     private int amount;               // price → amount로 수정

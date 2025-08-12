@@ -52,12 +52,12 @@
 
     <!-- 타입별 조회 -->
     <select id="selectByType" resultType="com.itbank.mall.dto.settlement.SettlementDetailDto">
-        SELECT 
-            s.*, 
-            p.name AS productName
-        FROM settlement_detail s
-        JOIN product p ON s.product_id = p.product_id
-        WHERE settlement_type = #{settlementType}
+		SELECT
+		s.*,
+		p.name AS productName
+		FROM settlement_detail s
+		JOIN product p ON s.product_id = p.product_id
+		WHERE s.type = #{type}
     </select>
 
     <!-- 날짜 범위 조회 -->
