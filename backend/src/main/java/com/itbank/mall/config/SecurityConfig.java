@@ -53,8 +53,10 @@ public class SecurityConfig {
 						    "/api/images/**",
 						    "/product/**",
 						    "/shop/**",
-						    "/api/admin/options",
-						    "/api/reviews/**"             // 리뷰 API		
+						    "/api/admin/options/**",
+						    "/api/admin/option-types/**",   // ← 여기 한 줄 추가 (콤마 포함!)
+						    "/api/reviews/**"
+						    // 리뷰 API		
 							).permitAll()
 			    // ✅ DELETE 요청 허용
 			    .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()

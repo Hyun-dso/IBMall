@@ -5,6 +5,12 @@
 
 <mapper namespace="com.itbank.mall.mapper.product.OptionTypeMapper">
 
+    <!-- ✅ 전체 조회 -->
+    <select id="findAll" resultType="com.itbank.mall.entity.product.OptionType">
+        SELECT * 
+        FROM option_type
+    </select>
+
     <select id="findByCategoryId" resultType="com.itbank.mall.entity.product.OptionType" parameterType="int">
         SELECT * FROM option_type
         WHERE category_id = #{categoryId}
