@@ -1,0 +1,715 @@
+/*M!999999\- enable the sandbox mode */
+-- MariaDB dump 10.19-11.4.5-MariaDB, for Win64 (AMD64)
+--
+-- Host: localhost    Database: ib_mall
+-- ------------------------------------------------------
+-- Server version       11.4.5-MariaDB
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*M!100616 SET @OLD_NOTE_VERBOSITY=@@NOTE_VERBOSITY, NOTE_VERBOSITY=0 */;
+
+--
+-- Table structure for table `cart`
+--
+
+DROP TABLE IF EXISTS `cart`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cart` (
+  `cart_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) NOT NULL,
+  `product_id` bigint(20) NOT NULL,
+  `product_option_id` bigint(20) DEFAULT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`cart_id`),
+  UNIQUE KEY `uq_cart_member_product_option` (`member_id`,`product_id`,`product_option_id`),
+  KEY `product_id` (`product_id`),
+  KEY `fk_cart_product_option` (`product_option_id`),
+  CONSTRAINT `cart_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `cart_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`),
+  CONSTRAINT `fk_cart_product_option` FOREIGN KEY (`product_option_id`) REFERENCES `product_option` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `category`
+--
+
+DROP TABLE IF EXISTS `category`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `category` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `coupon`
+--
+
+DROP TABLE IF EXISTS `coupon`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `coupon` (
+  `coupon_id` int(11) NOT NULL AUTO_INCREMENT,
+  `code` varchar(50) NOT NULL COMMENT '쿠폰 코드',
+  `discount_percent` int(11) NOT NULL COMMENT '할인 퍼센트 (예: 10 → 10%)',
+  `expires_at` datetime NOT NULL COMMENT '유효기간',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
+  PRIMARY KEY (`coupon_id`),
+  UNIQUE KEY `code` (`code`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `deliveries`
+--
+
+DROP TABLE IF EXISTS `deliveries`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `deliveries` (
+  `delivery_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `order_id` bigint(20) NOT NULL,
+  `address` varchar(255) NOT NULL,
+  `recipient` varchar(100) NOT NULL,
+  `phone` varchar(50) NOT NULL,
+  `tracking_number` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'READY' CHECK (`status` in ('READY','SHIPPING','DELIVERED','RETURNED','CANCELLED')),
+  PRIMARY KEY (`delivery_id`),
+  UNIQUE KEY `uq_deliveries_order` (`order_id`),
+  UNIQUE KEY `uq_tracking_number` (`tracking_number`),
+  KEY `fk_deliveries_order` (`order_id`),
+  CONSTRAINT `fk_deliveries_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `email_send_log`
+--
+
+DROP TABLE IF EXISTS `email_send_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `email_send_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  `subject` varchar(255) DEFAULT NULL,
+  `content` mediumtext DEFAULT NULL,
+  `type` varchar(50) DEFAULT NULL,
+  `success` tinyint(1) DEFAULT 1,
+  `sent_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `email_verification`
+--
+
+DROP TABLE IF EXISTS `email_verification`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `email_verification` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `expired_at` datetime NOT NULL,
+  `is_used` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `expected_settlement`
+--
+
+DROP TABLE IF EXISTS `expected_settlement`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `expected_settlement` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '예상정산 고유 ID',
+  `order_id` bigint(20) NOT NULL COMMENT '주문 ID',
+  `product_id` bigint(20) NOT NULL COMMENT '상품 ID',
+  `product_name` varchar(255) NOT NULL COMMENT '상품 이름 스냅샷',
+  `quantity` int(11) NOT NULL COMMENT '수량',
+  `final_price` int(11) NOT NULL COMMENT '최종 결제 금액',
+  `payment_created_at` datetime NOT NULL COMMENT '결제일자',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '정산 데이터 저장일자',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `grade_benefit`
+--
+
+DROP TABLE IF EXISTS `grade_benefit`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `grade_benefit` (
+  `grade_name` varchar(20) NOT NULL,
+  `discount_percent` int(11) NOT NULL,
+  `mileage_rate` int(11) NOT NULL,
+  PRIMARY KEY (`grade_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `grade_log`
+--
+
+DROP TABLE IF EXISTS `grade_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `grade_log` (
+  `log_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) NOT NULL,
+  `before_grade` varchar(20) DEFAULT NULL,
+  `after_grade` varchar(20) DEFAULT NULL,
+  `reason` varchar(50) DEFAULT NULL,
+  `changed_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`log_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `grade_rule`
+--
+
+DROP TABLE IF EXISTS `grade_rule`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `grade_rule` (
+  `grade_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `grade_name` varchar(50) NOT NULL,
+  `min_spending` int(11) NOT NULL,
+  `display_order` int(11) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`grade_id`),
+  UNIQUE KEY `grade_name` (`grade_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `member`
+--
+
+DROP TABLE IF EXISTS `member`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `member` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `nickname` varchar(50) DEFAULT NULL,
+  `name` varchar(50) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `address` varchar(255) DEFAULT NULL,
+  `provider` varchar(20) DEFAULT NULL,
+  `provider_id` varchar(255) DEFAULT NULL,
+  `is_verified` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `role` varchar(20) NOT NULL DEFAULT 'USER',
+  `grade` varchar(20) DEFAULT 'BASIC',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `uniq_nickname` (`nickname`),
+  UNIQUE KEY `uq_member_phone` (`phone`)
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `member_coupon`
+--
+
+DROP TABLE IF EXISTS `member_coupon`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `member_coupon` (
+  `member_coupon_id` int(11) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) NOT NULL,
+  `coupon_id` int(11) NOT NULL,
+  `is_used` tinyint(1) DEFAULT 0,
+  `issued_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`member_coupon_id`),
+  KEY `member_id` (`member_id`),
+  KEY `coupon_id` (`coupon_id`),
+  CONSTRAINT `member_coupon_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `member_coupon_ibfk_2` FOREIGN KEY (`coupon_id`) REFERENCES `coupon` (`coupon_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `member_message`
+--
+
+DROP TABLE IF EXISTS `member_message`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `member_message` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `content` mediumtext NOT NULL,
+  `type` varchar(50) DEFAULT NULL,
+  `is_read` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `member_id` (`member_id`),
+  CONSTRAINT `member_message_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `message`
+--
+
+DROP TABLE IF EXISTS `message`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `message` (
+  `message_id` int(11) NOT NULL AUTO_INCREMENT,
+  `receiver_id` bigint(20) NOT NULL,
+  `sender` varchar(20) DEFAULT 'admin',
+  `title` varchar(100) NOT NULL,
+  `content` text NOT NULL,
+  `is_read` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `image_url` varchar(255) DEFAULT NULL,
+  `scheduled_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`message_id`),
+  KEY `fk_message_receiver` (`receiver_id`),
+  CONSTRAINT `fk_message_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `member` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mileage`
+--
+
+DROP TABLE IF EXISTS `mileage`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mileage` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) NOT NULL,
+  `total_mileage` int(11) NOT NULL DEFAULT 0,
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `member_id` (`member_id`),
+  CONSTRAINT `mileage_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mileage_log`
+--
+
+DROP TABLE IF EXISTS `mileage_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mileage_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) NOT NULL,
+  `type` enum('SAVE','USE','EXPIRE') NOT NULL,
+  `amount` int(11) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `member_id` (`member_id`),
+  CONSTRAINT `mileage_log_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `option_type`
+--
+
+DROP TABLE IF EXISTS `option_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `option_type` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `category_id` (`category_id`),
+  CONSTRAINT `option_type_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `order_claim`
+--
+
+DROP TABLE IF EXISTS `order_claim`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `order_claim` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `order_id` bigint(20) NOT NULL,
+  `member_id` bigint(20) NOT NULL,
+  `product_id` bigint(20) DEFAULT NULL,
+  `type` varchar(20) NOT NULL,
+  `reason` text NOT NULL,
+  `is_simple_change` tinyint(1) DEFAULT 0,
+  `status` varchar(20) DEFAULT 'requested',
+  `admin_note` text DEFAULT NULL,
+  `handled_at` datetime DEFAULT NULL,
+  `shipping_fee_paid_by` varchar(10) DEFAULT 'user',
+  `image_url` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `order_items`
+--
+
+DROP TABLE IF EXISTS `order_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `order_items` (
+  `order_item_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `order_id` bigint(20) NOT NULL,
+  `product_id` bigint(20) NOT NULL,
+  `product_option_id` bigint(20) DEFAULT NULL,
+  `quantity` int(11) NOT NULL,
+  `price` int(11) NOT NULL,
+  `is_reviewed` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`order_item_id`),
+  KEY `product_id` (`product_id`),
+  KEY `fk_order_items_order` (`order_id`),
+  KEY `fk_order_items_option` (`product_option_id`),
+  KEY `idx_order_items_order_product` (`order_id`,`product_id`),
+  CONSTRAINT `fk_order_items_option` FOREIGN KEY (`product_option_id`) REFERENCES `product_option` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
+  CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`),
+  CONSTRAINT `chk_order_items_quantity_pos` CHECK (`quantity` >= 1),
+  CONSTRAINT `chk_order_items_price_pos` CHECK (`price` >= 0)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `orders`
+--
+
+DROP TABLE IF EXISTS `orders`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `orders` (
+  `order_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) DEFAULT NULL,
+  `buyer_name` varchar(100) NOT NULL,
+  `buyer_phone` varchar(20) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `status` varchar(20) NOT NULL,
+  `total_price` int(11) NOT NULL,
+  `order_type` varchar(20) NOT NULL,
+  `order_uid` varchar(100) NOT NULL COMMENT '외부 주문 추적 키(merchantUid)',
+  PRIMARY KEY (`order_id`),
+  UNIQUE KEY `uq_orders_order_uid` (`order_uid`),
+  KEY `idx_orders_member_created` (`member_id`,`created_at`),
+  KEY `idx_orders_status_created` (`status`,`created_at`),
+  CONSTRAINT `fk_orders_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `chk_orders_status` CHECK (`status` in ('주문완료','배송중','배송완료','취소','환불')),
+  CONSTRAINT `chk_orders_type` CHECK (`order_type` in ('MEMBER','GUEST'))
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `password_reset_token`
+--
+
+DROP TABLE IF EXISTS `password_reset_token`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `password_reset_token` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `expired_at` datetime NOT NULL,
+  `is_used` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `payment`
+--
+
+DROP TABLE IF EXISTS `payment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payment` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) DEFAULT NULL,
+  `order_uid` varchar(100) NOT NULL COMMENT '주문 고유번호',
+  `product_name` varchar(255) NOT NULL COMMENT '상품 이름',
+  `order_price` int(11) NOT NULL COMMENT '주문 총금액',
+  `paid_amount` int(11) NOT NULL COMMENT '실제 결제 금액 (쿠폰, 마일리지 등 적용 후)',
+  `payment_method` varchar(50) DEFAULT NULL COMMENT '결제수단 (카드, 카카오페이 등)',
+  `status` varchar(50) DEFAULT NULL CHECK (`status` in ('PAID','CANCELLED','REFUNDED')),
+  `transaction_id` varchar(255) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `pg_provider` varchar(50) DEFAULT NULL,
+  `buyer_name` varchar(100) DEFAULT NULL,
+  `buyer_email` varchar(255) DEFAULT NULL,
+  `buyer_phone` varchar(20) DEFAULT NULL,
+  `order_id` bigint(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_payment_order_uid` (`order_uid`),
+  UNIQUE KEY `uq_payment_transaction_id` (`transaction_id`),
+  KEY `member_id` (`member_id`),
+  KEY `idx_payment_order_id` (`order_id`),
+  KEY `idx_payment_created_at` (`created_at`),
+  KEY `idx_payment_status` (`status`),
+  KEY `idx_payment_member_created` (`member_id`,`created_at`),
+  CONSTRAINT `fk_payment_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_payment_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `product`
+--
+
+DROP TABLE IF EXISTS `product`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product` (
+  `product_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `price` int(11) NOT NULL,
+  `stock` int(11) NOT NULL,
+  `category_id` int(11) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `thumbnail_url` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `view_count` int(11) DEFAULT 0,
+  `recommend_count` int(11) DEFAULT 0,
+  `not_recommend_count` int(11) DEFAULT 0,
+  `is_time_sale` tinyint(1) DEFAULT 0,
+  `time_sale_price` int(11) DEFAULT NULL,
+  `time_sale_start` datetime DEFAULT NULL,
+  `time_sale_end` datetime DEFAULT NULL,
+  `status` varchar(20) DEFAULT 'INACTIVE',
+  PRIMARY KEY (`product_id`),
+  KEY `fk_product_category` (`category_id`),
+  CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`),
+  CONSTRAINT `chk_product_stock_nonneg` CHECK (`stock` >= 0),
+  CONSTRAINT `chk_product_price_nonneg` CHECK (`price` >= 0)
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `product_image`
+--
+
+DROP TABLE IF EXISTS `product_image`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_image` (
+  `image_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `product_id` bigint(20) NOT NULL,
+  `image_url` varchar(500) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `sort_order` int(11) DEFAULT 0,
+  PRIMARY KEY (`image_id`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `product_image_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `product_option`
+--
+
+DROP TABLE IF EXISTS `product_option`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_option` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `product_id` bigint(20) NOT NULL,
+  `option_type_id` int(11) NOT NULL,
+  `option_value` varchar(100) NOT NULL,
+  `stock` int(11) NOT NULL DEFAULT 0,
+  `extra_price` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `product_id` (`product_id`),
+  KEY `option_type_id` (`option_type_id`),
+  CONSTRAINT `product_option_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`),
+  CONSTRAINT `product_option_ibfk_2` FOREIGN KEY (`option_type_id`) REFERENCES `option_type` (`id`),
+  CONSTRAINT `chk_product_option_stock_pos` CHECK (`stock` >= 0),
+  CONSTRAINT `chk_product_option_extra_price_pos` CHECK (`extra_price` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `product_option_backup`
+--
+
+DROP TABLE IF EXISTS `product_option_backup`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_option_backup` (
+  `option_id` bigint(20) NOT NULL DEFAULT 0,
+  `product_id` bigint(20) NOT NULL,
+  `option_name` varchar(100) NOT NULL,
+  `extra_price` int(11) DEFAULT 0,
+  `stock` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `qna`
+--
+
+DROP TABLE IF EXISTS `qna`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `qna` (
+  `qna_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `content` text NOT NULL,
+  `is_secret` tinyint(1) DEFAULT 0,
+  `answer` text DEFAULT NULL,
+  `answered_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`qna_id`),
+  KEY `fk_qna_member` (`member_id`),
+  CONSTRAINT `fk_qna_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `review`
+--
+
+DROP TABLE IF EXISTS `review`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `review` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `product_id` bigint(20) NOT NULL,
+  `member_id` bigint(20) NOT NULL,
+  `payment_id` bigint(20) DEFAULT NULL,
+  `order_item_id` bigint(20) DEFAULT NULL,
+  `rating` int(11) DEFAULT NULL CHECK (`rating` between 1 and 5),
+  `content` text NOT NULL,
+  `image_url` varchar(500) DEFAULT NULL,
+  `likes` int(11) DEFAULT 0,
+  `is_visible` tinyint(1) DEFAULT 1,
+  `is_private` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `product_id` (`product_id`),
+  KEY `member_id` (`member_id`),
+  KEY `payment_id` (`payment_id`),
+  KEY `fk_review_order_item` (`order_item_id`),
+  CONSTRAINT `fk_review_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`order_item_id`) ON DELETE CASCADE,
+  CONSTRAINT `review_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`),
+  CONSTRAINT `review_ibfk_2` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `review_ibfk_3` FOREIGN KEY (`payment_id`) REFERENCES `payment` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `settlement`
+--
+
+DROP TABLE IF EXISTS `settlement`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `settlement` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `period_start` date NOT NULL,
+  `period_end` date NOT NULL,
+  `total_sales` int(11) NOT NULL,
+  `total_orders` int(11) NOT NULL,
+  `total_items` int(11) NOT NULL,
+  `type` varchar(20) DEFAULT '배송완료',
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `note` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `settlement_detail`
+--
+
+DROP TABLE IF EXISTS `settlement_detail`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `settlement_detail` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '정산 상세 PK',
+  `order_id` bigint(20) NOT NULL COMMENT '주문 ID',
+  `product_id` bigint(20) NOT NULL COMMENT '상품 ID',
+  `member_id` bigint(20) NOT NULL COMMENT '회원 ID',
+  `category_id` bigint(20) NOT NULL COMMENT '카테고리 ID',
+  `quantity` int(11) NOT NULL COMMENT '구매 수량',
+  `amount` int(11) NOT NULL COMMENT '총 상품 금액 (할인 전)',
+  `coupon_discount` int(11) DEFAULT 0 COMMENT '쿠폰 할인 금액',
+  `mileage_used` int(11) DEFAULT 0 COMMENT '사용 마일리지',
+  `delivery_fee` int(11) DEFAULT 0 COMMENT '사용자 배송비 부담액',
+  `delivery_cost` int(11) DEFAULT 0 COMMENT '실제 배송 비용 (관리자 부담)',
+  `refund_amount` int(11) DEFAULT 0 COMMENT '환불 금액',
+  `refund_reason` varchar(255) DEFAULT NULL COMMENT '환불/교환/취소 사유',
+  `type` varchar(20) NOT NULL COMMENT '정산 유형: real, expected, refund 등',
+  `status` varchar(20) NOT NULL COMMENT '정산 상태: complete, refund, cancel, exchange',
+  `payment_method` varchar(20) DEFAULT NULL COMMENT '결제 수단 (card, kakao 등)',
+  `settlement_date` date NOT NULL COMMENT '정산 기준일',
+  `created_by` varchar(50) DEFAULT NULL COMMENT '정산 기록 생성자',
+  `created_at` timestamp NULL DEFAULT current_timestamp() COMMENT '생성일',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='정산 상세 테이블';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `wishlist`
+--
+
+DROP TABLE IF EXISTS `wishlist`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `wishlist` (
+  `wishlist_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_id` bigint(20) NOT NULL,
+  `product_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`wishlist_id`),
+  UNIQUE KEY `member_id` (`member_id`,`product_id`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `wishlist_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `wishlist_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
+
+-- Dump completed on 2025-08-13 15:20:33

@@ -41,27 +41,29 @@
    		 ORDER BY o.created_at DESC
 		</select>
 
-		<insert id="insertOrder"
-		parameterType="com.itbank.mall.entity.orders.OrderEntity"
-		useGeneratedKeys="true" keyProperty="orderId">
-		INSERT INTO orders (
-		member_id,
-		total_price,
-		created_at,
-		buyer_name,
-		buyer_phone,
-		order_type,
-		status
-		) VALUES (
-		#{memberId},
-		#{totalPrice},
-		#{createdAt},
-		#{buyerName},
-		#{buyerPhone},
-		#{orderType},
-		#{status}
-		)
-		</insert>
+    <insert id="insertOrder"
+        parameterType="com.itbank.mall.entity.orders.OrderEntity"
+        useGeneratedKeys="true" keyProperty="orderId">
+        INSERT INTO orders (
+        member_id,
+        total_price,
+        created_at,
+        buyer_name,
+        buyer_phone,
+        order_type,
+        status,
+        order_uid
+        ) VALUES (
+        #{memberId},
+        #{totalPrice},
+        #{createdAt},
+        #{buyerName},
+        #{buyerPhone},
+        #{orderType},
+        #{status},
+        #{orderUid}
+        )
+    </insert>
 
 		<insert id="insertOrderItem"
 		parameterType="com.itbank.mall.entity.orders.OrderItemEntity">

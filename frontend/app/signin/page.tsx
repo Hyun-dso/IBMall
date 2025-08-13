@@ -8,9 +8,9 @@ import Button from '@/components/ui/Button';
 import { Toaster, toast } from 'react-hot-toast';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-if (!API_BASE_URL) {
-    throw new Error('환경 변수 NEXT_PUBLIC_API_BASE_URL이 정의되지 않았습니다.');
-}
+// if (!API_BASE_URL) {
+//     throw new Error('환경 변수 NEXT_PUBLIC_API_BASE_URL이 정의되지 않았습니다.');
+// }
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');

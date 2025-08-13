@@ -37,8 +37,8 @@ public class MemberPaymentService {
     private final OrderMapper orderMapper;
     private final DeliveryService deliveryService;
     private final PaymentVerificationService verificationService;
-    private final ProductMapper productMapper;               // ✅ 신규 주입
-    private final ProductOptionMapper productOptionMapper;   // ✅ 신규 주입
+    private final ProductMapper productMapper;
+    private final ProductOptionMapper productOptionMapper;
     private final MemberMapper memberMapper;
 
     private final ApplicationEventPublisher events;
@@ -48,12 +48,11 @@ public class MemberPaymentService {
     public void processSinglePayment(MemberPaymentRequestDto dto, Long memberId) {
         final String txId = dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
-        
 
         // (1) 서버 검증
         var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
 
-        // (2) 멱등 게이트
+        // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
         if (existing != null) {
             if (existing.getOrderId() != null) {
@@ -64,6 +63,29 @@ public class MemberPaymentService {
             paymentMapper.updateOrderIdByTransactionId(txId, orderId);
 
             // 커밋 후 메일(멤버: email은 리스너에서 memberId로 조회)
+            events.publishEvent(new PaymentCompletedEvent(
+                    memberId, null, orderUid,
+                    List.of("상품결제 x " + dto.getQuantity() + "개"),
+                    v.getAmount()
+            ));
+            return;
+        }
+
+        // (2-1) 멱등/충돌 프리체크 - orderUid 기준
+        Payment byUid = paymentMapper.findByOrderUid(orderUid);
+        if (byUid != null) {
+            // 같은 orderUid로 다른 txId가 이미 사용됨 → 정책상 충돌(Handler에서 409 매핑 권장)
+            if (byUid.getTransactionId() != null && !byUid.getTransactionId().equals(txId)) {
+                throw new IllegalStateException("DUPLICATE_TRANSACTION: orderUid already used with a different txId");
+            }
+            // 이미 주문 연결되어 있으면 멱등
+            if (byUid.getOrderId() != null) {
+                log.info("[IDEMPOTENT][orderUid] already linked. orderId={}", byUid.getOrderId());
+                return;
+            }
+            // 주문 미연결이면 복구 경로
+            Long orderId = createOrderAndDeliveryForSingle(dto, memberId, v.getAmount());
+            paymentMapper.updateOrderIdByTransactionId(txId, orderId);
             events.publishEvent(new PaymentCompletedEvent(
                     memberId, null, orderUid,
                     List.of("상품결제 x " + dto.getQuantity() + "개"),
@@ -109,7 +131,7 @@ public class MemberPaymentService {
         // (1) 서버 검증
         var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
 
-        // (2) 멱등 게이트
+        // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
         if (existing != null) {
             if (existing.getOrderId() != null) {
@@ -119,6 +141,28 @@ public class MemberPaymentService {
             Long orderId = createOrderAndDeliveryForCart(dto, memberId, v.getAmount());
             paymentMapper.updateOrderIdByTransactionId(txId, orderId);
 
+            events.publishEvent(new PaymentCompletedEvent(
+                    memberId, null, orderUid,
+                    dto.getItems().stream()
+                            .map(i -> i.getProductName() + " x " + i.getQuantity() + "개")
+                            .collect(Collectors.toList()),
+                    v.getAmount()
+            ));
+            return;
+        }
+
+        // (2-1) 멱등/충돌 프리체크 - orderUid 기준
+        Payment byUid = paymentMapper.findByOrderUid(orderUid);
+        if (byUid != null) {
+            if (byUid.getTransactionId() != null && !byUid.getTransactionId().equals(txId)) {
+                throw new IllegalStateException("DUPLICATE_TRANSACTION: orderUid already used with a different txId");
+            }
+            if (byUid.getOrderId() != null) {
+                log.info("[IDEMPOTENT][orderUid] already linked. orderId={}", byUid.getOrderId());
+                return;
+            }
+            Long orderId = createOrderAndDeliveryForCart(dto, memberId, v.getAmount());
+            paymentMapper.updateOrderIdByTransactionId(txId, orderId);
             events.publishEvent(new PaymentCompletedEvent(
                     memberId, null, orderUid,
                     dto.getItems().stream()
@@ -163,19 +207,19 @@ public class MemberPaymentService {
 
     /** 단일 주문 생성 (서버 계산/재고 차감/옵션ID 저장) */
     private Long createOrderAndDeliveryForSingle(MemberPaymentRequestDto dto, Long memberId, int verifiedPaidAmount) {
-    	var m = memberMapper.findById(memberId);
-    	
-    	// 폴백: 프로필 → 수령자
-    	String buyerName  = (m != null && m.getName()  != null && !m.getName().isBlank())
-    	        ? m.getName()  : dto.getRecipientName();
-    	String buyerPhone = (m != null && m.getPhone() != null && !m.getPhone().isBlank())
-    	        ? m.getPhone() : dto.getRecipientPhone();
+        var m = memberMapper.findById(memberId);
 
-    	// (필수) 최종 안전장치
-    	if (buyerName == null || buyerName.isBlank() || buyerPhone == null || buyerPhone.isBlank()) {
-    	    throw new IllegalArgumentException("수령자 이름/전화번호가 필요합니다.");
-    	}
-    	
+        // 폴백: 프로필 → 수령자
+        String buyerName  = (m != null && m.getName()  != null && !m.getName().isBlank())
+                ? m.getName()  : dto.getRecipientName();
+        String buyerPhone = (m != null && m.getPhone() != null && !m.getPhone().isBlank())
+                ? m.getPhone() : dto.getRecipientPhone();
+
+        // (필수) 최종 안전장치
+        if (buyerName == null || buyerName.isBlank() || buyerPhone == null || buyerPhone.isBlank()) {
+            throw new IllegalArgumentException("수령자 이름/전화번호가 필요합니다.");
+        }
+
         // 1) 서버 단가 계산
         int base = productMapper.getPriceById(dto.getProductId());
         int extra = (dto.getProductOptionId() != null)
@@ -208,6 +252,7 @@ public class MemberPaymentService {
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("MEMBER");
         order.setStatus("주문완료");
+        order.setOrderUid(dto.getOrderUid());
         orderMapper.insertOrder(order);
 
         // 5) 주문상세 (price=단가, 옵션ID 저장)
@@ -225,7 +270,7 @@ public class MemberPaymentService {
         delivery.setRecipient(dto.getRecipientName());
         delivery.setPhone(dto.getRecipientPhone());
         delivery.setAddress(dto.getRecipientAddress());
-        delivery.setStatus("배송준비중");
+        delivery.setStatus("READY");
         deliveryService.saveDelivery(delivery);
 
         return order.getOrderId();
@@ -233,19 +278,18 @@ public class MemberPaymentService {
 
     /** 장바구니 주문 생성 (서버 계산/재고 차감/옵션ID 저장) */
     private Long createOrderAndDeliveryForCart(MemberCartPaymentRequestDto dto, Long memberId, int verifiedPaidAmount) {
-    	
-    	var m = memberMapper.findById(memberId);
-    	
-    	// 폴백: 프로필 → 수령자
-    	String buyerName  = (m != null && m.getName()  != null && !m.getName().isBlank())
-    	        ? m.getName()  : dto.getRecipientName();
-    	String buyerPhone = (m != null && m.getPhone() != null && !m.getPhone().isBlank())
-    	        ? m.getPhone() : dto.getRecipientPhone();
+        var m = memberMapper.findById(memberId);
 
-    	// (필수) 최종 안전장치
-    	if (buyerName == null || buyerName.isBlank() || buyerPhone == null || buyerPhone.isBlank()) {
-    	    throw new IllegalArgumentException("수령자 이름/전화번호가 필요합니다.");
-    	}
+        // 폴백: 프로필 → 수령자
+        String buyerName  = (m != null && m.getName()  != null && !m.getName().isBlank())
+                ? m.getName()  : dto.getRecipientName();
+        String buyerPhone = (m != null && m.getPhone() != null && !m.getPhone().isBlank())
+                ? m.getPhone() : dto.getRecipientPhone();
+
+        // (필수) 최종 안전장치
+        if (buyerName == null || buyerName.isBlank() || buyerPhone == null || buyerPhone.isBlank()) {
+            throw new IllegalArgumentException("수령자 이름/전화번호가 필요합니다.");
+        }
 
         // 1) (productId, optionId) 기준 합산
         Map<String, MemberOrderItemDto> merged = new LinkedHashMap<>();
@@ -305,6 +349,7 @@ public class MemberPaymentService {
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("MEMBER");
         order.setStatus("주문완료");
+        order.setOrderUid(dto.getOrderUid());
         orderMapper.insertOrder(order);
 
         // 5) 주문상세 (DTO 가격 무시, 서버 단가 저장)
@@ -324,7 +369,7 @@ public class MemberPaymentService {
         delivery.setRecipient(dto.getRecipientName());
         delivery.setPhone(dto.getRecipientPhone());
         delivery.setAddress(dto.getRecipientAddress());
-        delivery.setStatus("배송준비중");
+        delivery.setStatus("READY");
         deliveryService.saveDelivery(delivery);
 
         return order.getOrderId();

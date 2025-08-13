@@ -18,6 +18,7 @@ public interface PaymentMapper {
     boolean existsByOrderUid(@Param("orderUid") String orderUid);
 
     Payment findByTransactionId(@Param("transactionId") String transactionId);
+    Payment findByOrderUid(@Param("orderUid") String orderUid);
 
     int updateOrderIdByTransactionId(@Param("transactionId") String transactionId,
                                      @Param("orderId") Long orderId);

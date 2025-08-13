@@ -98,6 +98,30 @@
         SET order_id = #{orderId}
         WHERE transaction_id = #{transactionId}
     </update>
+    
+    <!-- 🔹 orderUid로 payment 단건 조회(멱등/충돌 판정용) -->
+  	<select id="findByOrderUid" parameterType="string"
+          resultType="com.itbank.mall.entity.payment.Payment">
+    	SELECT
+    	id,
+      	member_id      AS memberId,
+      	order_uid      AS orderUid,
+      	product_name   AS productName,
+      	order_price    AS orderPrice,
+      	paid_amount    AS paidAmount,
+      	payment_method AS paymentMethod,
+     	status,
+      	transaction_id AS transactionId,
+      	created_at     AS createdAt,
+      	pg_provider    AS pgProvider,
+      	buyer_name     AS buyerName,
+      	buyer_email    AS buyerEmail,
+      	buyer_phone    AS buyerPhone,
+      	order_id       AS orderId
+     	FROM payment
+     	WHERE order_uid = #{orderUid}
+     	LIMIT 1
+  	</select>
 
 </mapper>
 

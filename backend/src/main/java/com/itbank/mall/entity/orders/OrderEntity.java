@@ -18,5 +18,6 @@ public class OrderEntity {
     private String buyerPhone;
     private String orderType; // ex. "MEMBER" or "GUEST"
     private List<OrderItemEntity> orderItems; // 주문 상품 목록
+    private String orderUid; // 외부 주문 추적 키(merchantUid) — orders.order_uid와 매핑
 
 }

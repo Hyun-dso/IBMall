@@ -51,13 +51,34 @@ public class GuestPaymentService {
         // (1) 서버 검증
         var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
 
-        // (2) 멱등 게이트
+        // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
         if (existing != null) {
             if (existing.getOrderId() != null) {
                 log.info("[IDEMPOTENT] payment already linked. txId={}, orderId={}", txId, existing.getOrderId());
                 return;
             }
+            Long orderId = createOrderAndDeliveryForSingle(dto, v.getAmount());
+            paymentMapper.updateOrderIdByTransactionId(txId, orderId);
+            publishPaymentMailEvent(dto.getBuyerEmail(), orderUid,
+                    List.of(dto.getProductName() + " x " + dto.getQuantity() + "개"),
+                    v.getAmount());
+            return;
+        }
+
+        // (2-1) 멱등/충돌 프리체크 - orderUid 기준
+        Payment byUid = paymentMapper.findByOrderUid(orderUid);
+        if (byUid != null) {
+            // 같은 orderUid로 이미 다른 txId가 사용된 경우 → 정책상 충돌(409 매핑 권장)
+            if (byUid.getTransactionId() != null && !byUid.getTransactionId().equals(txId)) {
+                throw new IllegalStateException("DUPLICATE_TRANSACTION: orderUid already used with a different txId");
+            }
+            // 이미 주문에 연결되어 있으면 멱등
+            if (byUid.getOrderId() != null) {
+                log.info("[IDEMPOTENT][orderUid] already linked. orderId={}", byUid.getOrderId());
+                return;
+            }
+            // 주문 미연결이면 복구: 주문/배송 생성 후 기존 payment(txId)와 연결
             Long orderId = createOrderAndDeliveryForSingle(dto, v.getAmount());
             paymentMapper.updateOrderIdByTransactionId(txId, orderId);
             publishPaymentMailEvent(dto.getBuyerEmail(), orderUid,
@@ -103,11 +124,27 @@ public class GuestPaymentService {
         // (1) 서버 검증
         var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
 
-        // (2) 멱등 게이트
+        // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
         if (existing != null) {
             if (existing.getOrderId() != null) {
                 log.info("[IDEMPOTENT] payment already linked. txId={}, orderId={}", txId, existing.getOrderId());
+                return;
+            }
+            Long orderId = createOrderAndDeliveryForCart(dto, v.getAmount());
+            paymentMapper.updateOrderIdByTransactionId(txId, orderId);
+            publishPaymentMailEvent(dto.getBuyerEmail(), orderUid, buildCartLines(dto), v.getAmount());
+            return;
+        }
+
+        // (2-1) 멱등/충돌 프리체크 - orderUid 기준
+        Payment byUid = paymentMapper.findByOrderUid(orderUid);
+        if (byUid != null) {
+            if (byUid.getTransactionId() != null && !byUid.getTransactionId().equals(txId)) {
+                throw new IllegalStateException("DUPLICATE_TRANSACTION: orderUid already used with a different txId");
+            }
+            if (byUid.getOrderId() != null) {
+                log.info("[IDEMPOTENT][orderUid] already linked. orderId={}", byUid.getOrderId());
                 return;
             }
             Long orderId = createOrderAndDeliveryForCart(dto, v.getAmount());
@@ -178,6 +215,7 @@ public class GuestPaymentService {
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("GUEST");
         order.setStatus("주문완료");
+        order.setOrderUid(dto.getOrderUid());
         orderMapper.insertOrder(order);
 
         // 5) 주문상세 (price=단가, 옵션ID 저장)
@@ -195,7 +233,7 @@ public class GuestPaymentService {
         delivery.setRecipient(dto.getRecipientName());
         delivery.setPhone(dto.getRecipientPhone());
         delivery.setAddress(dto.getRecipientAddress());
-        delivery.setStatus("배송준비중");
+        delivery.setStatus("READY");
         deliveryService.saveDelivery(delivery);
 
         return order.getOrderId();
@@ -260,6 +298,7 @@ public class GuestPaymentService {
         order.setTotalPrice(total);
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("GUEST");
+        order.setOrderUid(dto.getOrderUid());
         order.setStatus("주문완료");
         orderMapper.insertOrder(order);
 
@@ -280,7 +319,7 @@ public class GuestPaymentService {
         delivery.setRecipient(dto.getRecipientName());
         delivery.setPhone(dto.getRecipientPhone());
         delivery.setAddress(dto.getRecipientAddress());
-        delivery.setStatus("배송준비중");
+        delivery.setStatus("READY");
         deliveryService.saveDelivery(delivery);
 
         return order.getOrderId();
