@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itbank.mall.mapper.product.ProductOptionMapper">
+
+  <!-- 원자적 재고 차감 (옵션 재고 우선) -->
+  <update id="decreaseStock">
+    UPDATE product_option
+    SET stock = stock - #{qty}
+    WHERE id = #{optionId}
+      AND stock >= #{qty}
+  </update>
+
+  <!-- 옵션 추가금 조회 -->
+  <select id="getExtraPriceById" parameterType="long" resultType="int">
+    SELECT extra_price
+    FROM product_option
+    WHERE id = #{optionId}
+    LIMIT 1
+  </select>
+
+</mapper>

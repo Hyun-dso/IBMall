@@ -35,6 +35,8 @@ dependencies {
 	implementation 'org.mariadb.jdbc:mariadb-java-client:3.3.3'
 	// 보안
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	// ▼ 추가: Redis + Sentinel
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	// JWT 토큰 관련 라이브러리
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
@@ -49,7 +51,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
 	implementation 'commons-fileupload:commons-fileupload:1.4'
+	// redis-health check
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 }
 
 tasks.named('test') {

@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://${DB_HOST}:${DB_PORT:3306}/${DB_NAME:ib_mall}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  data:
+    redis:
+      password: ${REDIS_PASSWORD}
+      sentinel:
+        master: mymaster
+        nodes:
+          - 172.16.20.159:26379
+          - 172.16.21.116:26379
+          - 172.16.11.215:26379
+      timeout: 3000
+
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  expiration: ${JWT_EXPIRATION_SECONDS:1800}

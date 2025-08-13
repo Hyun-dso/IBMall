@@ -5,22 +5,60 @@
 
 <mapper namespace="com.itbank.mall.mapper.orders.DeliveryMapper">
 
-    <insert id="insertDelivery" parameterType="com.itbank.mall.entity.orders.DeliveryEntity">
-        INSERT INTO deliveries (
-            order_id,
-            address,
-            recipient,
-            phone,
-            tracking_number,
-            status
-        ) VALUES (
-            #{orderId},
-            #{address},
-            #{recipient},
-            #{phone},
-            #{trackingNumber},
-            #{status}
-        )
-    </insert>
+  <!-- 기존 UPSERT -->
+  <insert id="insertDelivery" parameterType="com.itbank.mall.entity.orders.DeliveryEntity">
+    INSERT INTO deliveries (order_id, address, recipient, phone, tracking_number, status)
+    VALUES (#{orderId}, #{address}, #{recipient}, #{phone}, #{trackingNumber}, #{status})
+    ON DUPLICATE KEY UPDATE
+      address         = VALUES(address),
+      recipient       = VALUES(recipient),
+      phone           = VALUES(phone),
+      tracking_number = IFNULL(tracking_number, VALUES(tracking_number)),
+      status          = VALUES(status)
+  </insert>
+
+	  <update id="updateTrackingNumber">
+ 	 UPDATE deliveries
+  	SET tracking_number = #{trackingNumber}
+  	WHERE order_id = #{orderId}
+    AND tracking_number IS NULL
+	</update>
+
+  <update id="updateStatus">
+    UPDATE deliveries
+    SET status = #{status}
+    WHERE order_id = #{orderId}
+  </update>
+
+  <select id="findByOrderId" parameterType="long"
+          resultType="com.itbank.mall.entity.orders.DeliveryEntity">
+    SELECT
+      delivery_id AS deliveryId,
+      order_id    AS orderId,
+      address,
+      recipient,
+      phone,
+      tracking_number AS trackingNumber,
+      status
+    FROM deliveries
+    WHERE order_id = #{orderId}
+    LIMIT 1
+  </select>
+
+  <!-- ✅ 추가: 트래킹번호로 단건 조회 -->
+  <select id="findByTrackingNumber" parameterType="string"
+          resultType="com.itbank.mall.entity.orders.DeliveryEntity">
+    SELECT
+      delivery_id AS deliveryId,
+      order_id    AS orderId,
+      address,
+      recipient,
+      phone,
+      tracking_number AS trackingNumber,
+      status
+    FROM deliveries
+    WHERE tracking_number = #{trackingNumber}
+    LIMIT 1
+  </select>
 
 </mapper>

@@ -20,7 +20,6 @@
             buyer_name,
             buyer_email,
             buyer_phone,
-            buyer_address,
             created_at
         ) VALUES (
             #{memberId}, 
@@ -35,7 +34,6 @@
             #{buyerName},
             #{buyerEmail},
             #{buyerPhone},
-            #{buyerAddress},
             #{createdAt}
         )
     </insert>
@@ -53,6 +51,77 @@
         FROM payment
         WHERE id = #{paymentId}
     </select>
+    
+    <update id="updateOrderId" parameterType="com.itbank.mall.entity.payment.Payment">
+    UPDATE payment
+    SET order_id = #{orderId}
+    WHERE id = #{id}
+	</update>
+	
+	    <!-- ✅ 멱등 체크: txId 존재 여부 -->
+    <select id="existsByTransactionId" parameterType="string" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM payment WHERE transaction_id = #{transactionId})
+    </select>
+
+    <!-- ✅ 멱등 체크: orderUid 존재 여부 -->
+    <select id="existsByOrderUid" parameterType="string" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM payment WHERE order_uid = #{orderUid})
+    </select>
+
+    <!-- ✅ txId로 payment 단건 조회 (복구/연결용) -->
+    <select id="findByTransactionId" parameterType="string"
+            resultType="com.itbank.mall.entity.payment.Payment">
+        SELECT
+            id,
+            member_id      AS memberId,
+            order_uid      AS orderUid,
+            product_name   AS productName,
+            order_price    AS orderPrice,
+            paid_amount    AS paidAmount,
+            payment_method AS paymentMethod,
+            status,
+            transaction_id AS transactionId,
+            created_at     AS createdAt,
+            pg_provider    AS pgProvider,
+            buyer_name     AS buyerName,
+            buyer_email    AS buyerEmail,
+            buyer_phone    AS buyerPhone,
+            order_id       AS orderId
+        FROM payment
+        WHERE transaction_id = #{transactionId}
+        LIMIT 1
+    </select>
+
+    <!-- ✅ txId 기준으로 order_id 연결(중간중단 복구) -->
+    <update id="updateOrderIdByTransactionId">
+        UPDATE payment
+        SET order_id = #{orderId}
+        WHERE transaction_id = #{transactionId}
+    </update>
+    
+    <!-- 🔹 orderUid로 payment 단건 조회(멱등/충돌 판정용) -->
+  	<select id="findByOrderUid" parameterType="string"
+          resultType="com.itbank.mall.entity.payment.Payment">
+    	SELECT
+    	id,
+      	member_id      AS memberId,
+      	order_uid      AS orderUid,
+      	product_name   AS productName,
+      	order_price    AS orderPrice,
+      	paid_amount    AS paidAmount,
+      	payment_method AS paymentMethod,
+     	status,
+      	transaction_id AS transactionId,
+      	created_at     AS createdAt,
+      	pg_provider    AS pgProvider,
+      	buyer_name     AS buyerName,
+      	buyer_email    AS buyerEmail,
+      	buyer_phone    AS buyerPhone,
+      	order_id       AS orderId
+     	FROM payment
+     	WHERE order_uid = #{orderUid}
+     	LIMIT 1
+  	</select>
 
 </mapper>
 

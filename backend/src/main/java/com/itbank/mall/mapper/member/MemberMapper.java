@@ -18,4 +18,6 @@ public interface MemberMapper {
     Member findById(Long id);
     void updateMember(Member member);
     boolean existsByPhone(String phone);
+    String findEmailById(@Param("memberId") Long memberId);
+    
 }

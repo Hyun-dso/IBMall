@@ -19,64 +19,68 @@
     <result property="buyerName" column="buyer_name" /> <!-- ✅ 추가 -->
     <result property="createdAt" column="created_at" />
     <collection property="orderItems"
-        ofType="com.itbank.mall.dto.orders.OrderItemDto"
-        resultMap="orderItemMap" />
-</resultMap>
+    ofType="com.itbank.mall.dto.orders.OrderItemDto"
+    resultMap="orderItemMap" />
+	</resultMap>
 
 	<!-- 주문 + 주문 상세 + 상품 JOIN 쿼리 -->
-	<select id="findOrdersByMemberId" resultMap="orderMap">
-    SELECT
+		<select id="findOrdersByMemberId" resultMap="orderMap">
+  		 SELECT
         o.order_id,
         o.total_price,
         o.status,
-        o.buyer_name,         -- ✅ SELECT 절에도 추가
+        o.buyer_name,
         o.created_at,
         oi.quantity,
         oi.price,
         p.name AS product_name
-    FROM orders o
-    JOIN order_items oi ON o.order_id = oi.order_id
-    JOIN product p ON oi.product_id = p.product_id
-    WHERE o.member_id = #{memberId}
-    ORDER BY o.created_at DESC
-</select>
+    	FROM orders o
+    	JOIN order_items oi ON o.order_id = oi.order_id
+    	JOIN product p ON oi.product_id = p.product_id
+    	WHERE o.member_id = #{memberId}
+   		 ORDER BY o.created_at DESC
+		</select>
 
-	<insert id="insertOrder"
-		parameterType="com.itbank.mall.entity.orders.OrderEntity"
-		useGeneratedKeys="true" keyProperty="orderId">
-		INSERT INTO orders (
-		member_id,
-		total_price,
-		created_at,
-		buyer_name,
-		buyer_phone,
-		order_type,
-		status
-		) VALUES (
-		#{memberId},
-		#{totalPrice},
-		#{createdAt},
-		#{buyerName},
-		#{buyerPhone},
-		#{orderType},
-		#{status}
-		)
-</insert>
+    <insert id="insertOrder"
+        parameterType="com.itbank.mall.entity.orders.OrderEntity"
+        useGeneratedKeys="true" keyProperty="orderId">
+        INSERT INTO orders (
+        member_id,
+        total_price,
+        created_at,
+        buyer_name,
+        buyer_phone,
+        order_type,
+        status,
+        order_uid
+        ) VALUES (
+        #{memberId},
+        #{totalPrice},
+        #{createdAt},
+        #{buyerName},
+        #{buyerPhone},
+        #{orderType},
+        #{status},
+        #{orderUid}
+        )
+    </insert>
 
-	<insert id="insertOrderItem"
+		<insert id="insertOrderItem"
 		parameterType="com.itbank.mall.entity.orders.OrderItemEntity">
 		INSERT INTO order_items (
 		order_id,
 		product_id,
+		product_option_id,
 		quantity,
 		price
 		) VALUES (
 		#{orderId},
 		#{productId},
+		#{productOptionId},
 		#{quantity},
 		#{price}
 		)
-	</insert>
+		</insert>
 
 
 </mapper>

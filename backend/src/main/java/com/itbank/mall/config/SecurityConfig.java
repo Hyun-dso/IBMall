@@ -34,7 +34,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // 💡 여기!
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
@@ -50,7 +50,7 @@ public class SecurityConfig {
                     "/api/admin/**", "/api/admin/images", "/api/images/**",
                     "/product/**", "/shop/**",
                     "/api/admin/images/set-thumbnail", "/api/admin/images/set-thumbnail/**",
-                    "/api/reviews", "/api/reviews/**"
+                    "/api/reviews", "/api/reviews/**", "/actuator/health"
                 ).permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()
                 .requestMatchers(
@@ -67,14 +67,29 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://192.168.52.212:3000", "http://192.168.10.2:3000", "http://192.168.52.215:3000"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        config.setMaxAge(3600L);  // 캐시 시간 (초)
+
+        // 배포용 + 로컬 겸용 (쿠키 인증 사용을 전제로 credentials 허용)
+        config.setAllowedOriginPatterns(List.of(
+            // Prod
+            "https://ibmall.shop",
+            "https://www.ibmall.shop",
+            "https://*.ibmall.shop",
+            // (테스트용) CloudFront 기본 도메인을 잠깐 써야 하면 주석 해제
+            // "https://d*.cloudfront.net",
+
+            // Local/사내
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://192.168.*:*"
+        ));
+
+        config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        config.setAllowedHeaders(List.of("Content-Type","Authorization","X-Requested-With","Accept"));
+        config.setAllowCredentials(true);   // fetch(..., { credentials: 'include' }) 필요
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);  // 모든 경로에 적용
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
