@@ -47,9 +47,9 @@
 	</select>
 
 	<update id="verifyMemberByEmail">
-		UPDATE member
-		SET verified = 1
-		WHERE email = #{email}
+	    UPDATE member
+	    SET is_verified = 1
+	    WHERE email = #{email}
 	</update>
 
 	<update id="updatePassword">
@@ -86,6 +86,10 @@
     SELECT EXISTS (
         SELECT 1 FROM member WHERE phone = #{phone}
     )
+	</select>
+	
+	<select id="findEmailById" parameterType="long" resultType="string">
+  	SELECT email FROM member WHERE id = #{memberId} LIMIT 1
 	</select>
 
 </mapper>

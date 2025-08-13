@@ -8,15 +8,15 @@
     <!-- 특정 order_item의 is_reviewed 상태를 true로 변경 -->
     <update id="markAsReviewed" parameterType="long">
         UPDATE order_items
-        SET is_reviewed = true
-        WHERE id = #{orderItemId}
+        SET is_reviewed = TRUE
+        WHERE order_item_id = #{orderItemId}
     </update>
 
     <!-- 특정 order_item이 이미 리뷰 작성됐는지 확인 -->
     <select id="isReviewed" parameterType="long" resultType="boolean">
         SELECT is_reviewed
         FROM order_items
-        WHERE id = #{orderItemId}
+        WHERE order_item_id = #{orderItemId}
     </select>
 
 </mapper>

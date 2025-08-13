@@ -1,9 +1,12 @@
 package com.itbank.mall.service.payment;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,13 +17,17 @@ import com.itbank.mall.entity.orders.DeliveryEntity;
 import com.itbank.mall.entity.orders.OrderEntity;
 import com.itbank.mall.entity.orders.OrderItemEntity;
 import com.itbank.mall.entity.payment.Payment;
+import com.itbank.mall.event.payment.PaymentCompletedEvent;
 import com.itbank.mall.mapper.orders.OrderMapper;
 import com.itbank.mall.mapper.payment.PaymentMapper;
-import com.itbank.mall.service.MailService;
+import com.itbank.mall.mapper.product.ProductMapper;
+import com.itbank.mall.mapper.product.ProductOptionMapper;
 import com.itbank.mall.service.orders.DeliveryService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GuestPaymentService {
@@ -28,46 +35,161 @@ public class GuestPaymentService {
     private final PaymentMapper paymentMapper;
     private final OrderMapper orderMapper;
     private final DeliveryService deliveryService;
-    private final MailService mailService;
+    private final ApplicationEventPublisher events;
 
+    private final ProductMapper productMapper;               // ✅ 신규 주입
+    private final ProductOptionMapper productOptionMapper;   // ✅ 신규 주입
+
+    private final PaymentVerificationService verificationService;
+
+    /** 비회원 단일 상품 결제 */
     @Transactional
     public void processGuestPayment(GuestPaymentRequestDto dto) {
-        // 1. payment 저장
+        final String txId = dto.getTransactionId();
+        final String orderUid = dto.getOrderUid();
+
+        // (1) 서버 검증
+        var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
+
+        // (2) 멱등 게이트
+        Payment existing = paymentMapper.findByTransactionId(txId);
+        if (existing != null) {
+            if (existing.getOrderId() != null) {
+                log.info("[IDEMPOTENT] payment already linked. txId={}, orderId={}", txId, existing.getOrderId());
+                return;
+            }
+            Long orderId = createOrderAndDeliveryForSingle(dto, v.getAmount());
+            paymentMapper.updateOrderIdByTransactionId(txId, orderId);
+            publishPaymentMailEvent(dto.getBuyerEmail(), orderUid,
+                    List.of(dto.getProductName() + " x " + dto.getQuantity() + "개"),
+                    v.getAmount());
+            return;
+        }
+
+        // (3) payment 저장 - 검증값 반영
         Payment payment = new Payment();
-        payment.setOrderUid(dto.getOrderUid());
+        payment.setOrderUid(orderUid);
         payment.setProductName(dto.getProductName());
         payment.setOrderPrice(dto.getOrderPrice());
-        payment.setPaidAmount(dto.getPaidAmount());
-        payment.setPaymentMethod(dto.getPaymentMethod());
-        payment.setStatus(dto.getStatus());
-        payment.setTransactionId(dto.getTransactionId());
-        payment.setPgProvider(dto.getPgProvider());
+        payment.setPaidAmount(v.getAmount());
+        payment.setPaymentMethod(v.getPayMethod());
+        payment.setStatus(v.getStatus());
+        payment.setTransactionId(txId);
+        payment.setPgProvider("INICIS");
         payment.setBuyerName(dto.getBuyerName());
         payment.setBuyerEmail(dto.getBuyerEmail());
         payment.setBuyerPhone(dto.getBuyerPhone());
         payment.setCreatedAt(LocalDateTime.now());
         paymentMapper.insert(payment);
 
-        // 2. orders 저장
+        // (4) 주문/상세/배송
+        Long orderId = createOrderAndDeliveryForSingle(dto, v.getAmount());
+        // (5) 링크
+        payment.setOrderId(orderId);
+        paymentMapper.updateOrderId(payment);
+
+        // (6) 커밋 후 메일
+        publishPaymentMailEvent(dto.getBuyerEmail(), orderUid,
+                List.of(dto.getProductName() + " x " + dto.getQuantity() + "개"),
+                v.getAmount());
+    }
+
+    /** 비회원 장바구니 결제 */
+    @Transactional
+    public void processGuestCartPayment(GuestCartPaymentRequestDto dto) {
+        final String txId = dto.getTransactionId();
+        final String orderUid = dto.getOrderUid();
+
+        // (1) 서버 검증
+        var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
+
+        // (2) 멱등 게이트
+        Payment existing = paymentMapper.findByTransactionId(txId);
+        if (existing != null) {
+            if (existing.getOrderId() != null) {
+                log.info("[IDEMPOTENT] payment already linked. txId={}, orderId={}", txId, existing.getOrderId());
+                return;
+            }
+            Long orderId = createOrderAndDeliveryForCart(dto, v.getAmount());
+            paymentMapper.updateOrderIdByTransactionId(txId, orderId);
+            publishPaymentMailEvent(dto.getBuyerEmail(), orderUid, buildCartLines(dto), v.getAmount());
+            return;
+        }
+
+        // (3) payment 저장 - 검증값 반영
+        Payment payment = new Payment();
+        payment.setOrderUid(orderUid);
+        payment.setProductName(dto.getProductName());
+        payment.setOrderPrice(dto.getOrderPrice());
+        payment.setPaidAmount(v.getAmount());
+        payment.setPaymentMethod(v.getPayMethod());
+        payment.setStatus(v.getStatus());
+        payment.setTransactionId(txId);
+        payment.setPgProvider("INICIS");
+        payment.setBuyerName(dto.getBuyerName());
+        payment.setBuyerEmail(dto.getBuyerEmail());
+        payment.setBuyerPhone(dto.getBuyerPhone());
+        payment.setCreatedAt(LocalDateTime.now());
+        paymentMapper.insert(payment);
+
+        // (4) 주문/상세/배송
+        Long orderId = createOrderAndDeliveryForCart(dto, v.getAmount());
+        // (5) 링크
+        payment.setOrderId(orderId);
+        paymentMapper.updateOrderId(payment);
+
+        // (6) 커밋 후 메일
+        publishPaymentMailEvent(dto.getBuyerEmail(), orderUid, buildCartLines(dto), v.getAmount());
+    }
+
+    // ===== 내부 유틸 =====
+
+    /** 단일 주문 생성 (서버 계산/재고 차감/옵션ID 저장) */
+    private Long createOrderAndDeliveryForSingle(GuestPaymentRequestDto dto, int verifiedPaidAmount) {
+        // 1) 서버 단가 계산
+        int base = productMapper.getPriceById(dto.getProductId());
+        int extra = (dto.getProductOptionId() != null)
+                ? productOptionMapper.getExtraPriceById(dto.getProductOptionId())
+                : 0;
+        int unitPrice = base + extra;
+
+        // 2) 원자적 재고 차감 (옵션 우선)
+        int affected = (dto.getProductOptionId() != null)
+                ? productOptionMapper.decreaseStock(dto.getProductOptionId(), dto.getQuantity())
+                : productMapper.decreaseStock(dto.getProductId(), dto.getQuantity());
+        if (affected != 1) {
+            // ControllerAdvice에서 409로 매핑 권장
+            throw new IllegalStateException("재고 부족 또는 동시성으로 실패");
+        }
+
+        // 3) 합계 검증
+        int total = unitPrice * dto.getQuantity();
+        if (total != verifiedPaidAmount) {
+            // ControllerAdvice에서 422로 매핑 권장
+            throw new IllegalArgumentException("결제 금액 불일치(total != verifiedPaidAmount)");
+        }
+
+        // 4) 주문
         OrderEntity order = new OrderEntity();
-        order.setMemberId(null); // 비회원
+        order.setMemberId(null);
         order.setBuyerName(dto.getBuyerName());
         order.setBuyerPhone(dto.getBuyerPhone());
-        order.setTotalPrice(dto.getPaidAmount());
+        order.setTotalPrice(total);
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("GUEST");
         order.setStatus("주문완료");
-        orderMapper.insertOrder(order); // order_id 생성
+        orderMapper.insertOrder(order);
 
-        // 3. order_items 저장
+        // 5) 주문상세 (price=단가, 옵션ID 저장)
         OrderItemEntity item = new OrderItemEntity();
         item.setOrderId(order.getOrderId());
         item.setProductId(dto.getProductId());
+        item.setProductOptionId(dto.getProductOptionId());  // ✅
         item.setQuantity(dto.getQuantity());
-        item.setPrice(dto.getPaidAmount());
+        item.setPrice(unitPrice);                           // ✅
         orderMapper.insertOrderItem(item);
 
-        // 4. deliveries 저장
+        // 6) 배송
         DeliveryEntity delivery = new DeliveryEntity();
         delivery.setOrderId(order.getOrderId());
         delivery.setRecipient(dto.getRecipientName());
@@ -75,59 +197,84 @@ public class GuestPaymentService {
         delivery.setAddress(dto.getRecipientAddress());
         delivery.setStatus("배송준비중");
         deliveryService.saveDelivery(delivery);
-        
-        payment.setOrderId(order.getOrderId());
-        payment.setId(payment.getId()); // 이미 insert에서 keyProperty로 세팅됨
-        paymentMapper.updateOrderId(payment);
-        
-        mailService.sendGuestPaymentCompleteEmail(
-        	    dto.getBuyerEmail(),
-        	    dto.getOrderUid(),
-        	    List.of(dto.getProductName() + " x " + dto.getQuantity() + "개"),
-        	    dto.getPaidAmount()
-        	);
-    }
-    
-    @Transactional
-    public void processGuestCartPayment(GuestCartPaymentRequestDto dto) {
-        // 1. payment 저장
-        Payment payment = new Payment();
-        payment.setOrderUid(dto.getOrderUid());
-        payment.setProductName(dto.getProductName());
-        payment.setOrderPrice(dto.getOrderPrice());
-        payment.setPaidAmount(dto.getPaidAmount());
-        payment.setPaymentMethod(dto.getPaymentMethod());
-        payment.setStatus(dto.getStatus());
-        payment.setTransactionId(dto.getTransactionId());
-        payment.setPgProvider(dto.getPgProvider());
-        payment.setBuyerName(dto.getBuyerName());
-        payment.setBuyerEmail(dto.getBuyerEmail());
-        payment.setBuyerPhone(dto.getBuyerPhone());
-        payment.setCreatedAt(LocalDateTime.now());
-        paymentMapper.insert(payment);
 
-        // 2. orders 저장
+        return order.getOrderId();
+    }
+
+    /** 장바구니 주문 생성 (서버 계산/재고 차감/옵션ID 저장) */
+    private Long createOrderAndDeliveryForCart(GuestCartPaymentRequestDto dto, int verifiedPaidAmount) {
+        // 1) (productId, optionId) 기준 합산
+        Map<String, GuestOrderItemDto> merged = new LinkedHashMap<>();
+        for (GuestOrderItemDto i : dto.getItems()) {
+            String key = i.getProductId() + ":" + (i.getProductOptionId() == null ? "-" : i.getProductOptionId());
+            merged.compute(key, (k, v) -> {
+                if (v == null) return i;
+                v.setQuantity(v.getQuantity() + i.getQuantity());
+                return v;
+            });
+        }
+
+        // 2) 정렬(교착 최소화) + 원자적 재고 차감 + 단가 계산
+        var lines = merged.values().stream()
+                .sorted((a, b) -> {
+                    int c = Long.compare(a.getProductId(), b.getProductId());
+                    if (c != 0) return c;
+                    long ao = a.getProductOptionId() == null ? 0L : a.getProductOptionId();
+                    long bo = b.getProductOptionId() == null ? 0L : b.getProductOptionId();
+                    return Long.compare(ao, bo);
+                })
+                .toList();
+
+        int total = 0;
+        record Line(long pid, Long oid, int qty, int unit) {}
+        java.util.List<Line> calc = new java.util.ArrayList<>();
+
+        for (GuestOrderItemDto l : lines) {
+            int base = productMapper.getPriceById(l.getProductId());
+            int extra = (l.getProductOptionId() != null)
+                    ? productOptionMapper.getExtraPriceById(l.getProductOptionId())
+                    : 0;
+            int unit = base + extra;
+
+            int affected = (l.getProductOptionId() != null)
+                    ? productOptionMapper.decreaseStock(l.getProductOptionId(), l.getQuantity())
+                    : productMapper.decreaseStock(l.getProductId(), l.getQuantity());
+            if (affected != 1) {
+                throw new IllegalStateException("재고 부족 또는 동시성으로 실패");
+            }
+
+            total += unit * l.getQuantity();
+            calc.add(new Line(l.getProductId(), l.getProductOptionId(), l.getQuantity(), unit));
+        }
+
+        // 3) 검증 금액 일치 확인
+        if (total != verifiedPaidAmount) {
+            throw new IllegalArgumentException("결제 금액 불일치(total != verifiedPaidAmount)");
+        }
+
+        // 4) 주문
         OrderEntity order = new OrderEntity();
-        order.setMemberId(null); // 비회원
+        order.setMemberId(null);
         order.setBuyerName(dto.getBuyerName());
         order.setBuyerPhone(dto.getBuyerPhone());
-        order.setTotalPrice(dto.getPaidAmount());  // 총 금액
+        order.setTotalPrice(total);
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("GUEST");
         order.setStatus("주문완료");
-        orderMapper.insertOrder(order);  // order_id 생성됨
+        orderMapper.insertOrder(order);
 
-        // 3. order_items 저장 (여러 개)
-        for (GuestOrderItemDto i : dto.getItems()) {
+        // 5) 주문상세 (DTO의 item.price는 무시, 서버 단가 저장)
+        for (Line c : calc) {
             OrderItemEntity item = new OrderItemEntity();
             item.setOrderId(order.getOrderId());
-            item.setProductId(i.getProductId());
-            item.setQuantity(i.getQuantity());
-            item.setPrice(i.getPrice());  // 단일 상품 가격 × 수량
+            item.setProductId(c.pid());
+            item.setProductOptionId(c.oid()); // ✅
+            item.setQuantity(c.qty());
+            item.setPrice(c.unit());          // ✅ 단가
             orderMapper.insertOrderItem(item);
         }
 
-        // 4. deliveries 저장
+        // 6) 배송
         DeliveryEntity delivery = new DeliveryEntity();
         delivery.setOrderId(order.getOrderId());
         delivery.setRecipient(dto.getRecipientName());
@@ -136,19 +283,17 @@ public class GuestPaymentService {
         delivery.setStatus("배송준비중");
         deliveryService.saveDelivery(delivery);
 
-        payment.setOrderId(order.getOrderId());
-        payment.setId(payment.getId()); // 이미 insert에서 keyProperty로 세팅됨
-        paymentMapper.updateOrderId(payment);
-    
-        List<String> productLines = dto.getItems().stream()
-        	    .map(i -> i.getProductName() + " x " + i.getQuantity() + "개")
-        	    .collect(Collectors.toList());
+        return order.getOrderId();
+    }
 
-    	mailService.sendGuestPaymentCompleteEmail(
-    	    dto.getBuyerEmail(),
-    	    dto.getOrderUid(),
-    	    productLines,
-    	    dto.getPaidAmount()
-    	);
+    // ✅ 공통 이벤트로 발행 (게스트: memberId=null, email 사용)
+    private void publishPaymentMailEvent(String email, String orderUid, List<String> productLines, int paidAmount) {
+        events.publishEvent(new PaymentCompletedEvent(null, email, orderUid, productLines, paidAmount));
+    }
+
+    private List<String> buildCartLines(GuestCartPaymentRequestDto dto) {
+        return dto.getItems().stream()
+                .map(i -> i.getProductName() + " x " + i.getQuantity() + "개")
+                .collect(Collectors.toList());
     }
 }
