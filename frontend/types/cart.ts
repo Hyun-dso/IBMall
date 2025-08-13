@@ -1,13 +1,12 @@
-export interface ProductLineItem {
-    productId: number;
-    name: string;
-    price: number;
-    thumbnailUrl: string | null;
-    quantity: number;
-    productOptionId?: number;
-    optionName?: string;
-    timeSalePrice?: number | null;
-    isTimeSale?: boolean;
-    disableQuantityControls?: boolean;
-    showDeleteButton?: boolean;
+// /types/cart.ts
+import type { Id, Won } from './primitives';
+
+export interface CartItem {
+  productId: Id;
+  name: string;
+  price: Won;
+  quantity: number;
+  thumbnailUrl: string | null;
+  productOptionId?: Id | null;
 }
+export interface ProductLineItem extends CartItem {}

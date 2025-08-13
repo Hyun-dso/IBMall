@@ -2,130 +2,123 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
-import { Toaster, toast } from 'react-hot-toast';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-// if (!API_BASE_URL) {
-//     throw new Error('환경 변수 NEXT_PUBLIC_API_BASE_URL이 정의되지 않았습니다.');
-// }
+import { showToast } from '@/lib/toast';
+import { signIn, getGoogleAuthUrl } from '@/lib/api/auth.client';
+import { isSuccess } from '@/types/api'; // SUCCESS/FAIL 가드
+import { INPUT_CLASS, INPUT_DIVIDER_CLASS } from '@/constants/styles';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const router = useRouter();
+    const [pending, setPending] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        toast.dismiss();
+        if (pending) return;
 
-        if (!email.trim() || !password.trim()) {
-            toast.error('이메일과 비밀번호를 모두 입력하세요.');
+        const trimmedEmail = email.trim();
+        const trimmedPw = password.trim();
+        if (!trimmedEmail || !trimmedPw) {
+            showToast.error('이메일과 비밀번호를 모두 입력해야 해요', { group: 'auth.signin' });
             return;
         }
 
         try {
-            toast.loading('로그인 중...');
+            setPending(true);
+            showToast.loading('로그인 중...');
 
-            const res = await fetch(`/api/auth/signin`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-                credentials: 'include',
-            });
+            // 이전: fetch Response 사용 → res.ok / res.json()
+            // 변경: ApiResponse<Member> 사용 → code로 분기
+            const result = await signIn({ email: trimmedEmail, password: trimmedPw });
 
-            toast.dismiss();
-
-            if (!res.ok) {
-                const { message } = await res.json();
-                toast.error(message || '로그인에 실패했습니다.');
+            if (!isSuccess(result)) {
+                showToast.error(result.message || '로그인에 실패했어요');
                 return;
             }
 
-            toast.success('로그인 성공');
+            showToast.success('로그인에 성공했어요', { group: 'auth', persist: true, showNow: false });
             window.location.href = '/';
-        } catch {
-            toast.dismiss();
-            toast.error('네트워크 오류가 발생했습니다.');
+        } catch (err: unknown) {
+            // http.ts 가 4xx/5xx에서 Error를 던짐
+            const message = err instanceof Error ? err.message : '네트워크 오류가 발생했습니다.';
+            showToast.error(message);
+        } finally {
+            setPending(false);
         }
     };
 
     const handleGoogleLogin = async () => {
-        toast.dismiss();
-        toast.loading('구글 로그인 준비 중...');
-
+        if (pending) return;
         try {
-            const res = await fetch(`/api/oauth2/authorize/google`);
-            toast.dismiss();
+            setPending(true);
+            showToast.loading('구글 로그인 준비 중...');
 
-            if (!res.ok) {
-                const { message } = await res.json();
-                toast.error(message || '구글 로그인 실패');
-                return;
-            }
-
-            const { url } = await res.json();
+            // getGoogleAuthUrl 도 http.get<{url:string}>를 반환함 (Response 아님)
+            const { url } = await getGoogleAuthUrl();
             if (!url) {
-                toast.error('Google OAuth URL을 받아오지 못했습니다.');
+                showToast.error('Google OAuth URL을 받아오지 못했어요');
                 return;
             }
-
             window.location.href = url;
-        } catch {
-            toast.dismiss();
-            toast.error('Google OAuth 요청 중 오류 발생');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Google OAuth 요청 중 오류 발생';
+            showToast.error(message);
+        } finally {
+            setPending(false);
         }
     };
 
     return (
         <main className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary">
-            <Toaster />
             <form
                 noValidate
                 onSubmit={handleSubmit}
                 className="w-full max-w-sm p-8 bg-surface dark:bg-dark-surface rounded-lg shadow-md"
             >
-                <div className="w-100 flex items-center justify-center">
+                <div className="w-full flex items-center justify-center">
                     <Logo />
                 </div>
                 <h1 className="text-2xl font-bold mb-6 text-center">로그인</h1>
 
                 <div className="mb-6 border border-border dark:border-dark-border rounded-md overflow-hidden bg-surface dark:bg-dark-surface">
+                    <label htmlFor="email" className="sr-only">이메일</label>
                     <input
                         id="email"
                         type="email"
+                        autoComplete="username"
                         placeholder="이메일"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-4 py-3 border-b border-border dark:border-dark-border bg-transparent text-text-primary dark:text-dark-text-primary placeholder-text-secondary dark:placeholder-dark-text-secondary focus:outline-none"
+                        disabled={pending}
+                        className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
                     />
+                    <label htmlFor="password" className="sr-only">비밀번호</label>
                     <input
                         id="password"
                         type="password"
+                        autoComplete="current-password"
                         placeholder="비밀번호"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 bg-transparent text-text-primary dark:text-dark-text-primary placeholder-text-secondary dark:placeholder-dark-text-secondary focus:outline-none"
+                        disabled={pending}
+                        className={`${INPUT_CLASS}`}
                     />
                 </div>
 
-                <Button
-                    type="submit"
-                    fullWidth
-                    className="font-bold"
-                >
-                    로그인
+                <Button type="submit" full disabled={pending} className="font-bold">
+                    {pending ? '처리 중...' : '로그인'}
                 </Button>
 
                 <Button
                     type="button"
                     onClick={handleGoogleLogin}
                     variant="outline"
-                    fullWidth
+                    full
+                    disabled={pending}
                     className="mt-4 font-bold"
                 >
                     Google 로그인

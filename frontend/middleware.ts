@@ -1,19 +1,36 @@
-// middleware.ts
-import { NextRequest, NextResponse } from 'next/server';
+// /middleware.ts
+import { NextResponse, type NextRequest } from 'next/server';
+import { ACCESS_COOKIE } from '@/constants/auth';
 
-export function middleware(request: NextRequest) {
-    const theme = request.cookies.get('theme')?.value || 'system';
-    const prefersDark = request.headers.get('sec-ch-prefers-color-scheme') === 'dark';
+const GUEST_ONLY = new Set(['/signin', '/signup']);
+const PROTECTED_PREFIXES = ['/account', '/orders', '/cart'];
 
-    const resolvedTheme =
-        theme === 'dark' || (theme === 'system' && prefersDark) ? 'dark' : 'light';
+function isProtectedPath(pathname: string) {
+    return PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+}
 
-    const response = NextResponse.next();
-    response.headers.set('x-theme', resolvedTheme);
+export function middleware(req: NextRequest) {
+    const { pathname, search } = req.nextUrl;
+    const hasAuth = Boolean(req.cookies.get(ACCESS_COOKIE)?.value);
 
-    return response;
+    if (hasAuth && GUEST_ONLY.has(pathname)) {
+        const url = req.nextUrl.clone();
+        url.pathname = '/';
+        return NextResponse.redirect(url);
+    }
+
+    if (!hasAuth && isProtectedPath(pathname)) {
+        const url = req.nextUrl.clone();
+        url.pathname = '/signin';
+        url.search = search
+            ? `${search}&redirect=${encodeURIComponent(pathname)}`
+            : `?redirect=${encodeURIComponent(pathname)}`;
+        return NextResponse.redirect(url);
+    }
+
+    return NextResponse.next();
 }
 
 export const config = {
-    matcher: ['/', '/((?!_next|api|favicon.ico).*)'], // 적용할 경로
+    matcher: ['/((?!_next|.*\\..*|api).*)'],
 };
