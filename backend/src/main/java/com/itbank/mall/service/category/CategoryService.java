@@ -12,43 +12,41 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryService {
 
- private final CategoryMapper mapper;
+    private final CategoryMapper categoryMapper;
 
- @Transactional
- public CategoryDto create(CategoryDto dto) {
-     if (dto.getName() == null || dto.getName().isBlank())
-         throw new IllegalArgumentException("카테고리명을 입력하세요");
-     String name = dto.getName().trim();
-     if (mapper.existsByName(name))
-         throw new IllegalArgumentException("이미 존재하는 카테고리명입니다");
+    /** 생성 */
+    @Transactional
+    public CategoryDto create(CategoryDto dto) {
+        if (dto == null || dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("INVALID_NAME");
+        }
+        categoryMapper.insert(dto); // useGeneratedKeys 로 dto.id 채워짐
+        return dto;
+    }
 
-     dto.setName(name);
-     mapper.insert(dto);   // useGeneratedKeys → dto.id 세팅됨
-     return new CategoryDto(dto.getId(), dto.getName());
- }
+    /** 전체 조회 */
+    @Transactional(readOnly = true)
+    public List<CategoryDto> list() {
+        return categoryMapper.findAll();
+    }
 
- @Transactional(readOnly = true)
- public List<CategoryDto> list() {
-     return mapper.findAll();
- }
+    /** 이름 변경 */
+    @Transactional
+    public void rename(Long id, CategoryDto dto) {
+        if (id == null) throw new IllegalArgumentException("CATEGORY_NOT_FOUND");
+        String newName = (dto != null) ? dto.getName() : null;
+        if (newName == null || newName.isBlank()) {
+            throw new IllegalArgumentException("INVALID_NAME");
+        }
+        int updated = categoryMapper.updateName(id, newName);
+        if (updated == 0) throw new IllegalArgumentException("CATEGORY_NOT_FOUND");
+    }
 
- @Transactional
- public void rename(Long id, CategoryDto dto) {
-     if (!mapper.existsById(id)) throw new IllegalArgumentException("CATEGORY_NOT_FOUND");
-     if (dto.getName() == null || dto.getName().isBlank())
-         throw new IllegalArgumentException("카테고리명을 입력하세요");
-     mapper.updateName(id, dto.getName().trim());
- }
-
- @Transactional
- public void delete(Long id) {
-     int rows = mapper.delete(id);
-     if (rows == 0) throw new IllegalArgumentException("CATEGORY_NOT_FOUND");
-     // FK(product.category_id) 참조 중이면 DB에서 무결성 예외 발생 가능
- }
-
- @Transactional(readOnly = true)
- public boolean existsById(Long id) {
-     return mapper.existsById(id);
- }
+    /** 삭제 */
+    @Transactional
+    public void delete(Long id) {
+        if (id == null) throw new IllegalArgumentException("CATEGORY_NOT_FOUND");
+        int deleted = categoryMapper.delete(id);
+        if (deleted == 0) throw new IllegalArgumentException("CATEGORY_NOT_FOUND");
+    }
 }

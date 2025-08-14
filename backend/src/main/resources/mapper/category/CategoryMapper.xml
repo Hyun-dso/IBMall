@@ -21,22 +21,9 @@
     DELETE FROM category WHERE id = #{id}
   </delete>
 
-  <!-- 단건/목록 -->
-  <select id="findById" resultType="com.itbank.mall.dto.category.CategoryDto">
-    SELECT id, name FROM category WHERE id = #{id}
-  </select>
-
+  <!-- 목록 -->
   <select id="findAll" resultType="com.itbank.mall.dto.category.CategoryDto">
     SELECT id, name FROM category ORDER BY id
-  </select>
-
-  <!-- 존재 확인 -->
-  <select id="existsById" resultType="boolean">
-    SELECT EXISTS(SELECT 1 FROM category WHERE id = #{id})
-  </select>
-
-  <select id="existsByName" resultType="boolean">
-    SELECT EXISTS(SELECT 1 FROM category WHERE name = #{name})
   </select>
 
 </mapper>
