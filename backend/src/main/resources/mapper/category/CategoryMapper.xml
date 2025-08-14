@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.category.CategoryMapper">
+
+  <!-- 생성: AUTO_INCREMENT → 키 채워서 dto.id 에 주입 -->
+  <insert id="insert" parameterType="com.itbank.mall.dto.category.CategoryDto"
+          useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO category (name) VALUES (#{name})
+  </insert>
+
+  <!-- 수정 -->
+  <update id="updateName">
+    UPDATE category SET name = #{name} WHERE id = #{id}
+  </update>
+
+  <!-- 삭제 -->
+  <delete id="delete">
+    DELETE FROM category WHERE id = #{id}
+  </delete>
+
+  <!-- 단건/목록 -->
+  <select id="findById" resultType="com.itbank.mall.dto.category.CategoryDto">
+    SELECT id, name FROM category WHERE id = #{id}
+  </select>
+
+  <select id="findAll" resultType="com.itbank.mall.dto.category.CategoryDto">
+    SELECT id, name FROM category ORDER BY id
+  </select>
+
+  <!-- 존재 확인 -->
+  <select id="existsById" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM category WHERE id = #{id})
+  </select>
+
+  <select id="existsByName" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM category WHERE name = #{name})
+  </select>
+
+</mapper>
