@@ -26,6 +26,8 @@ jobs:
         run: |
           npm ci
           npm run build
+        env:
+          NODE_ENV: production
 
       - name: Set image tags
         id: tags
