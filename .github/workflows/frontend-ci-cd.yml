@@ -20,6 +20,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
 
       - name: Install deps (frontend)
         working-directory: frontend
@@ -29,6 +31,7 @@ jobs:
         working-directory: frontend
         run: NODE_ENV=production npm run build -- --no-lint
 
+      # GHCR 이미지 경로는 소문자만 허용
       - name: Set image tags
         id: tags
         run: |
