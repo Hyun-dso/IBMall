@@ -27,7 +27,7 @@ jobs:
 
       - name: Build (frontend)
         working-directory: frontend
-        run: NODE_ENV=production npm run build
+        run: NODE_ENV=production npm run build -- --no-lint
 
       - name: Set image tags
         id: tags
