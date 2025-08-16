@@ -32,8 +32,10 @@ jobs:
       - name: Set image tags
         id: tags
         run: |
-          echo "IMAGE=ghcr.io/${{ secrets.GHCR_USER }}/ibmall-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
-          echo "IMAGE_MAIN=ghcr.io/${{ secrets.GHCR_USER }}/ibmall-frontend:main" >> $GITHUB_OUTPUT
+          OWNER="${{ secrets.GHCR_USER }}"
+          OWNER_LC="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "IMAGE=ghcr.io/${OWNER_LC}/ibmall-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "IMAGE_MAIN=ghcr.io/${OWNER_LC}/ibmall-frontend:main" >> $GITHUB_OUTPUT
 
       - name: Login to GHCR
         uses: docker/login-action@v3
