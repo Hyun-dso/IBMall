@@ -1,11 +1,11 @@
 // next.config.js
-module.exports = {
+/** / @type {import('next').NextConfig} */
+const nextConfig = {
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_BASE_URL + '/api/:path*',
-      },
-    ];
+  if (process.env.NODE_ENV && process.env.NODE_ENV === 'development') {
+    return [{ source: '/api/:path*', destination: 'http://localhost:8080/api/:path*' }];
+  }
+  return [];
   },
 };
+module.exports = nextConfig;
