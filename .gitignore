@@ -22,9 +22,9 @@ HELP.md
 
 # Gradle
 /backend/.gradle
-/backend/gradle/
-!/backend/gradle/wrapper/gradle-wrapper.jar
-!/backend/src/main/**/build/
+/backend/gradle/*
+!/backend/gradle/wrapper/
+/backend/src/main/**/build/
 
 # === React Frontend ===
 /frontend/node_modules/
