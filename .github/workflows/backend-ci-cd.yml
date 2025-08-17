@@ -7,9 +7,17 @@ on:
       - "backend/**"
       - "deploy/backend/**"
       - ".github/workflows/backend-ci-cd.yml"
+  # 프론트처럼 수동 롤백도 지원
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "이미지 태그 또는 풀 경로 (예: ghcr.io/owner/ibmall-backend:<tag>)"
+        required: true
+        type: string
 
 jobs:
   build-and-deploy:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
 
@@ -56,7 +64,9 @@ jobs:
 
       # 스크립트 배포 (레포 → 배스천 → 각 앱서버)
       - name: Ship backend deploy scripts via Bastion
+        shell: bash
         run: |
+          set -euo pipefail
           echo "${{ secrets.BASTION_KEY }}" > bastion.pem
           chmod 600 bastion.pem
           SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
@@ -65,16 +75,16 @@ jobs:
           APP2="${{ secrets.APP2_HOST }}"
 
           # 2번째 홉용 키를 배스천에 임시 복사
-          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem $SSH_BASTION:/tmp/app.pem
-          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "chmod 600 /tmp/app.pem"
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
 
           # 레포 → 배스천
-          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/deploy.sh   $SSH_BASTION:/tmp/deploy_back.sh
-          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/rollback.sh $SSH_BASTION:/tmp/rollback_back.sh || true
+          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/deploy.sh   "$SSH_BASTION":/tmp/deploy_back.sh
+          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/rollback.sh "$SSH_BASTION":/tmp/rollback_back.sh || true
 
           # 배스천 → 각 앱서버 배치
           for HOST in "$APP1" "$APP2"; do
-            ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
+            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
               "scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/deploy_back.sh   ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
                ( [ -f /tmp/rollback_back.sh ] && scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/rollback_back.sh ${APP_USER}@${HOST}:/tmp/rollback_back.sh || true ) && \
                ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
@@ -90,7 +100,9 @@ jobs:
           IMAGE: ${{ steps.tags.outputs.IMAGE }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
           GHCR_PAT:  ${{ secrets.GHCR_PAT }}
+        shell: bash
         run: |
+          set -euo pipefail
           echo "${{ secrets.BASTION_KEY }}" > bastion.pem
           chmod 600 bastion.pem
           SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
@@ -99,7 +111,45 @@ jobs:
           APP2="${{ secrets.APP2_HOST }}"
 
           # 2번째 홉용 키
-          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem $SSH_BASTION:/tmp/app.pem
-          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "chmod 600 /tmp/app.pem"
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
 
-          for HOST
+          for HOST in "$APP1" "$APP2"; do
+            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
+              "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
+               'echo \"${GHCR_PAT}\" | sudo docker login ghcr.io -u \"${GHCR_USER}\" --password-stdin && \
+                ENV_FILE=/home/ubuntu/env/backend.prod DATA_ROOT=/home/ubuntu/upload SPRING_PROFILES_ACTIVE=prod \
+                sudo /home/ubuntu/deploy/backend/deploy.sh \"${IMAGE}\"'"
+          done
+
+  # ===== 수동 롤백 잡 =====
+  rollback:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Roll back to specific image via Bastion
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="${{ inputs.image }}"
+          echo "Rollback target image: $IMAGE"
+
+          echo "${{ secrets.BASTION_KEY }}" > bastion.pem
+          chmod 600 bastion.pem
+          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
+          APP_USER="${{ secrets.APP_USER }}"
+          APP1="${{ secrets.APP1_HOST }}"
+          APP2="${{ secrets.APP2_HOST }}"
+
+          # 2-hop key
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+
+          for HOST in "$APP1" "$APP2"; do
+            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
+              "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
+               'sudo /home/ubuntu/deploy/backend/rollback.sh \"${IMAGE}\"'"
+          done
