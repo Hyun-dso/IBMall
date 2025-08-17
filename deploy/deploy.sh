@@ -5,7 +5,7 @@ set -euo pipefail
 IMAGE="${1:?Usage: deploy.sh <image>}"
 BLUE_PORT="${BLUE_PORT:-3000}"
 GREEN_PORT="${GREEN_PORT:-3001}"
-HEALTH_PATH="${HEALTH_PATH:-/health}"
+HEALTH_PATH="${HEALTH_PATH:-/api/health}"
 SNIPPET="/etc/nginx/snippets/ibmall-upstream.conf"
 
 echo "[deploy] image=${IMAGE}"
