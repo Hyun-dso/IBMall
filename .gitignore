@@ -24,7 +24,6 @@ HELP.md
 /backend/.gradle
 /backend/gradle/*
 !/backend/gradle/wrapper/
-/backend/src/main/**/build/
 
 # === React Frontend ===
 /frontend/node_modules/
