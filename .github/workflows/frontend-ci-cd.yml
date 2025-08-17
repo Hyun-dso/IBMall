@@ -56,21 +56,38 @@ jobs:
 
       - name: Ship deploy & rollback scripts to web-ec2 via Bastion
         run: |
+          # 1) 러너 -> 배스천 접속용 키 생성
           echo "${{ secrets.BASTION_KEY }}" > bastion.pem
           chmod 600 bastion.pem
+
           SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
-          SSH_WEB="${{ secrets.APP_USER }}@${{ secrets.APP1_HOST }}"
+          SSH_WEB="${{ secrets.APP_USER }}@${{ secrets.APP1_HOST }}"   # ← 프라이빗 IP
 
+          # 2) 같은 키를 배스천에 임시 복사해 2번째 홉에서 사용
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem $SSH_BASTION:/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "chmod 600 /tmp/app.pem"
+
+          # 3) 배스천 -> 웹EC2: 디렉토리 준비 (2번째 홉은 /tmp/app.pem 사용)
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
-            "ssh -o StrictHostKeyChecking=no $SSH_WEB 'mkdir -p /home/ubuntu/deploy'"
+            "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem $SSH_WEB 'mkdir -p /home/ubuntu/deploy'"
 
+          # 4) 스크립트 전달(러너→배스천→웹EC2)
           scp -o StrictHostKeyChecking=no -i bastion.pem deploy/deploy.sh $SSH_BASTION:/tmp/deploy.sh
           scp -o StrictHostKeyChecking=no -i bastion.pem deploy/rollback.sh $SSH_BASTION:/tmp/rollback.sh
-          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "scp -o StrictHostKeyChecking=no /tmp/deploy.sh $SSH_WEB:/tmp/deploy.sh"
-          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "scp -o StrictHostKeyChecking=no /tmp/rollback.sh $SSH_WEB:/tmp/rollback.sh"
 
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
-            "ssh -o StrictHostKeyChecking=no $SSH_WEB 'sudo mv /tmp/deploy.sh /home/ubuntu/deploy/deploy.sh && sudo mv /tmp/rollback.sh /home/ubuntu/deploy/rollback.sh && sudo chmod +x /home/ubuntu/deploy/*.sh'"
+            "scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/deploy.sh $SSH_WEB:/tmp/deploy.sh && \
+             scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/rollback.sh $SSH_WEB:/tmp/rollback.sh"
+
+          # 5) 권한/배치
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
+            "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem $SSH_WEB \
+             'sudo mv /tmp/deploy.sh /home/ubuntu/deploy/deploy.sh && \
+              sudo mv /tmp/rollback.sh /home/ubuntu/deploy/rollback.sh && \
+              sudo chmod +x /home/ubuntu/deploy/*.sh'"
+
+          # (선택) 배스천 임시 키 삭제
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION 'shred -u /tmp/app.pem' || true
 
       - name: Deploy (blue/green port switch via Bastion)
         env:
@@ -80,10 +97,18 @@ jobs:
         run: |
           echo "${{ secrets.BASTION_KEY }}" > bastion.pem
           chmod 600 bastion.pem
+
           SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
-          SSH_WEB="${{ secrets.APP_USER }}@${{ secrets.APP1_HOST }}"
+          SSH_WEB="${{ secrets.APP_USER }}@${{ secrets.APP1_HOST }}"   # ← 프라이빗 IP
+
+          # 같은 키를 배스천에 다시 전달해 배포 실행에도 사용
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem $SSH_BASTION:/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "chmod 600 /tmp/app.pem"
 
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
-            "ssh -o StrictHostKeyChecking=no $SSH_WEB \
+            "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem $SSH_WEB \
              'echo \"$GHCR_PAT\" | sudo docker login ghcr.io -u \"$GHCR_USER\" --password-stdin && \
-               sudo /home/ubuntu/deploy/deploy.sh \"$IMAGE\"'"
+              sudo /home/ubuntu/deploy/deploy.sh \"$IMAGE\"'"
+
+          # (선택) 배스천 임시 키 삭제
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION 'shred -u /tmp/app.pem' || true
