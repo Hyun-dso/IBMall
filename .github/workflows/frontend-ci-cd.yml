@@ -109,7 +109,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
             "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem $SSH_WEB \
              'echo \"$GHCR_PAT\" | sudo docker login ghcr.io -u \"$GHCR_USER\" --password-stdin && \
-              sudo /home/ubuntu/deploy/deploy.sh \"$IMAGE\"'"
+              HEALTH_PATH=/api/health sudo /home/ubuntu/deploy/deploy.sh \"$IMAGE\"'"
 
           # (선택) 배스천 임시 키 삭제
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION 'shred -u /tmp/app.pem' || true
