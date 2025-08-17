@@ -2,29 +2,34 @@
 set -euo pipefail
 
 IMAGE="${1:?Usage: deploy.sh <image>}"
-SERVICE="${SERVICE:-ibmall-backend}"      # 컨테이너 이름 prefix
-PORT="${PORT:-8080}"                       # 호스트/컨테이너 내부 모두 8080
+SERVICE="${SERVICE:-ibmall-backend}"      # 컨테이너 이름 (고정)
+PORT="${PORT:-8080}"                      # 호스트/컨테이너 모두 8080
 HEALTH_PATH="${HEALTH_PATH:-/actuator/health}"
 ENV_FILE="${ENV_FILE:-/home/ubuntu/env/backend.prod}"
 
-NAME="${SERVICE}"                           # 고정 이름(blue/green 안 씀)
+NAME="${SERVICE}"
 
 echo "[deploy-backend] image=$IMAGE port=$PORT health=$HEALTH_PATH"
 
 # 이미지 풀
 sudo docker pull "$IMAGE"
 
-# 기존 컨테이너 있으면 부드럽게 교체
+# 기존 컨테이너 있으면 정리
 if sudo docker ps -a --format '{{.Names}}' | grep -q "^${NAME}$"; then
   echo "[deploy-backend] stopping old container..."
   sudo docker rm -f "$NAME" >/dev/null 2>&1 || true
 fi
 
-# 새 컨테이너 실행 (고정 포트)
+# EFS 루트(호스트) 경로 준비
+DATA_ROOT="${DATA_ROOT:-/home/ubuntu/upload}"
+sudo mkdir -p "${DATA_ROOT}/productImg" "${DATA_ROOT}/messageImg"
+
+# 새 컨테이너 실행 (EFS 마운트 ↔ 컨테이너 동일 경로)
 sudo docker run -d --name "$NAME" -p ${PORT}:${PORT} \
   --restart=always \
   --env-file "$ENV_FILE" \
   -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-prod}" \
+  -v "${DATA_ROOT}:${DATA_ROOT}:rw" \
   "$IMAGE"
 
 # 헬스체크 대기
