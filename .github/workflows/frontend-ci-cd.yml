@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "frontend/**"
+      - "deploy/**"
       - ".github/workflows/frontend-ci-cd.yml"
 
 jobs:
