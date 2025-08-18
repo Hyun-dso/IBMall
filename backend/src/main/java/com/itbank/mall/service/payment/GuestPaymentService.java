@@ -214,7 +214,7 @@ public class GuestPaymentService {
         order.setTotalPrice(total);
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("GUEST");
-        order.setStatus("주문완료");
+        order.setStatus("ORDERED");
         order.setOrderUid(dto.getOrderUid());
         orderMapper.insertOrder(order);
 
@@ -299,7 +299,7 @@ public class GuestPaymentService {
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("GUEST");
         order.setOrderUid(dto.getOrderUid());
-        order.setStatus("주문완료");
+        order.setStatus("ORDERED");
         orderMapper.insertOrder(order);
 
         // 5) 주문상세 (DTO의 item.price는 무시, 서버 단가 저장)

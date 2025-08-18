@@ -1,11 +1,18 @@
-// next.config.js
-/** / @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
   async rewrites() {
-  if (process.env.NODE_ENV && process.env.NODE_ENV === 'development') {
-    return [{ source: '/api/:path*', destination: 'http://localhost:8080/api/:path*' }];
-  }
-  return [];
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/api/:path*',
+          destination: 'http://localhost:8080/api/:path*',
+        },
+      ]
+    }
+    // 운영 환경에서는 Nginx/ALB가 proxy_pass 처리
+    return []
   },
-};
-module.exports = nextConfig;
+}
+
+export default nextConfig
