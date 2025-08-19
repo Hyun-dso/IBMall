@@ -38,35 +38,47 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // ✅ 공개(비회원) 허용 경로 — 중복 제거 완료
+                // ✅ 비회원 접근 허용 경로 (두 브랜치 합집합, 중복 제거)
                 .requestMatchers(
                     "/", "/js/**", "/css/**", "/images/**",
-                    "/api/auth/**",
-                    "/api/members/signup",
-                    "/api/members/check-nickname", "/api/members/check-email", "/api/members/check-phone",
-                    "/api/email/**", "/api/password/**", "/api/oauth2/**",
-                    "/api/payments/**", "/api/payments/v2-result",
-                    "/api/products/**", "/api/products",
-                    "/product/**", "/shop/**",
-                    "/api/images/**",
                     "/signin", "/signup",
                     "/auth/signin", "/auth/signup",
                     "/paymenttest",
+                    "/product/**", "/shop/**",
+                    "/actuator/health",
+
+                    "/api/auth/**",
+                    "/api/members/signup",
+                    "/api/members/check-nickname", "/api/members/check-email", "/api/members/check-phone",
+                    "/api/email/**",
+                    "/api/password/**",
+                    "/api/oauth2/**",
+
+                    "/api/products/**",
+                    "/api/images/**",
                     "/api/reviews", "/api/reviews/**",
-                    "/actuator/health"
+
+                    // 아래 3개는 origin/CJY0913에서 공개로 열어둔 경로 (의도된 공개라면 유지)
+                    "/api/admin/images/**",
+                    "/api/admin/options/**",
+                    "/api/admin/option-types/**",
+
+                    // 결제 (V1/V2 및 조회)
+                    "/api/payments/**",
+                    "/api/payments/v2-result"
                 ).permitAll()
 
-                // ✅ 메서드별 인증 필요
+                // ✅ 메서드별 인증 요구
                 .requestMatchers(HttpMethod.DELETE, "/admin/grade-rule/delete/**").authenticated()
 
-                // ✅ 인증 필요한 경로(관리/마이페이지 등)
+                // ✅ 인증 필요한 경로
                 .requestMatchers(
                     "/api/members/me",
                     "/api/mypage/**",
                     "/api/orders/me",
                     "/api/message",
                     "/api/admin/message/send",
-                    "/api/admin/**",
+                    "/api/admin/**",                 // 단, 위 permitAll에 명시된 세부 경로는 선행 허용됨
                     "/admin/grade-rule/delete",
                     "/api/admin/order/*/status",
                     "/api/qna/**",
@@ -85,7 +97,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 배포/로컬 겸용 (쿠키 인증 전제)
+        // 배포/로컬 겸용 (HttpOnly 쿠키 인증 전제)
         config.setAllowedOriginPatterns(List.of(
             "https://ibmall.shop",
             "https://www.ibmall.shop",
@@ -94,7 +106,6 @@ public class SecurityConfig {
             "http://127.0.0.1:3000",
             "http://192.168.*:*"
         ));
-
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Requested-With", "Accept"));
         config.setAllowCredentials(true);

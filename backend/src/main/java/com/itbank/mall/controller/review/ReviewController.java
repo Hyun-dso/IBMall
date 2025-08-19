@@ -15,7 +15,11 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    // 리뷰 작성
+    /**
+     * 리뷰 작성 API
+     * @param review 리뷰 정보 (productId, memberId, paymentId, orderItemId 등)
+     * @return 등록 결과 메시지
+     */
     @PostMapping
     public ApiResponse<String> writeReview(@RequestBody Review review) {
         boolean alreadyWritten = reviewService.hasAlreadyWritten(review.getMemberId(), review.getOrderItemId());
@@ -28,9 +32,13 @@ public class ReviewController {
         return ApiResponse.ok("리뷰가 등록되었습니다.");
     }
 
-    // 상품별 리뷰 목록 조회
+    /**
+     * 상품별 리뷰 목록 조회 API
+     * @param productId 리뷰를 조회할 상품 ID
+     * @return 해당 상품에 대한 공개 리뷰 목록
+     */
     @GetMapping("/product/{productId}")
-    public ApiResponse<List<Review>> getProductReviews(@PathVariable Long productId) {
+    public ApiResponse<List<Review>> getProductReviews(@PathVariable("productId") Long productId) {
         List<Review> reviews = reviewService.getProductReviews(productId);
         return ApiResponse.ok(reviews);
     }
