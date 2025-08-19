@@ -61,8 +61,10 @@ public class PortoneV2Client {
     private static String normalizeStatus(String s) {
         if (s == null) return null;
         s = s.trim();
-        return "paid".equalsIgnoreCase(s) ? "PAID"
+        return "paid".equalsIgnoreCase(s) ? "SUCCESS"
+        		: "success".equalsIgnoreCase(s) ? "SUCCESS"
                 : "cancelled".equalsIgnoreCase(s) ? "CANCELLED"
+                : "refunded".equalsIgnoreCase(s) ? "REFUNDED"
                 : "failed".equalsIgnoreCase(s) ? "FAILED"
                 : s.toUpperCase();
     }

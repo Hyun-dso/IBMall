@@ -1,64 +1,61 @@
 // /components/ui/Button.tsx
-'use client';
 
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Slot } from '@radix-ui/react-slot';
-import { type ButtonHTMLAttributes } from 'react';
-import { cn } from '@/lib/utils'; // 없으면 /lib/utils.ts에 cn 유틸 추가
+import { cn } from '@/lib/utils';
+import { ButtonHTMLAttributes } from 'react';
+import { Slot } from '@radix-ui/react-slot'; // 추가
 
 const buttonVariants = cva(
-    'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed hover:cursor-pointer',
-    {
-        variants: {
-            variant: {
-                solid:
-                    // 배경은 primary, hover는 opacity로 처리(팔레트 외 색상 금지)
-                    'bg-primary text-text-primary hover:opacity-90',
-                outline:
-                    'border border-border bg-transparent text-text-primary hover:bg-surface dark:border-dark-border dark:text-dark-text-primary dark:hover:bg-dark-surface',
-                ghost:
-                    'bg-transparent text-text-primary hover:bg-surface dark:text-dark-text-primary dark:hover:bg-dark-surface',
-            },
-            size: {
-                sm: 'h-9 px-3 text-sm',
-                md: 'h-11 px-4 text-base',
-                lg: 'h-12 px-6 text-base',
-                icon: 'h-11 w-11 p-0',
-            },
-            full: {
-                true: 'w-full',
-                false: '',
-            },
-        },
-        defaultVariants: {
-            variant: 'solid',
-            size: 'md',
-            full: false,
-        },
-    }
+  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none hover:cursor-pointer',
+  {
+    variants: {
+      variant: {
+        solid: 'bg-primary hover:bg-accent text-black',
+        outline:
+          'border border-border text-text-primary dark:text-dark-text-primary dark:border-dark-border hover:bg-surface dark:hover:bg-dark-surface',
+        ghost:
+          'text-text-secondary hover:text-text-primary dark:text-dark-text-secondary dark:hover:text-dark-text-primary',
+      },
+      size: {
+        sm: 'h-8 px-3 text-sm',
+        md: 'h-10 px-4 text-base',
+        lg: 'h-12 px-6 text-lg',
+        icon: 'h-10 w-10 p-0',
+      },
+      full: {
+        true: 'w-full',
+        false: '',
+      },
+    },
+    defaultVariants: {
+      variant: 'solid',
+      size: 'md',
+      full: false,
+    },
+  }
 );
 
-export interface ButtonProps
-    extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-    asChild?: boolean;
+interface ButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
+  VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
 }
 
 export default function Button({
-    className,
-    variant,
-    size,
-    full,
-    asChild = false,
-    type = 'button',
-    ...props
+  className,
+  variant,
+  size,
+  full,
+  asChild = false,
+  type = 'button',
+  ...props
 }: ButtonProps) {
-    const Comp = asChild ? Slot : 'button';
-    return (
-        <Comp
-            type={asChild ? undefined : type}
-            className={cn(buttonVariants({ variant, size, full }), className)}
-            {...props}
-        />
-    );
+  const Comp = asChild ? Slot : 'button';
+  return (
+    <Comp
+      type={asChild ? undefined : type}
+      className={cn(buttonVariants({ variant, size, full }), className)}
+      {...props}
+    />
+  );
 }

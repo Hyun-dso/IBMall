@@ -251,7 +251,7 @@ public class MemberPaymentService {
         order.setTotalPrice(total);
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("MEMBER");
-        order.setStatus("주문완료");
+        order.setStatus("ORDERED");
         order.setOrderUid(dto.getOrderUid());
         orderMapper.insertOrder(order);
 
@@ -348,7 +348,7 @@ public class MemberPaymentService {
         order.setTotalPrice(total);
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderType("MEMBER");
-        order.setStatus("주문완료");
+        order.setStatus("ORDERED");
         order.setOrderUid(dto.getOrderUid());
         orderMapper.insertOrder(order);
 
