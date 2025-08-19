@@ -23,5 +23,4 @@ public class Payment {
     private String buyerPhone;
     private LocalDateTime createdAt;
     private Long orderId;
-    
 }

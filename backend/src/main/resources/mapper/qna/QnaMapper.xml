@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.qna.QnaMapper">
+
+    <!-- 사용자: QnA 등록 -->
+    <insert id="insert" parameterType="com.itbank.mall.dto.qna.QnaCreateDto">
+        INSERT INTO qna (member_id, title, content, is_secret)
+        VALUES (#{memberId}, #{title}, #{content}, #{isSecret})
+    </insert>
+
+    <!-- 사용자: 본인 QnA 목록 -->
+    <select id="selectByMemberId" resultType="com.itbank.mall.dto.qna.QnaDto">
+        SELECT
+            q.qna_id AS qnaId,
+            q.member_id AS memberId,
+            q.title,
+            q.content,
+            q.is_secret AS isSecret,
+            q.answer,
+            q.answered_at AS answeredAt,
+            q.created_at AS createdAt,
+            q.updated_at AS updatedAt,
+            m.nickname
+        FROM qna q
+        JOIN member m ON q.member_id = m.id
+        WHERE q.member_id = #{memberId}
+        ORDER BY q.created_at DESC
+    </select>
+
+    <!-- 사용자: 상세조회 -->
+    <select id="selectById" resultType="com.itbank.mall.dto.qna.QnaDto">
+        SELECT
+            q.qna_id AS qnaId,
+            q.member_id AS memberId,
+            q.title,
+            q.content,
+            q.is_secret AS isSecret,
+            q.answer,
+            q.answered_at AS answeredAt,
+            q.created_at AS createdAt,
+            q.updated_at AS updatedAt,
+            m.nickname
+        FROM qna q
+        JOIN member m ON q.member_id = m.id
+        WHERE q.qna_id = #{qnaId}
+    </select>
+
+    <!-- 관리자: 전체 QnA 목록 -->
+    <select id="selectAll" resultType="com.itbank.mall.dto.qna.QnaDto">
+        SELECT
+            q.qna_id AS qnaId,
+            q.member_id AS memberId,
+            q.title,
+            q.content,
+            q.is_secret AS isSecret,
+            q.answer,
+            q.answered_at AS answeredAt,
+            q.created_at AS createdAt,
+            q.updated_at AS updatedAt,
+            m.nickname
+        FROM qna q
+        JOIN member m ON q.member_id = m.id
+        ORDER BY q.created_at DESC
+    </select>
+    
+    <select id="selectDetailById" resultType="com.itbank.mall.dto.qna.QnaDto">
+    SELECT q.*, m.nickname
+    FROM qna q
+    JOIN member m ON q.member_id = m.id
+    WHERE q.qna_id = #{qnaId}
+</select>
+
+    <!-- 관리자: 답변 등록 -->
+    <update id="updateAnswer" parameterType="com.itbank.mall.dto.qna.QnaAnswerDto">
+        UPDATE qna
+        SET answer = #{answer},
+            answered_at = NOW()
+        WHERE qna_id = #{qnaId}
+    </update>
+
+</mapper>

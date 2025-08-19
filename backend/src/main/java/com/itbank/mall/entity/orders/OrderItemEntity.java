@@ -1,4 +1,3 @@
-// com.itbank.mall.entity.orders.OrderItemEntity
 package com.itbank.mall.entity.orders;
 
 import lombok.Getter;
