@@ -16,5 +16,6 @@ public class Member {
     private String providerId;     // 소셜 로그인용 고유값 (일반 회원은 null)
     private Boolean verified;    // 이메일 인증 여부
     private String grade;
+    private String role;
     private LocalDateTime createdAt;
 }
