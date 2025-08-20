@@ -1,7 +1,8 @@
 package com.itbank.mall.service.category;
 
 import com.itbank.mall.dto.category.CategoryDto;
-import com.itbank.mall.mapper.category.CategoryMapper;
+import com.itbank.mall.mapper.product.CategoryMapper;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

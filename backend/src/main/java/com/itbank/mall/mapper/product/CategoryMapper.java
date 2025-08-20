@@ -1,4 +1,4 @@
-package com.itbank.mall.mapper.category;
+package com.itbank.mall.mapper.product;
 
 import com.itbank.mall.dto.category.CategoryDto;
 import org.apache.ibatis.annotations.Mapper;
