@@ -13,6 +13,7 @@ public class MemberCartPaymentRequestDto {
     private int paidAmount;
     private int originalAmount;
     private String status;
+    private String paymentId;
     private String transactionId;
     private String pgProvider;
 

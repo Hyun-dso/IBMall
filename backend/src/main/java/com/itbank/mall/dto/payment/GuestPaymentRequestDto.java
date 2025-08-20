@@ -12,6 +12,7 @@ public class GuestPaymentRequestDto {
     private int paidAmount;
     private String paymentMethod;
     private String status;
+    private String paymentId;
     private String transactionId;
     private String pgProvider;
 
