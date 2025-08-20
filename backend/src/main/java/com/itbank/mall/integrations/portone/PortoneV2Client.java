@@ -61,11 +61,20 @@ public class PortoneV2Client {
     private static String normalizeStatus(String s) {
         if (s == null) return null;
         s = s.trim();
+<<<<<<< HEAD
         return "paid".equalsIgnoreCase(s) ? "SUCCESS"
         		: "success".equalsIgnoreCase(s) ? "SUCCESS"
                 : "cancelled".equalsIgnoreCase(s) ? "CANCELLED"
                 : "refunded".equalsIgnoreCase(s) ? "REFUNDED"
                 : "failed".equalsIgnoreCase(s) ? "FAILED"
                 : s.toUpperCase();
+=======
+        return "paid".equalsIgnoreCase(s) ? "SUCCESS"   // PortOne 응답 paid → SUCCESS
+             : "success".equalsIgnoreCase(s) ? "SUCCESS" // 혹시 success도 오면 SUCCESS
+             : "cancelled".equalsIgnoreCase(s) ? "CANCELLED"
+             : "refunded".equalsIgnoreCase(s) ? "REFUNDED"
+             : "failed".equalsIgnoreCase(s) ? "FAILED"
+             : s.toUpperCase();
+>>>>>>> origin/0819
     }
 }

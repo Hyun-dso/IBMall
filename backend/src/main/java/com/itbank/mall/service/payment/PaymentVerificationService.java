@@ -12,7 +12,7 @@ public class PaymentVerificationService {
 
     private final PortoneV2Client client;
 
-    /** txId로 서버 검증 후, 금액 일치/상태=PAID가 아니면 예외 */
+    /** txId로 서버 검증 후, 금액 일치/상태=SUCCESS가 아니면 예외 */
     public VerifiedPayment verifyOrThrow(String txId, int expectedAmount) {
         VerifiedPayment v = client.getPaymentByTxId(txId);
         if (v.getAmount() == null || v.getAmount() != expectedAmount) {

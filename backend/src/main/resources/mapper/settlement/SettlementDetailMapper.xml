@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.settlement.SettlementDetailMapper">
+
+    <!-- INSERT -->
+<insert id="insertSettlement">
+    INSERT INTO settlement_detail (
+        order_id, product_id, member_id, category_id,
+        quantity, amount,
+        coupon_discount, mileage_used, delivery_fee, delivery_cost,
+        refund_amount, refund_reason,
+        type, status, payment_method,
+        settlement_date, created_by
+    ) VALUES (
+        #{orderId}, #{productId}, #{memberId}, #{categoryId},
+        #{quantity}, #{amount},
+        #{couponDiscount}, #{mileageUsed}, #{deliveryFee}, #{deliveryCost},
+        #{refundAmount}, #{refundReason},
+        #{type}, #{status}, #{paymentMethod},
+        #{settlementDate}, #{createdBy}
+    )
+</insert>
+
+    <!-- 전체 조회 (JOIN product) -->
+<select id="selectAllSettlements" resultType="com.itbank.mall.dto.settlement.SettlementDetailDto">
+    SELECT 
+        s.id,
+        s.order_id AS orderId,
+        s.product_id AS productId,
+        s.member_id AS memberId,
+        s.category_id AS categoryId,
+        s.quantity,
+        s.amount,
+        s.coupon_discount AS couponDiscount,
+        s.mileage_used AS mileageUsed,
+        s.delivery_fee AS deliveryFee,
+        s.delivery_cost AS deliveryCost,
+        s.refund_amount AS refundAmount,
+        s.refund_reason AS refundReason,
+        s.type,
+        s.status,
+        s.payment_method AS paymentMethod,
+        s.settlement_date AS settlementDate,
+        s.created_by AS createdBy,
+        p.name AS productName
+    FROM settlement_detail s
+    JOIN product p ON s.product_id = p.product_id
+</select>
+
+    <!-- 타입별 조회 -->
+    <select id="selectByType" resultType="com.itbank.mall.dto.settlement.SettlementDetailDto">
+		SELECT
+		s.*,
+		p.name AS productName
+		FROM settlement_detail s
+		JOIN product p ON s.product_id = p.product_id
+		WHERE s.type = #{type}
+    </select>
+
+    <!-- 날짜 범위 조회 -->
+    <select id="selectByDateRange" resultType="com.itbank.mall.dto.settlement.SettlementDetailDto">
+        SELECT 
+            s.*, 
+            p.name AS productName
+        FROM settlement_detail s
+        JOIN product p ON s.product_id = p.product_id
+        WHERE settlement_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="selectByOrderId" resultType="com.itbank.mall.dto.settlement.SettlementDetailDto">
+        SELECT 
+            s.*, 
+            p.name AS productName
+        FROM settlement_detail s
+        JOIN product p ON s.product_id = p.product_id
+        WHERE s.order_id = #{orderId}
+    </select>
+    
+        <!-- 배송 상태 조회 -->
+    <select id="selectDeliveryStatusByOrderId" resultType="string">
+        SELECT status
+        FROM deliveries
+        WHERE order_id = #{orderId}
+    </select>
+    
+<select id="search" resultType="com.itbank.mall.dto.settlement.SettlementDetailDto">
+    SELECT 
+        sd.*, p.name AS productName, m.nickname AS memberNickname,
+        p.category_id AS categoryId  <!-- ✅ 직접 product 테이블에서 가져옴 -->
+    FROM settlement_detail sd
+    JOIN product p ON sd.product_id = p.product_id
+    JOIN member m ON sd.member_id = m.id
+    WHERE 1 = 1
+    <if test="type != null"> AND sd.type = #{type} </if>
+    <if test="start != null and end != null"> AND sd.created_at BETWEEN #{start} AND #{end} </if>
+    <if test="memberId != null"> AND sd.member_id = #{memberId} </if>
+    <if test="productId != null"> AND sd.product_id = #{productId} </if>
+    <if test="categoryId != null"> AND p.category_id = #{categoryId} </if> <!-- ✅ 변경됨 -->
+    <if test="status != null"> AND sd.status = #{status} </if>
+</select>
+
+
+</mapper>

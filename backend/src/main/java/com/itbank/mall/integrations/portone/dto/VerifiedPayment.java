@@ -8,7 +8,7 @@ import lombok.Value;
 @Builder
 public class VerifiedPayment {
     String txId;           // 조회 기준
-    String status;         // PAID/CANCELLED/FAILED 등
+    String status;         // SUCCESS/CANCELLED/FAILED 등
     Integer amount;        // 총 결제 금액
     String currency;       // KRW
     String payMethod;      // CARD/KAKAOPAY/...

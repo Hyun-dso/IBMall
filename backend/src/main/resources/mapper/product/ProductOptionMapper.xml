@@ -19,4 +19,47 @@
     LIMIT 1
   </select>
 
+    <!-- 컬럼 ↔ 필드 매핑 -->
+    <resultMap id="ProductOptionMap" type="com.itbank.mall.entity.product.ProductOption">
+        <id     property="id"           column="id"/>
+        <result property="productId"    column="product_id"/>
+        <result property="optionTypeId" column="option_type_id"/>
+        <result property="optionValue"  column="option_value"/>
+        <result property="extraPrice"   column="extra_price"/>
+        <result property="stock"        column="stock"/>
+    </resultMap>
+
+    <!-- 1. 특정 상품의 옵션 전체 조회 -->
+    <select id="findByProductId" resultMap="ProductOptionMap" parameterType="long">
+        SELECT id, product_id, option_type_id, option_value, extra_price, stock
+        FROM product_option
+        WHERE product_id = #{productId}
+        ORDER BY id DESC
+    </select>
+
+    <!-- 2. 옵션 추가 -->
+    <insert id="insert" parameterType="com.itbank.mall.entity.product.ProductOption">
+        INSERT INTO product_option (
+            product_id, option_type_id, option_value, extra_price, stock
+        ) VALUES (
+            #{productId}, #{optionTypeId}, #{optionValue}, #{extraPrice}, #{stock}
+        )
+    </insert>
+
+    <!-- 3. 옵션 삭제 -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM product_option
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 4. 옵션 수정 -->
+    <update id="update" parameterType="com.itbank.mall.entity.product.ProductOption">
+        UPDATE product_option
+        SET option_type_id = #{optionTypeId},
+            option_value   = #{optionValue},
+            extra_price    = #{extraPrice},
+            stock          = #{stock}
+        WHERE id = #{id}
+    </update>
+
 </mapper>

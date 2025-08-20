@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "frontend/**"
+      - "deploy/frontend/**"
       - ".github/workflows/frontend-ci-cd.yml"
 
 jobs:
@@ -20,18 +21,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
 
-      - name: Install & Build (frontend)
+      - name: Install deps (frontend)
         working-directory: frontend
-        run: |
-          npm ci
-          npm run build
+        run: NPM_CONFIG_PRODUCTION=false npm ci
 
+      - name: Build (frontend)
+        working-directory: frontend
+        run: NODE_ENV=production npm run build -- --no-lint
+
+      # GHCR 이미지 경로는 소문자만 허용
       - name: Set image tags
         id: tags
         run: |
-          echo "IMAGE=ghcr.io/${{ secrets.GHCR_USER }}/ibmall-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
-          echo "IMAGE_MAIN=ghcr.io/${{ secrets.GHCR_USER }}/ibmall-frontend:main" >> $GITHUB_OUTPUT
+          OWNER="${{ secrets.GHCR_USER }}"
+          OWNER_LC="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "IMAGE=ghcr.io/${OWNER_LC}/ibmall-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "IMAGE_MAIN=ghcr.io/${OWNER_LC}/ibmall-frontend:main" >> $GITHUB_OUTPUT
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -47,30 +55,37 @@ jobs:
           docker push "${{ steps.tags.outputs.IMAGE }}"
           docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
 
-      # CloudFront 무효화 (필요시)
-      # - name: Invalidate CloudFront
-      #   run: aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/"
-
-      - name: Ship deploy & rollback scripts to web-ec2 via Bastion
+      - name: Ship frontend deploy scripts via Bastion
         run: |
           echo "${{ secrets.BASTION_KEY }}" > bastion.pem
           chmod 600 bastion.pem
+
           SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
-          SSH_WEB="${{ secrets.APP_USER }}@${{ secrets.APP1_HOST }}"
+          SSH_WEB="${{ secrets.APP_USER }}@${{ secrets.WEB_HOST }}"   # ← 프라이빗 IP
 
-          # deploy 폴더 생성
+          # 두 번째 홉용 키를 배스천에 임시 복사
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem $SSH_BASTION:/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "chmod 600 /tmp/app.pem"
+
+          # (1) 레포 → 배스천
+          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/frontend/deploy.sh   $SSH_BASTION:/tmp/deploy_front.sh
+          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/frontend/rollback.sh $SSH_BASTION:/tmp/rollback_front.sh
+
+          # (2) 배스천 → 웹 EC2
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
-            "ssh -o StrictHostKeyChecking=no $SSH_WEB 'mkdir -p /home/ubuntu/deploy'"
+            "scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/deploy_front.sh   $SSH_WEB:/tmp/deploy_front.sh && \
+             scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/rollback_front.sh $SSH_WEB:/tmp/rollback_front.sh"
 
-          # 스크립트 전송
-          scp -o StrictHostKeyChecking=no -i bastion.pem deploy/deploy.sh $SSH_BASTION:/tmp/deploy.sh
-          scp -o StrictHostKeyChecking=no -i bastion.pem deploy/rollback.sh $SSH_BASTION:/tmp/rollback.sh
-          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "scp -o StrictHostKeyChecking=no /tmp/deploy.sh $SSH_WEB:/tmp/deploy.sh"
-          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "scp -o StrictHostKeyChecking=no /tmp/rollback.sh $SSH_WEB:/tmp/rollback.sh"
-
-          # 권한 변경 (sudo)
+          # (3) 웹 EC2에 배치
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
-            "ssh -o StrictHostKeyChecking=no $SSH_WEB 'sudo mv /tmp/deploy.sh /home/ubuntu/deploy/deploy.sh && sudo mv /tmp/rollback.sh /home/ubuntu/deploy/rollback.sh && sudo chmod +x /home/ubuntu/deploy/*.sh'"
+            "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem $SSH_WEB \
+             'mkdir -p /home/ubuntu/deploy/frontend && \
+              sudo mv /tmp/deploy_front.sh   /home/ubuntu/deploy/frontend/deploy.sh && \
+              sudo mv /tmp/rollback_front.sh /home/ubuntu/deploy/frontend/rollback.sh && \
+              sudo chmod +x /home/ubuntu/deploy/frontend/*.sh'"
+
+          # (선택) 배스천 임시 키 삭제
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION 'shred -u /tmp/app.pem' || true
 
       - name: Deploy (blue/green port switch via Bastion)
         env:
@@ -80,10 +95,19 @@ jobs:
         run: |
           echo "${{ secrets.BASTION_KEY }}" > bastion.pem
           chmod 600 bastion.pem
-          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
-          SSH_WEB="${{ secrets.APP_USER }}@${{ secrets.APP1_HOST }}"
 
+          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
+          SSH_WEB="${{ secrets.APP_USER }}@${{ secrets.WEB_HOST }}"   # ← 프라이빗 IP
+
+          # 두 번째 홉용 키를 배스천에 임시 복사
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem $SSH_BASTION:/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "chmod 600 /tmp/app.pem"
+
+          # 프론트 배포 실행 (헬스체크 경로는 /api/health)
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
-            "ssh -o StrictHostKeyChecking=no $SSH_WEB \
+            "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem $SSH_WEB \
              'echo \"$GHCR_PAT\" | sudo docker login ghcr.io -u \"$GHCR_USER\" --password-stdin && \
-               sudo /home/ubuntu/deploy/deploy.sh \"$IMAGE\"'"
+              HEALTH_PATH=/api/health sudo /home/ubuntu/deploy/frontend/deploy.sh \"$IMAGE\"'"
+
+          # (선택) 배스천 임시 키 삭제
+          ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION 'shred -u /tmp/app.pem' || true

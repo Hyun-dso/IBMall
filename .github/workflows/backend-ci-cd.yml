@@ -1,0 +1,155 @@
+name: Backend CI/CD (prod)
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "backend/**"
+      - "deploy/backend/**"
+      - ".github/workflows/backend-ci-cd.yml"
+  # 프론트처럼 수동 롤백도 지원
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "이미지 태그 또는 풀 경로 (예: ghcr.io/owner/ibmall-backend:<tag>)"
+        required: true
+        type: string
+
+jobs:
+  build-and-deploy:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Gradle 빌드 (JDK 17)
+      - name: Set up JDK 17 (Gradle cache)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Build (backend)
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar -x test
+
+      # GHCR 이미지 태그 (소문자)
+      - name: Set image tags
+        id: tags
+        run: |
+          OWNER="${{ secrets.GHCR_USER }}"
+          OWNER_LC="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "IMAGE=ghcr.io/${OWNER_LC}/ibmall-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "IMAGE_MAIN=ghcr.io/${OWNER_LC}/ibmall-backend:main" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USER }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build & Push Docker image
+        run: |
+          docker build -f backend/Dockerfile -t "${{ steps.tags.outputs.IMAGE }}" backend
+          docker tag "${{ steps.tags.outputs.IMAGE }}" "${{ steps.tags.outputs.IMAGE_MAIN }}"
+          docker push "${{ steps.tags.outputs.IMAGE }}"
+          docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
+
+      # 스크립트 배포 (레포 → 배스천 → 각 앱서버)
+      - name: Ship backend deploy scripts via Bastion
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.BASTION_KEY }}" > bastion.pem
+          chmod 600 bastion.pem
+          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
+          APP_USER="${{ secrets.APP_USER }}"
+          APP1="${{ secrets.APP1_HOST }}"
+          APP2="${{ secrets.APP2_HOST }}"
+
+          # 2번째 홉용 키를 배스천에 임시 복사
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+
+          # 레포 → 배스천
+          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/deploy.sh   "$SSH_BASTION":/tmp/deploy_back.sh
+          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/rollback.sh "$SSH_BASTION":/tmp/rollback_back.sh || true
+
+          # 배스천 → 각 앱서버 배치
+          for HOST in "$APP1" "$APP2"; do
+            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
+              "scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/deploy_back.sh   ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
+               ( [ -f /tmp/rollback_back.sh ] && scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/rollback_back.sh ${APP_USER}@${HOST}:/tmp/rollback_back.sh || true ) && \
+               ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
+                 'mkdir -p /home/ubuntu/deploy/backend && \
+                  sudo mv /tmp/deploy_back.sh   /home/ubuntu/deploy/backend/deploy.sh && \
+                  ( [ -f /tmp/rollback_back.sh ] && sudo mv /tmp/rollback_back.sh /home/ubuntu/deploy/backend/rollback.sh || true ) && \
+                  sudo chmod +x /home/ubuntu/deploy/backend/*.sh || true'"
+          done
+
+      # 롤링 배포 (앱서버1 → OK → 앱서버2)
+      - name: Deploy to app servers (rolling)
+        env:
+          IMAGE: ${{ steps.tags.outputs.IMAGE }}
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_PAT:  ${{ secrets.GHCR_PAT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.BASTION_KEY }}" > bastion.pem
+          chmod 600 bastion.pem
+          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
+          APP_USER="${{ secrets.APP_USER }}"
+          APP1="${{ secrets.APP1_HOST }}"
+          APP2="${{ secrets.APP2_HOST }}"
+
+          # 2번째 홉용 키
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+
+          for HOST in "$APP1" "$APP2"; do
+            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
+              "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
+               'echo \"${GHCR_PAT}\" | sudo docker login ghcr.io -u \"${GHCR_USER}\" --password-stdin && \
+                ENV_FILE=/home/ubuntu/env/backend.prod DATA_ROOT=/home/ubuntu/upload SPRING_PROFILES_ACTIVE=prod \
+                sudo /home/ubuntu/deploy/backend/deploy.sh \"${IMAGE}\"'"
+          done
+
+  # ===== 수동 롤백 잡 =====
+  rollback:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Roll back to specific image via Bastion
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="${{ inputs.image }}"
+          echo "Rollback target image: $IMAGE"
+
+          echo "${{ secrets.BASTION_KEY }}" > bastion.pem
+          chmod 600 bastion.pem
+          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
+          APP_USER="${{ secrets.APP_USER }}"
+          APP1="${{ secrets.APP1_HOST }}"
+          APP2="${{ secrets.APP2_HOST }}"
+
+          # 2-hop key
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+
+          for HOST in "$APP1" "$APP2"; do
+            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
+              "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
+               'sudo /home/ubuntu/deploy/backend/rollback.sh \"${IMAGE}\"'"
+          done

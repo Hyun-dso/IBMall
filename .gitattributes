@@ -1,0 +1,25 @@
+# 소스코드: 줄바꿈 LF 고정
+*.java       text eol=lf
+*.html       text eol=lf
+*.js         text eol=lf
+*.css        text eol=lf
+*.xml        text eol=lf
+*.yml        text eol=lf
+*.yaml       text eol=lf
+*.properties text eol=lf
+*.md         text eol=lf
+
+# 실행 관련
+/backend/gradlew    text eol=lf
+*.bat               text eol=crlf
+*.sh                text eol=lf
+
+# GitHub Actions/CI 파일도 LF 강제
+/.github/workflows/*.yml  text eol=lf
+/.github/workflows/*.yaml text eol=lf
+
+# 바이너리
+*.jar        binary
+*.png        binary
+*.jpg        binary
+*.gif        binary

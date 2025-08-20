@@ -1,0 +1,27 @@
+# VCS / 메타
+.git
+.gitignore
+.gitattributes
+.github
+
+# Gradle 캐시/산출물
+.gradle
+build
+
+# IDE/OS 잡파일
+.vscode
+.idea
+*.iml
+**/.DS_Store
+**/Thumbs.db
+
+# 로그/임시
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# (주의) 아래 파일들은 필요하므로 제외하지 마세요:
+# gradlew, gradlew.bat, gradle/wrapper/**, build.gradle, settings.gradle, src/**
+# 위 항목들은 기본적으로 제외하지 않았음
