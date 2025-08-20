@@ -46,11 +46,12 @@ public class MemberPaymentService {
     /** 회원 단일 상품 결제 */
     @Transactional
     public void processSinglePayment(MemberPaymentRequestDto dto, Long memberId) {
+    	final String paymentId = dto.getPaymentId();
         final String txId = dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증
-        var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
+        var v = verificationService.verifyOrThrow(paymentId, txId, dto.getPaidAmount());
 
         // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
