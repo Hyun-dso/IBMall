@@ -1,17 +1,9 @@
-<<<<<<< HEAD
 // /app/layout.tsx
 import '@/styles/globals.css';
 import { headers } from 'next/headers';
 import localFont from 'next/font/local';
-=======
-import ThemeToggle from '@/components/ui/ThemeToggle';
-import './globals.css';
-import { getThemeFromCookies, systemThemeBootstrapScript } from '@/lib/theme';
-import GlobalToast from '@/components/GlobalToast';
->>>>>>> origin/0819
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-<<<<<<< HEAD
 import ThemeSync from './ThemeSync';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { getUserFromServer } from '@/lib/auth';
@@ -34,20 +26,6 @@ export const dynamic = 'force-dynamic';
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const cookie = (await headers()).get('cookie') || '';
   const user = await getUserFromServer(cookie);
-=======
-
-export const dynamic = 'force-dynamic'; // 임시(원인 제거 후 삭제 가능)
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = await getThemeFromCookies();
-
-  let user = null;
-  try {
-    user = await getUserFromServer();
-  } catch {
-    user = null;
-  }
->>>>>>> origin/0819
 
   return (
     <html lang="ko" suppressHydrationWarning>
@@ -76,7 +54,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeSync />
         <GlobalToast />
         <Header user={user} />
-<<<<<<< HEAD
         <main className="relative z-10 w-full flex justify-center min-h-[calc(100dvh-6rem)] mt-[var(--header-height)] pt-4 bg-background dark:bg-dark-background">
           {children}
         </main>
@@ -85,11 +62,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </footer>
         <FloatingDock />
         <ThemeToggle />
-=======
-        <main className="mt-24">{children}</main>
-        <Footer />
-        <ThemeToggle initial={theme} />
->>>>>>> origin/0819
       </body>
     </html>
   );

@@ -127,7 +127,7 @@ export default function SignupPage() {
         <h1 className="text-2xl font-bold mb-6 text-center">회원가입</h1>
 
         {/* 이메일 + 비밀번호 */}
-        <div className={`mb-6 ${INPUT_GROUP_CLASS}`}>
+        <div className={`mb-4 ${INPUT_GROUP_CLASS}`}>
             <label htmlFor="email" className={SR_ONLY}>이메일</label>
             <input
                 id="email"

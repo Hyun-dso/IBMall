@@ -3,82 +3,50 @@ import type { Category } from '@/types/category';
 
 interface ApiSuccess<T> { success: true; data: T; message?: string }
 interface ApiError { success: false; error: { status: number; code: string; message: string } }
-interface LegacySuccess<T> { status: 'SUCCESS'; data: T; message?: string }
-type AnyResponse<T> = ApiSuccess<T> | ApiError | LegacySuccess<T>;
+type AnyResponse<T> = ApiSuccess<T> | ApiError;
 
-const BASE_PATH = '/api/admin/categories';
+const BASE_PATH = '/api/admin/categories'; // 프론트에서 내부 프록시로 호출
 
-function isApiSuccess<T>(b: AnyResponse<T> | null | undefined): b is ApiSuccess<T> {
-    return !!b && (b as ApiSuccess<T>).success === true;
-}
-function isLegacySuccess<T>(b: AnyResponse<T> | null | undefined): b is LegacySuccess<T> {
-    return !!b && (b as LegacySuccess<T>).status === 'SUCCESS';
-}
-function pickMessage<T>(b: AnyResponse<T> | null | undefined): string {
-    if (!b) return '서버 응답 없음';
-    if (isApiSuccess<T>(b) || isLegacySuccess<T>(b)) return (b as any).message ?? '요청 처리 완료';
-    return (b as ApiError).error?.message ?? '요청 실패';
-}
-async function readJson<T>(res: Response): Promise<AnyResponse<T> | null> {
-    try { return (await res.json()) as AnyResponse<T>; } catch { return null; }
+async function readJsonOrText<T>(res: Response): Promise<{ json: AnyResponse<T> | null; text: string | null }> {
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+        try { return { json: await res.json() as AnyResponse<T>, text: null }; } catch { }
+    }
+    try { return { json: null, text: await res.text() }; } catch { return { json: null, text: null }; }
 }
 
 export type CreateCategoryResult =
     | { ok: true; data: Category; message: string }
-    | { ok: false; message: string; httpStatus?: number }                // code 없음
-    | { ok: false; message: string; httpStatus?: number; code: string }; // code 있을 때만 존재
+    | { ok: false; message: string; httpStatus?: number; code?: string };
 
-export interface CreateCategoryOptions {
-    signal?: AbortSignal | null;
-    timeoutMs?: number;
-}
-
-export async function createSellerCategory(
-    name: string,
-    opts: CreateCategoryOptions = {}
-): Promise<CreateCategoryResult> {
-    const controller = !opts.signal && opts.timeoutMs ? new AbortController() : null;
-    const timer = controller ? setTimeout(() => controller.abort(), opts.timeoutMs) : null;
-
+export async function createSellerCategory(name: string): Promise<CreateCategoryResult> {
     try {
-        const init: RequestInit = {
+        const res = await fetch(BASE_PATH, {
             method: 'POST',
-            credentials: 'include',
-            headers: { 'content-type': 'application/json' },
+            credentials: 'include',                  // 쿠키 자동 전송
+            headers: { 'content-type': 'application/json', accept: 'application/json' },
             body: JSON.stringify({ name }),
-        };
-        if (controller) init.signal = controller.signal;
-        else if (opts.signal) init.signal = opts.signal;
+        });
 
-        const res = await fetch('localhost:8080' + BASE_PATH, init);
-        const body = await readJson<Category>(res);
+        const { json, text } = await readJsonOrText<Category>(res);
 
         if (!res.ok) {
-            const msg = pickMessage(body);
-            const code = (body as ApiError | null)?.error?.code as string | undefined;
-
-            // exactOptionalPropertyTypes 대응: code가 있을 때만 속성 추가
-            const base = { ok: false as const, message: msg, httpStatus: res.status };
-            const result: CreateCategoryResult = code ? { ...base, code } : base;
-            return result;
+            const code = (json as ApiError | null)?.error?.code;
+            const msg =
+                (json as any)?.error?.message ||
+                (json as any)?.message ||
+                (text ? `${res.status} ${res.statusText}: ${text.slice(0, 200)}` : `${res.status} ${res.statusText}`);
+            return { ok: false, message: msg, httpStatus: res.status, ...(code ? { code } : {}) };
         }
 
-        const data =
-            (isApiSuccess<Category>(body) && body.data) ||
-            (isLegacySuccess<Category>(body) && body.data) ||
-            null;
-
+        const data = (json as ApiSuccess<Category> | null)?.data ?? null;
         if (!data) {
-            return { ok: false, message: '응답 데이터가 비어있습니다', httpStatus: res.status };
+            const msg = (json as any)?.message || (text ?? '응답 데이터가 비어있습니다');
+            return { ok: false, message: msg, httpStatus: res.status };
         }
-
-        return { ok: true, data, message: pickMessage(body) };
-    } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') {
-            return { ok: false, message: '요청이 취소되었습니다' };
-        }
+        const message = (json as any)?.message ?? '카테고리 생성 완료';
+        return { ok: true, data, message };
+    } catch {
         return { ok: false, message: '네트워크 오류' };
-    } finally {
-        if (timer) clearTimeout(timer);
     }
 }

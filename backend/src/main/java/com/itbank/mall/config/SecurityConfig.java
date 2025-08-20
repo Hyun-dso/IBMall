@@ -73,6 +73,7 @@ public class SecurityConfig {
 
                 // ✅ 인증 필요한 경로
                 .requestMatchers(
+                    "/api/admin/categories",
                     "/api/members/me",
                     "/api/mypage/**",
                     "/api/orders/me",

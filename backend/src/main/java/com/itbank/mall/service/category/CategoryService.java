@@ -1,7 +1,7 @@
 package com.itbank.mall.service.category;
 
 import com.itbank.mall.dto.category.CategoryDto;
-import com.itbank.mall.mapper.category.CategoryMapper;
+import com.itbank.mall.mapper.category.CategoryMapper2;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +12,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryService {
 
-    private final CategoryMapper categoryMapper;
+    private final CategoryMapper2 categoryMapper;
 
     /** 생성 */
     @Transactional

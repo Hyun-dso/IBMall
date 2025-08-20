@@ -357,7 +357,7 @@ function Switch({
             role="switch"
             aria-checked={checked}
             onClick={() => onChange(!checked)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 hover:cursor-pointer"
         >
             <span className="text-sm text-text-secondary dark:text-dark-text-secondary">{label}</span>
             <span

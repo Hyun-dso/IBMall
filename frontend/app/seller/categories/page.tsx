@@ -1,13 +1,13 @@
 // /app/seller/categories/page.tsx
 import { requireRole } from '@/lib/auth/role.server';
-import { fetchSellerCategories } from '@/lib/api/seller-categories.server';
+import { fetchAdminCategories, fetchSellerCategories } from '@/lib/api/seller-categories.server';
 import SellerCategoryCreateForm from '@/components/seller/ProductCreateForm';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SellerCategoriesPage() {
     await requireRole('SELLER', '/signin');
-    const list = await fetchSellerCategories();
+    const list = await fetchAdminCategories();
 
     return (
         <main className="max-w-screen-xl mx-auto px-6 py-8">

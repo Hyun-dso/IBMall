@@ -18,3 +18,4 @@ public interface CategoryMapper {
     int deleteById(Long id);
 }
 
+;
