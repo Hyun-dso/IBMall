@@ -1,20 +1,15 @@
-package com.itbank.mall.mapper.product;
+package com.itbank.mall.mapper.category;
 
-import com.itbank.mall.entity.product.Category;
+import com.itbank.mall.dto.category.CategoryDto;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 @Mapper
 public interface CategoryMapper {
-
-    // 전체 카테고리 조회
-    List<Category> findAll();
-
-    // 카테고리 추가
-    int insert(Category category);
-
-    // 카테고리 삭제
-    int deleteById(Long id);
+    int insert(CategoryDto dto);                                     // XML <insert>
+    int updateName(@Param("id") Long id, @Param("name") String name); // XML <update>
+    int delete(@Param("id") Long id);                                 // XML <delete>
+    List<CategoryDto> findAll();                                      // XML <select>
 }
-

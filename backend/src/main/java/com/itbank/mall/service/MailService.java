@@ -29,13 +29,13 @@ public class MailService {
         message.setText(text);
 
         mailSender.send(message);
+
         return code;
     }
 
     private String generate6DigitCode() {
         return String.format("%06d", new Random().nextInt(1_000_000));
     }
-
     public void sendEmail(String to, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
