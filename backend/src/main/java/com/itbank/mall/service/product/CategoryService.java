@@ -1,14 +1,13 @@
 package com.itbank.mall.service.product;
 
-import com.itbank.mall.entity.product.Category;
-
 import java.util.List;
+
+import com.itbank.mall.dto.category.CategoryDto;
 
 public interface CategoryService {
 
-    List<Category> findAll();
-
-    void addCategory(String name);
-
-    void deleteCategory(Long id);
+    List<CategoryDto> findAll();
+    CategoryDto create(CategoryDto dto);
+    void rename(Long id, String newName);
+    void delete(Long id); 
 }

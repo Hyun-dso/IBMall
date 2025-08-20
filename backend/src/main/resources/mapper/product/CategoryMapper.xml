@@ -3,26 +3,34 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.itbank.mall.mapper.product.CategoryMapper">
-    
-      <!-- 생성: AUTO_INCREMENT → 키 채워서 dto.id 에 주입 -->
-  <insert id="insert" parameterType="com.itbank.mall.dto.category.CategoryDto"
-          useGeneratedKeys="true" keyProperty="id">
-    INSERT INTO category (name) VALUES (#{name})
+
+  <!-- 생성: AUTO_INCREMENT → useGeneratedKeys 로 dto.id 채움 -->
+  <insert id="insert"
+          parameterType="com.itbank.mall.dto.category.CategoryDto"
+          useGeneratedKeys="true"
+          keyProperty="id">
+    INSERT INTO category (name)
+    VALUES (#{name})
   </insert>
 
-  <!-- 수정 -->
+  <!-- 수정: @Param("id"), @Param("name") 사용 → #{id}, #{name}로 접근 가능 -->
   <update id="updateName">
-    UPDATE category SET name = #{name} WHERE id = #{id}
+    UPDATE category
+    SET name = #{name}
+    WHERE id = #{id}
   </update>
 
-  <!-- 삭제 -->
+  <!-- 삭제: @Param("id") 사용 -->
   <delete id="delete">
-    DELETE FROM category WHERE id = #{id}
+    DELETE FROM category
+    WHERE id = #{id}
   </delete>
 
-  <!-- 목록 -->
+  <!-- 목록: DTO 반환 -->
   <select id="findAll" resultType="com.itbank.mall.dto.category.CategoryDto">
-    SELECT id, name FROM category ORDER BY id
+    SELECT id, name
+    FROM category
+    ORDER BY id
   </select>
 
 </mapper>

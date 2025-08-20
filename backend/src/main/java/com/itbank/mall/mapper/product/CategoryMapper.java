@@ -8,8 +8,12 @@ import java.util.List;
 
 @Mapper
 public interface CategoryMapper {
-    int insert(CategoryDto dto);                                     // XML <insert>
-    int updateName(@Param("id") Long id, @Param("name") String name); // XML <update>
-    int delete(@Param("id") Long id);                                 // XML <delete>
-    List<CategoryDto> findAll();                                      // XML <select>
+
+    int insert(CategoryDto dto);  // ✅ DTO로 받기
+
+    int updateName(@Param("id") Long id, @Param("name") String name);
+
+    int delete(@Param("id") Long id);
+
+    List<CategoryDto> findAll();  // ✅ DTO 리스트 반환
 }

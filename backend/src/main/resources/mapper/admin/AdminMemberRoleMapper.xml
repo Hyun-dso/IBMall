@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.admin.AdminMemberRoleMapper">
+
+  <select id="existsById" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM member WHERE id = #{memberId}) AS cnt
+  </select>
+
+  <select id="findRoleById" resultType="string">
+    SELECT role FROM member WHERE id = #{memberId}
+  </select>
+
+  <select id="countAdmins" resultType="int">
+    SELECT COUNT(*) FROM member WHERE UPPER(role) = 'ADMIN'
+  </select>
+
+  <update id="updateRole">
+    UPDATE member SET role = #{role}
+    WHERE id = #{memberId}
+  </update>
+
+</mapper>
