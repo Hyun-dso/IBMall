@@ -12,7 +12,7 @@
   </update>
 
   <!-- 옵션 추가금 조회 -->
-  <select id="getExtraPriceById" parameterType="long" resultType="int">
+  <select id="getExtraPriceById" parameterType="long" resultType="java.lang.Integer">
     SELECT extra_price
     FROM product_option
     WHERE id = #{optionId}
