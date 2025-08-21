@@ -18,6 +18,5 @@ public class MemberResponseDto {
     private Boolean verified;
     private String role;
     private String grade;              // ✅ 추가
-    private String role;
     private LocalDateTime createdAt;
 }

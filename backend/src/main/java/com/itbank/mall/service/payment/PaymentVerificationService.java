@@ -28,7 +28,7 @@ public class PaymentVerificationService {
         if (v.getAmount() == null || v.getAmount() != expectedAmount) {
             throw new IllegalArgumentException("결제 금액 불일치");
         }
-        if (!"SUCCESS".equalsIgnoreCase(v.getStatus())) {
+        if (!"PAID".equalsIgnoreCase(v.getStatus())) {
             throw new IllegalStateException("결제 미승인 상태: " + v.getStatus());
         }
         return v;

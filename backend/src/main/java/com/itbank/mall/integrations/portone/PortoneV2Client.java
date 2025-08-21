@@ -120,11 +120,15 @@ public class PortoneV2Client {
     private static String normalizeStatus(String s) {
         if (s == null) return null;
         s = s.trim();
-        return "paid".equalsIgnoreCase(s) ? "SUCCESS"
-             : "success".equalsIgnoreCase(s) ? "SUCCESS"
-             : "cancelled".equalsIgnoreCase(s) ? "CANCELLED"
-             : "refunded".equalsIgnoreCase(s) ? "REFUNDED"
-             : "failed".equalsIgnoreCase(s) ? "FAILED"
-             : s.toUpperCase();
+
+        // 표준화: PortOne V2는 paid/cancelled/refunded/failed 등을 반환
+        if ("paid".equalsIgnoreCase(s)) return "PAID";
+        if ("cancelled".equalsIgnoreCase(s)) return "CANCELLED";
+        if ("refunded".equalsIgnoreCase(s)) return "REFUNDED";
+        if ("failed".equalsIgnoreCase(s)) return "FAILED";
+        if ("ready".equalsIgnoreCase(s)) return "READY"; // 결제 대기 등 확장
+
+        // 그 외는 대문자 통일
+        return s.toUpperCase();
     }
 }
