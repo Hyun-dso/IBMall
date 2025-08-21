@@ -82,11 +82,34 @@
     )
   </insert>
 
-  <!-- ==========================================
+	<!-- (E) 메일 본문용 라인아이템 매핑 -->
+	<resultMap id="OrderEmailLineMap"
+		type="com.itbank.mall.dto.orders.OrderEmailLineDto">
+		<result property="productName" column="product_name" />
+		<result property="optionValue" column="option_value" />
+		<result property="quantity" column="quantity" />
+		<result property="lineTotal" column="line_total" />
+	</resultMap>
+
+	<select id="findOrderEmailLinesByOrderUid" resultMap="OrderEmailLineMap">
+		SELECT
+		p.name AS product_name,
+		po.option_value AS option_value, -- 옵션 없으면 NULL
+		oi.quantity AS quantity,
+		oi.price AS line_total -- ⚠️ 라인합계(단가 아님)
+		FROM orders o
+		JOIN order_items oi ON oi.order_id = o.order_id
+		JOIN product p ON p.product_id = oi.product_id
+		LEFT JOIN product_option po ON po.id = oi.product_option_id
+		WHERE o.order_uid = #{orderUid}
+		ORDER BY oi.order_item_id ASC
+	</select>
+
+	<!-- ==========================================
        (B) 비회원 주문 조회용 ResultMap/공통 컬럼
        ========================================== -->
 
-  <!-- 공통 컬럼 묶음 -->
+	<!-- 공통 컬럼 묶음 -->
   <sql id="OrderBaseCols">
     o.order_id    AS order_id,
     o.order_uid   AS order_uid,
@@ -97,7 +120,7 @@
     o.buyer_phone AS buyer_phone
   </sql>
 
-  <!-- Row(VO) 매핑: 목록 요약 -->
+	<!-- Row(VO) 매핑: 목록 요약 -->
   <resultMap id="OrderSummaryMap" type="com.itbank.mall.mapper.row.OrderSummaryRow">
     <id     property="orderId"     column="order_id"/>
     <result property="orderUid"    column="order_uid"/>
@@ -110,7 +133,7 @@
     <result property="hasDelivery" column="has_delivery"/>
   </resultMap>
 
-  <!-- Row(VO) 매핑: 상세 헤더 -->
+	<!-- Row(VO) 매핑: 상세 헤더 -->
   <resultMap id="OrderDetailMap" type="com.itbank.mall.mapper.row.OrderDetailRow">
     <id     property="orderId"    column="order_id"/>
     <result property="orderUid"   column="order_uid"/>
@@ -121,7 +144,7 @@
     <result property="buyerPhone" column="buyer_phone"/>
   </resultMap>
 
-  <!-- Row(VO) 매핑: 상세 아이템들 (주의: unitPrice <- price) -->
+	<!-- Row(VO) 매핑: 상세 아이템들 (주의: unitPrice <- price) -->
   <resultMap id="OrderItemRowMap" type="com.itbank.mall.mapper.row.OrderItemRow">
     <result property="orderId"         column="order_id"/>
     <result property="productId"       column="product_id"/>
@@ -132,11 +155,11 @@
     <result property="unitPrice"       column="price"/>
   </resultMap>
 
-  <!-- ==========================================
+	<!-- ==========================================
        (C) 비회원 주문 조회용 쿼리
        ========================================== -->
 
-  <!-- COUNT: 이름+전화+기간 -->
+	<!-- COUNT: 이름+전화+기간 -->
   <select id="countGuestOrdersByNamePhone" resultType="long">
     SELECT COUNT(*)
     FROM orders o
@@ -147,7 +170,7 @@
       AND o.created_at <![CDATA[ < ]]> DATE_ADD(#{to}, INTERVAL 1 DAY)
   </select>
 
-  <!-- LIST: 이름+전화+기간 (페이징) -->
+	<!-- LIST: 이름+전화+기간 (페이징) -->
   <select id="selectGuestOrdersByNamePhone" resultMap="OrderSummaryMap">
     SELECT
       <include refid="OrderBaseCols"/>,
@@ -181,7 +204,7 @@
     LIMIT #{size} OFFSET #{offset}
   </select>
 
-  <!-- DETAIL: 소유 검증 + 주문 기본 정보 -->
+	<!-- DETAIL: 소유 검증 + 주문 기본 정보 -->
   <select id="selectGuestOrderDetail" resultMap="OrderDetailMap">
     SELECT
       <include refid="OrderBaseCols"/>
@@ -192,7 +215,7 @@
     LIMIT 1
   </select>
 
-  <!-- ITEMS: 주문 아이템 목록 (상세용) -->
+	<!-- ITEMS: 주문 아이템 목록 (상세용) -->
   <select id="selectOrderItems" resultMap="OrderItemRowMap">
     SELECT
       oi.order_id,
@@ -208,12 +231,12 @@
     WHERE oi.order_id = #{orderId}
     ORDER BY oi.id ASC
   </select>
-  
-   <!-- ==========================================
+
+	<!-- ==========================================
        (D) 회원 전용 주문 조회 쿼리
        ========================================== -->
 
-  <!-- COUNT: memberId + 기간(+옵션 status) -->
+	<!-- COUNT: memberId + 기간(+옵션 status) -->
   <select id="countOrdersByMemberId" resultType="long">
     SELECT COUNT(*)
     FROM orders o
@@ -225,7 +248,7 @@
     </if>
   </select>
 
-  <!-- LIST: memberId + 기간(+옵션 status) (페이징) -->
+	<!-- LIST: memberId + 기간(+옵션 status) (페이징) -->
   <select id="selectOrdersByMemberId" resultMap="OrderSummaryMap">
     SELECT
       <include refid="OrderBaseCols"/>,
@@ -260,7 +283,7 @@
     LIMIT #{size} OFFSET #{offset}
   </select>
 
-  <!-- DETAIL: memberId + orderUid (소유 검증) -->
+	<!-- DETAIL: memberId + orderUid (소유 검증) -->
   <select id="selectMemberOrderDetail" resultMap="OrderDetailMap">
     SELECT
       <include refid="OrderBaseCols"/>

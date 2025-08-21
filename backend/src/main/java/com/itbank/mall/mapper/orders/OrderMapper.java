@@ -7,13 +7,13 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.itbank.mall.dto.orders.OrderDto;
+import com.itbank.mall.dto.orders.OrderEmailLineDto;
 import com.itbank.mall.entity.orders.OrderEntity;
 import com.itbank.mall.entity.orders.OrderItemEntity;
-
-// 신규 Row(VO)
-import com.itbank.mall.mapper.row.OrderSummaryRow;
 import com.itbank.mall.mapper.row.OrderDetailRow;
 import com.itbank.mall.mapper.row.OrderItemRow;
+// 신규 Row(VO)
+import com.itbank.mall.mapper.row.OrderSummaryRow;
 
 @Mapper
 public interface OrderMapper {
@@ -65,4 +65,7 @@ public interface OrderMapper {
 
     OrderDetailRow selectMemberOrderDetail(@Param("memberId") Long memberId,
                                            @Param("orderUid") String orderUid);
+    
+    //메일 본문용 라인아이템 조회 (orderUid 기준)
+    List<OrderEmailLineDto> findOrderEmailLinesByOrderUid(@Param("orderUid") String orderUid);
 }
