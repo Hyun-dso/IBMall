@@ -1,75 +1,61 @@
 // /components/ui/ThemeToggle.tsx
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Theme } from '@/types/common';
+import { useEffect, useState } from 'react';
 
-const OPTIONS: Array<{ label: string; value: Theme }> = [
+export default function ThemeToggle() {
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system' | null>(null); // 초기값 null
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    const initial: 'light' | 'dark' | 'system' =
+      stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+
+    setTheme(initial); // 실제 초기 상태 반영
+
+    // 실제 문서 클래스 조정
+    const effectiveDark = initial === 'dark' || (initial === 'system' && prefersDark);
+    document.documentElement.classList.toggle('dark', effectiveDark);
+  }, []);
+
+  useEffect(() => {
+    if (!theme) return;
+
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const effectiveDark = theme === 'dark' || (theme === 'system' && prefersDark);
+    document.documentElement.classList.toggle('dark', effectiveDark);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  if (theme === null) return null; // 초기화 전까지 렌더링 안 함
+
+  const options: { label: string; value: 'light' | 'dark' | 'system' }[] = [
     { label: '시스템', value: 'system' },
     { label: '환하게', value: 'light' },
     { label: '어둡게', value: 'dark' },
-];
+  ];
 
-export default function ThemeToggle({ initial }: { initial: Theme }) {
-    const [selected, setSelected] = useState<Theme>(initial);
-    const [pending, start] = useTransition();
-    const router = useRouter();
+  return (
+    <div className="fixed bottom-4 right-4 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-full shadow-md p-2 flex space-x-2 z-50">
+      {options.map(({ label, value }) => {
+        const isActive = theme === value;
+        const baseClass = 'px-4 py-1.5 text-sm rounded-full transition-colors';
+        const activeClass = isActive
+          ? 'bg-primary text-black hover:bg-accent'
+          : 'bg-transparent text-text-secondary dark:text-dark-text-secondary';
 
-    // DOM(html) 클래스 즉시 적용
-    const applyDom = (t: Theme) => {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const isDark = t === 'dark' || (t === 'system' && prefersDark);
-        document.documentElement.classList.toggle('dark', isDark);
-    };
-
-    // 최초 진입 시 SSR 값 반영
-    useEffect(() => { applyDom(initial); /* once */ }, [initial]);
-
-    // system 모드일 때 OS 테마 변경 추적
-    useEffect(() => {
-        if (selected !== 'system') return;
-        const mql = window.matchMedia('(prefers-color-scheme: dark)');
-        const onChange = (e: MediaQueryListEvent) =>
-            document.documentElement.classList.toggle('dark', e.matches);
-        mql.addEventListener('change', onChange);
-        return () => mql.removeEventListener('change', onChange);
-    }, [selected]);
-
-    const apply = (t: Theme) => {
-        if (pending || t === selected) return;
-        setSelected(t);     // 낙관적 표시
-        applyDom(t);        // 즉시 색상 반영
-
-        // 쿠키 갱신 후 서버 컴포넌트만 새로고침(SSR 값 동기화)
-        start(async () => {
-            await fetch('/theme/set', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ theme: t }),
-            });
-            router.refresh();
-        });
-    };
-
-    const base = 'px-4 py-1.5 text-sm rounded-full transition-colors hover:cursor-pointer';
-    const active = 'bg-primary text-text-primary hover:opacity-90';
-    const inactive = 'bg-transparent text-text-secondary dark:text-dark-text-secondary';
-
-    return (
-        <div className="fixed bottom-4 right-4 z-50 flex space-x-2 rounded-full border border-border dark:border-dark-border bg-surface dark:bg-dark-surface p-2 shadow-md"
-            role="radiogroup" aria-label="테마 선택">
-            {OPTIONS.map(({ label, value }) => {
-                const isActive = selected === value;
-                return (
-                    <button key={value} type="button" role="radio" aria-checked={isActive}
-                        disabled={pending} onClick={() => apply(value)}
-                        className={`${base} ${isActive ? active : inactive}`}>
-                        {label}
-                    </button>
-                );
-            })}
-        </div>
-    );
+        return (
+          <button
+            key={value}
+            onClick={() => setTheme(value)}
+            className={`${baseClass} ${activeClass}`}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }

@@ -10,7 +10,7 @@
 *.md         text eol=lf
 
 # 실행 관련
-/backend/gradlew    text eol=lf           # 백엔드 gradlew 확실히 LF
+/backend/gradlew    text eol=lf
 *.bat               text eol=crlf
 *.sh                text eol=lf
 
