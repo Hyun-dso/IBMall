@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.payment.PaymentMapper">
+
+    <!-- INSERT: payment_id(PortOne paymentId) 추가 -->
+    <insert id="insert" parameterType="com.itbank.mall.entity.payment.Payment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payment (
+            payment_id,
+            member_id,
+            order_uid,
+            product_name,
+            order_price,
+            paid_amount,
+            status,
+            pg_provider,
+            payment_method,
+            transaction_id,
+            buyer_name,
+            buyer_email,
+            buyer_phone,
+            created_at
+        ) VALUES (
+            #{paymentId},
+            #{memberId},
+            #{orderUid},
+            #{productName},
+            #{orderPrice},
+            #{paidAmount},
+            #{status},
+            #{pgProvider},
+            #{paymentMethod},
+            #{transactionId},
+            #{buyerName},
+            #{buyerEmail},
+            #{buyerPhone},
+            #{createdAt}
+        )
+    </insert>
+
+    <!-- 결제 PK(id)로 결제 금액 조회 -->
+    <select id="findPaidAmountById" resultType="int">
+        SELECT paid_amount
+        FROM payment
+        WHERE id = #{paymentId}
+    </select>
+
+    <!-- PortOne payment_id로 결제 금액 조회 (추가) -->
+    <select id="findPaidAmountByPaymentId" parameterType="string" resultType="int">
+        SELECT paid_amount
+        FROM payment
+        WHERE payment_id = #{paymentId}
+    </select>
+
+    <!-- payment PK(id)로 member_id 조회 -->
+    <select id="findMemberIdByPaymentId" parameterType="long" resultType="long">
+        SELECT member_id
+        FROM payment
+        WHERE id = #{paymentId}
+    </select>
+
+    <!-- 주문 연결 -->
+    <update id="updateOrderId" parameterType="com.itbank.mall.entity.payment.Payment">
+        UPDATE payment
+        SET order_id = #{orderId}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 멱등/존재 체크 -->
+    <select id="existsByTransactionId" parameterType="string" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM payment WHERE transaction_id = #{transactionId})
+    </select>
+
+    <select id="existsByOrderUid" parameterType="string" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM payment WHERE order_uid = #{orderUid})
+    </select>
+
+    <!-- PortOne payment_id 존재 체크 (추가) -->
+    <select id="existsByPaymentId" parameterType="string" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM payment WHERE payment_id = #{paymentId})
+    </select>
+
+    <!-- 조회: txId 기준 -->
+    <select id="findByTransactionId" parameterType="string"
+            resultType="com.itbank.mall.entity.payment.Payment">
+        SELECT
+            id,
+            payment_id     AS paymentId,
+            member_id      AS memberId,
+            order_uid      AS orderUid,
+            product_name   AS productName,
+            order_price    AS orderPrice,
+            paid_amount    AS paidAmount,
+            payment_method AS paymentMethod,
+            status,
+            transaction_id AS transactionId,
+            created_at     AS createdAt,
+            pg_provider    AS pgProvider,
+            buyer_name     AS buyerName,
+            buyer_email    AS buyerEmail,
+            buyer_phone    AS buyerPhone,
+            order_id       AS orderId
+        FROM payment
+        WHERE transaction_id = #{transactionId}
+        LIMIT 1
+    </select>
+
+    <!-- 조회: PortOne payment_id 기준 (추가) -->
+    <select id="findByPaymentId" parameterType="string"
+            resultType="com.itbank.mall.entity.payment.Payment">
+        SELECT
+            id,
+            payment_id     AS paymentId,
+            member_id      AS memberId,
+            order_uid      AS orderUid,
+            product_name   AS productName,
+            order_price    AS orderPrice,
+            paid_amount    AS paidAmount,
+            payment_method AS paymentMethod,
+            status,
+            transaction_id AS transactionId,
+            created_at     AS createdAt,
+            pg_provider    AS pgProvider,
+            buyer_name     AS buyerName,
+            buyer_email    AS buyerEmail,
+            buyer_phone    AS buyerPhone,
+            order_id       AS orderId
+        FROM payment
+        WHERE payment_id = #{paymentId}
+        LIMIT 1
+    </select>
+
+    <!-- 조회: orderUid 기준 -->
+    <select id="findByOrderUid" parameterType="string"
+            resultType="com.itbank.mall.entity.payment.Payment">
+        SELECT
+            id,
+            payment_id     AS paymentId,
+            member_id      AS memberId,
+            order_uid      AS orderUid,
+            product_name   AS productName,
+            order_price    AS orderPrice,
+            paid_amount    AS paidAmount,
+            payment_method AS paymentMethod,
+            status,
+            transaction_id AS transactionId,
+            created_at     AS createdAt,
+            pg_provider    AS pgProvider,
+            buyer_name     AS buyerName,
+            buyer_email    AS buyerEmail,
+            buyer_phone    AS buyerPhone,
+            order_id       AS orderId
+        FROM payment
+        WHERE order_uid = #{orderUid}
+        LIMIT 1
+    </select>
+
+    <!-- 링크 업데이트: txId 기준 -->
+    <update id="updateOrderIdByTransactionId">
+        UPDATE payment
+        SET order_id = #{orderId}
+        WHERE transaction_id = #{transactionId}
+    </update>
+
+    <!-- 링크 업데이트: payment_id 기준 (추가) -->
+    <update id="updateOrderIdByPaymentId">
+        UPDATE payment
+        SET order_id = #{orderId}
+        WHERE payment_id = #{paymentId}
+    </update>
+
+</mapper>

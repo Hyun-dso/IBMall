@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://${DB_HOST:192.168.52.215}:${DB_PORT:3306}/${DB_NAME:ib_mall}
+    username: ${DB_USERNAME:ibmall_user}
+    password: ${DB_PASSWORD:1234}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+jwt:
+  secret: ${JWT_SECRET_KEY:dev-secret}
+  expiration: ${JWT_EXPIRATION_SECONDS:1800}
