@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:ib_mall}
+    url: jdbc:mariadb://192.168.10.3:${DB_PORT:3306}/${DB_NAME:ib_mall}
     username: ${DB_USERNAME:ibmall_user}
     password: ${DB_PASSWORD:1234}
   data:

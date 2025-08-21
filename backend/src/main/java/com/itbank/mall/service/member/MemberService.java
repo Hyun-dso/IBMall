@@ -22,10 +22,16 @@ public class MemberService {
     public Member signin(String email, String rawPassword) {
         Member member = memberMapper.findByEmail(email);
         if (member == null) {
-            return null;
+            return null; // 401
         }
 
-        boolean matched = passwordEncoder.matches(rawPassword, member.getPassword());
+        String encoded = member.getPassword();
+        if (encoded == null || encoded.isBlank()) {
+            // 소셜가입/임시계정 등 비번 미설정 사용자
+            return null; // 401로 정리 (컨트롤러에서 UNAUTHORIZED 반환)
+        }
+
+        boolean matched = passwordEncoder.matches(rawPassword, encoded);
         return matched ? member : null;
     }
     

@@ -11,7 +11,10 @@ export default async function SellerLayout({ children }: { children: React.React
                 <div className="border border-border dark:border-dark-border rounded-xl bg-surface dark:bg-dark-surface">
                     <SellerNav />
                 </div>
-                <section className="max-w-screen-xl mx-auto min-h-[40vh]">{children}</section>
+
+                <section className="p-4 text-text-primary dark:text-dark-text-primary">
+                    {children}
+                </section>
             </div>
         </div>
     );

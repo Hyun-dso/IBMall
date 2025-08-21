@@ -35,7 +35,7 @@ export default async function ProductPage({ params }: Params) {
             : product.price;
 
     return (
-        <main className="mt-32 w-full scroll-mt-32 px-6 pb-16 bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary min-h-screen">
+        <div className=" w-full scroll-mt-32 px-6 pb-16 bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary min-h-screen">
             <div className="w-full max-w-screen-xl mx-auto flex flex-col md:flex-row gap-12">
                 <div className="w-full md:w-1/2 aspect-square relative rounded border border-border dark:border-dark-border">
                     <Image
@@ -78,6 +78,6 @@ export default async function ProductPage({ params }: Params) {
                     </div>
                 </div>
             </div>
-        </main >
+        </div >
     );
 }

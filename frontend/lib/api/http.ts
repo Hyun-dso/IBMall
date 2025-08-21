@@ -188,3 +188,58 @@ export const httpAdmin = {
         return requestAdmin<T>('DELETE', url, body, opts);
     },
 };
+
+// 서버 전용 베이스 URL(절대경로)
+export const API_BASE = (process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? '').replace(/\/+$/, '');
+
+export type JsonResult<T> =
+    | { ok: true; data: T; message?: string | null }
+    | { ok: false; status: number; message: string; code?: string };
+
+function normalizeError(res: Response, body: any): { status: number; message: string; code?: string } {
+    if (body && typeof body === 'object') {
+        const msg = body?.message || body?.error?.message || res.statusText;
+        const code = body?.error?.code;
+        return { status: res.status, message: String(msg ?? ''), code };
+    }
+    return { status: res.status, message: `${res.status} ${res.statusText}` };
+}
+
+export async function serverJSON<T>(path: string, init?: RequestInit): Promise<JsonResult<T>> {
+    const { cookies, headers } = await import('next/headers');
+    if (!API_BASE) return { ok: false, status: 500, message: 'API_BASE_URL 미설정' };
+
+    const cookie = (await cookies()).toString();
+    const h = await headers();
+
+    const res = await fetch(`${API_BASE}${path}`, {
+        ...init,
+        headers: {
+            accept: 'application/json',
+            ...(init?.headers || {}),
+            cookie,
+            'x-forwarded-host': h.get('host') ?? undefined,
+        },
+        cache: 'no-store',
+    });
+
+    const ct = res.headers.get('content-type') || '';
+    const body = ct.includes('application/json') ? await res.json().catch(() => null) : await res.text().catch(() => null);
+    if (!res.ok) return { ok: false, ...normalizeError(res, body) };
+
+    const data = (body?.data ?? body) as T;
+    return { ok: true, data, message: body?.message ?? null };
+}
+
+export async function clientJSON<T>(path: string, init?: RequestInit): Promise<JsonResult<T>> {
+    const res = await fetch(path, {
+        credentials: 'include',
+        headers: { accept: 'application/json', ...(init?.headers || {}) },
+        ...init,
+    });
+    const ct = res.headers.get('content-type') || '';
+    const body = ct.includes('application/json') ? await res.json().catch(() => null) : await res.text().catch(() => null);
+    if (!res.ok) return { ok: false, ...normalizeError(res, body) };
+    const data = (body?.data ?? body) as T;
+    return { ok: true, data, message: body?.message ?? null };
+}

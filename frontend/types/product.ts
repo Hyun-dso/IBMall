@@ -9,6 +9,7 @@ export interface Product {
     isTimeSale?: boolean;
     timeSalePrice?: number;
     isWished?: boolean;
+    imageUrls?: string[];         // 옵셔널, undefined 금지(키 생략)
 }
 
 export interface ProductBuyProps {

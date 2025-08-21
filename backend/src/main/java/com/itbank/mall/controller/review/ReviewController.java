@@ -37,8 +37,9 @@ public class ReviewController {
      * @param productId 리뷰를 조회할 상품 ID
      * @return 해당 상품에 대한 공개 리뷰 목록
      */
+    // 상품별 리뷰 목록 조회
     @GetMapping("/product/{productId}")
-    public ApiResponse<List<Review>> getProductReviews(@PathVariable("productId") Long productId) {
+    public ApiResponse<List<Review>> getProductReviews(@PathVariable Long productId) {
         List<Review> reviews = reviewService.getProductReviews(productId);
         return ApiResponse.ok(reviews);
     }

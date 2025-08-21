@@ -4,23 +4,33 @@
 
 <mapper namespace="com.itbank.mall.mapper.product.CategoryMapper">
 
-    <!-- 전체 카테고리 조회 -->
-    <select id="findAll" resultType="com.itbank.mall.entity.product.Category">
-        SELECT id, name
-        FROM category
-        ORDER BY id ASC
-    </select>
+  <!-- 생성: AUTO_INCREMENT → useGeneratedKeys 로 dto.id 채움 -->
+  <insert id="insert"
+          parameterType="com.itbank.mall.dto.category.CategoryDto"
+          useGeneratedKeys="true"
+          keyProperty="id">
+    INSERT INTO category (name)
+    VALUES (#{name})
+  </insert>
 
-    <!-- 카테고리 추가 -->
-    <insert id="insert" parameterType="com.itbank.mall.entity.product.Category">
-        INSERT INTO category (name)
-        VALUES (#{name})
-    </insert>
+  <!-- 수정: @Param("id"), @Param("name") 사용 → #{id}, #{name}로 접근 가능 -->
+  <update id="updateName">
+    UPDATE category
+    SET name = #{name}
+    WHERE id = #{id}
+  </update>
 
-    <!-- 카테고리 삭제 -->
-    <delete id="deleteById" parameterType="long">
-        DELETE FROM category
-        WHERE id = #{id}
-    </delete>
+  <!-- 삭제: @Param("id") 사용 -->
+  <delete id="delete">
+    DELETE FROM category
+    WHERE id = #{id}
+  </delete>
+
+  <!-- 목록: DTO 반환 -->
+  <select id="findAll" resultType="com.itbank.mall.dto.category.CategoryDto">
+    SELECT id, name
+    FROM category
+    ORDER BY id
+  </select>
 
 </mapper>

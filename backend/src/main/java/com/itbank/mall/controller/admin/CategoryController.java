@@ -1,4 +1,4 @@
-package com.itbank.mall.controller.category;
+package com.itbank.mall.controller.admin;
 
 
 import com.itbank.mall.dto.category.CategoryDto;

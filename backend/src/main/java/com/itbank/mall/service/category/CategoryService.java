@@ -1,18 +1,19 @@
 package com.itbank.mall.service.category;
 
-import com.itbank.mall.dto.category.CategoryDto;
-import com.itbank.mall.mapper.category.CategoryMapper2;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.itbank.mall.dto.category.CategoryDto;
+import com.itbank.mall.mapper.product.CategoryMapper;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
 
-    private final CategoryMapper2 categoryMapper;
+    private final CategoryMapper categoryMapper;
 
     /** 생성 */
     @Transactional

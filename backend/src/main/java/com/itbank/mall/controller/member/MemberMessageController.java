@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.itbank.mall.dto.member.MemberMessageDto;
 import com.itbank.mall.service.member.MemberMessageService;
@@ -45,11 +47,10 @@ public class MemberMessageController {
     }
 
     private Long extractMemberId(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new RuntimeException("JWT 토큰이 누락되었거나 잘못되었습니다");
+        String token = jwtUtil.resolveToken(request);
+        if (token == null || !jwtUtil.validateToken(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "JWT 토큰이 없거나 유효하지 않습니다.");
         }
-        String token = authHeader.substring(7);
-        return jwtUtil.getIdFromToken(token);
+        return jwtUtil.getMemberId(token); // ★ getIdFromToken() 대신 getMemberId()
     }
 }

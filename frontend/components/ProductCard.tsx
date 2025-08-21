@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import ProductBuyButtons from '@/components/product/ProductBuyButtons';
 import { useCartStore } from '@/stores/useCartStore';
 import type { CartItem } from '@/types/cart';
+import { showToast } from '@/lib/toast';
 
 interface Props {
     productId: number;
@@ -68,13 +69,13 @@ export default function ProductCard(props: Props) {
             });
             if (!res.ok) {
                 const { message } = await res.json();
-                toast.error(message || '처리 실패');
+                showToast.error(message || '처리 실패', { group: 'wish' + wished });
                 return;
             }
             setWished(!wished);
-            toast.success(wished ? '위시리스트에서 제거됨' : '위시리스트에 추가됨');
+            showToast.success(wished ? '위시리스트에서 제거했어요' : '위시리스트에 추가했어요', { group: 'wish' + wished });
         } catch {
-            toast.error('위시리스트 처리 중 오류 발생');
+            showToast.error('위시리스트 처리 중 오류가 발생했어요', { group: 'wish' + wished });
         }
     };
 
@@ -85,11 +86,11 @@ export default function ProductCard(props: Props) {
         const item = buildCartItem(props);
         add(item); // zustand persist가 자동 영속화
 
-        toast.success('장바구니에 담았습니다');
+        showToast.success('장바구니에 담았어요', { group: 'cart' + productId });
         try {
             await trySyncMemberCartAfterAdd(item);
         } catch {
-            toast.error('서버 동기화 실패. 잠시 후 다시 시도하세요.');
+            showToast.error('서버 동기화에 실패했어요', { group: 'cart' + productId });
         } finally {
             setAdding(false);
         }
@@ -105,13 +106,13 @@ export default function ProductCard(props: Props) {
             });
             if (!res.ok) {
                 const { message } = await res.json();
-                toast.error(message || '구매 실패');
+                showToast.error(message || '구매 실패');
                 return;
             }
             const { redirectUrl } = await res.json();
             router.push(redirectUrl);
         } catch {
-            toast.error('구매 처리 중 오류 발생');
+            showToast.error('구매 처리 중 오류 발생');
         }
     };
 
