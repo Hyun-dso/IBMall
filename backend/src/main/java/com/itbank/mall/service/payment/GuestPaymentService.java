@@ -45,11 +45,12 @@ public class GuestPaymentService {
     /** 비회원 단일 상품 결제 */
     @Transactional
     public void processGuestPayment(GuestPaymentRequestDto dto) {
+    	final String paymentId = dto.getPaymentId();
         final String txId = dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증
-        var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
+        var v = verificationService.verifyOrThrow(paymentId, txId, dto.getPaidAmount());
 
         // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
@@ -90,6 +91,7 @@ public class GuestPaymentService {
         // (3) payment 저장 - 검증값 반영
         Payment payment = new Payment();
         payment.setOrderUid(orderUid);
+        payment.setPaymentId(paymentId);
         payment.setProductName(dto.getProductName());
         payment.setOrderPrice(dto.getOrderPrice());
         payment.setPaidAmount(v.getAmount());
@@ -118,11 +120,12 @@ public class GuestPaymentService {
     /** 비회원 장바구니 결제 */
     @Transactional
     public void processGuestCartPayment(GuestCartPaymentRequestDto dto) {
+    	final String paymentId = dto.getPaymentId();
         final String txId = dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증
-        var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
+        var v = verificationService.verifyOrThrow(paymentId, txId, dto.getPaidAmount());
 
         // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
@@ -156,6 +159,7 @@ public class GuestPaymentService {
         // (3) payment 저장 - 검증값 반영
         Payment payment = new Payment();
         payment.setOrderUid(orderUid);
+        payment.setPaymentId(paymentId);
         payment.setProductName(dto.getProductName());
         payment.setOrderPrice(dto.getOrderPrice());
         payment.setPaidAmount(v.getAmount());

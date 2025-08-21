@@ -35,9 +35,9 @@ export interface User {
     nickname: string;
     phone: string;
     address: string;
-    role: string;
     provider: 'local' | 'google';
     verified: boolean;
+    role: string;
     grade: 'BASIC' | 'ADMIN' | string;
     createdAt: string; // ISO 8601 형식
 }

@@ -203,7 +203,7 @@ export default function GuestPaymentPage() {
                         const j = await res.json();
                         msg = j.message || msg;
                     } catch { }
-                    toast.error(msg + " 여기임");
+                    toast.error(msg);
                     return;
                 }
             } catch {

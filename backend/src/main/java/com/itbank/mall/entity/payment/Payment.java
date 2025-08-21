@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Setter
 public class Payment {
     private Long id;
+    private String paymentId;
     private Long memberId;
     private String orderUid;
     private String productName;     // 🔁 추가

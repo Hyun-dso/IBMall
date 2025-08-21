@@ -18,6 +18,7 @@ export interface GuestSinglePaymentRequest {
     paymentMethod: PaymentMethod;
     status: PaymentStatus;
     transactionId: string;
+    paymentId: string;
     pgProvider: string;
     productId: number;
     productOptionId?: number | null;
@@ -46,6 +47,7 @@ export interface GuestCartPaymentRequest {
     paymentMethod: PaymentMethod;
     status: PaymentStatus;
     transactionId: string;
+    paymentId: string;
     pgProvider: string;
     buyerName: string;
     buyerEmail: string;
