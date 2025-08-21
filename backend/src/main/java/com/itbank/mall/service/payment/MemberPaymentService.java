@@ -47,7 +47,8 @@ public class MemberPaymentService {
     @Transactional
     public void processSinglePayment(MemberPaymentRequestDto dto, Long memberId) {
     	final String paymentId = dto.getPaymentId();
-        final String txId = dto.getTransactionId();
+        final String txId = (dto.getTransactionId() == null || dto.getTransactionId().isBlank())
+                ? paymentId : dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증
@@ -128,7 +129,8 @@ public class MemberPaymentService {
     @Transactional
     public void processCartPayment(MemberCartPaymentRequestDto dto, Long memberId) {
     	final String paymentId = dto.getPaymentId();
-        final String txId = dto.getTransactionId();
+        final String txId = (dto.getTransactionId() == null || dto.getTransactionId().isBlank())
+                ? paymentId : dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증

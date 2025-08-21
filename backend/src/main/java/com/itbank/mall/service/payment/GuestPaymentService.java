@@ -46,7 +46,8 @@ public class GuestPaymentService {
     @Transactional
     public void processGuestPayment(GuestPaymentRequestDto dto) {
     	final String paymentId = dto.getPaymentId();
-        final String txId = dto.getTransactionId();
+        final String txId = (dto.getTransactionId() == null || dto.getTransactionId().isBlank())
+                ? paymentId : dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증
@@ -121,7 +122,8 @@ public class GuestPaymentService {
     @Transactional
     public void processGuestCartPayment(GuestCartPaymentRequestDto dto) {
     	final String paymentId = dto.getPaymentId();
-        final String txId = dto.getTransactionId();
+        final String txId = (dto.getTransactionId() == null || dto.getTransactionId().isBlank())
+                ? paymentId : dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증
