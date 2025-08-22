@@ -18,4 +18,11 @@ public interface ReviewMapper {
 
     // 상품별 리뷰 조회
     List<Review> findByProductId(@Param("productId") Long productId);
+    
+    // ✅ 리뷰 수정
+    int updateReview(Review review);
+
+    // ✅ 리뷰 삭제 (작성자 본인만)
+    int deleteReview(@Param("reviewId") Long reviewId,
+                     @Param("memberId") Long memberId);
 }

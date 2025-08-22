@@ -11,4 +11,10 @@ public interface ReviewService {
     boolean hasAlreadyWritten(Long memberId, Long orderItemId);
 
     List<Review> getProductReviews(Long productId);
+    
+    // ✅ 새로 추가
+    boolean updateReview(Review review);
+
+    boolean deleteReview(Long reviewId, Long memberId);
 }
+
