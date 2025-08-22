@@ -26,7 +26,7 @@ export default async function SellerOrdersPage() {
                     </tr>
                 </thead>
                 <tbody>
-                    {res.items.map(o => (
+                    {res.items.map((o: any) => (
                         <tr key={o.orderUid} className="border-t border-border/50 dark:border-dark-border/50">
                             <td className="px-4 py-3">{o.orderUid}</td>
                             <td className="px-4 py-3">{o.status}</td>

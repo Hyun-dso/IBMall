@@ -26,8 +26,8 @@ function genPaymentId() {
     return parts.join('');
 }
 
-export default function CartPaymentPage({ params }: { params: { role: PaymentRole } }) {
-    const role = params.role;
+export default function CartPaymentPage({ params }: any) {
+    const role = (params as { role: PaymentRole }).role;
     const router = useRouter();
 
     const items = useCartStore((s) => s.items);
@@ -110,7 +110,7 @@ export default function CartPaymentPage({ params }: { params: { role: PaymentRol
 
     const orderName = useMemo(() => {
         if (!items.length) return '';
-        const first = items[0].name;
+        const first = items[0]!.name;
         const rest = items.length - 1;
         return rest > 0 ? `${first} 외 ${rest}개` : first;
     }, [items]);

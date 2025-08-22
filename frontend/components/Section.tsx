@@ -25,7 +25,6 @@ export default function Section({ title, products }: SectionProps) {
                             <ProductCard
                                 key={product.productId}
                                 {...product}
-                                timeSalePrice={product.timeSalePrice}
                                 isWished={product.isWished ?? false}
                             />
                         ))}

@@ -6,10 +6,6 @@ import { notFound } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import ProductBuyButtons from '@/components/product/ProductBuyButtons';
 
-interface Params {
-    params: { productId: string };
-}
-
 async function fetchProductById(id: string): Promise<Product | null> {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!baseUrl) return null;
@@ -25,8 +21,8 @@ async function fetchProductById(id: string): Promise<Product | null> {
     }
 }
 
-export default async function ProductPage({ params }: Params) {
-    const product = await fetchProductById(params.productId);
+export default async function ProductPage({ params }: any) {
+    const product = await fetchProductById((params as { productId: string }).productId);
     if (!product) return notFound();
 
     const displayPrice =

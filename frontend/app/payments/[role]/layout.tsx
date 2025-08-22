@@ -5,8 +5,8 @@ import { redirect, notFound } from 'next/navigation';
 export default async function PaymentsRoleLayout({
     children,
     params,
-}: { children: React.ReactNode; params: { role: 'member' | 'guest' } }) {
-    const { role } = params;
+}: { children: React.ReactNode; params: any }) {
+    const { role } = params as { role: 'member' | 'guest' };
     if (role !== 'member' && role !== 'guest') notFound();
 
     const hasSession = Boolean((await cookies()).get('accessToken')?.value);

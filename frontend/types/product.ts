@@ -15,5 +15,9 @@ export interface Product {
 export interface ProductBuyProps {
     productId: number;
     quantity?: number;
-    mode: string | null;
+    mode?: string | null;
+}
+
+export interface ProductSummary {
+    [key: string]: any;
 }
