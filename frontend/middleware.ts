@@ -1,36 +1,42 @@
 // /middleware.ts
-import { NextResponse, type NextRequest } from 'next/server';
-import { ACCESS_COOKIE } from '@/constants/auth';
+import { NextRequest, NextResponse } from 'next/server';
 
-const GUEST_ONLY = new Set(['/signin', '/signup']);
-const PROTECTED_PREFIXES = ['/account', '/orders', '/cart'];
+const PROTECTED_PATHS = ['/payments/member', '/mypage'];
 
-function isProtectedPath(pathname: string) {
-    return PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+export function middleware(request: NextRequest) {
+    const { pathname, search } = request.nextUrl;
+    const accessToken = request.cookies.get('accessToken')?.value;
+
+    // 회원 전용 경로 보호
+    if (PROTECTED_PATHS.some((p) => pathname.startsWith(p))) {
+        if (!accessToken) {
+            const url = request.nextUrl.clone();
+            url.pathname = '/signin';
+            url.search = `?redirect=${encodeURIComponent(pathname + search)}`;
+            const res = NextResponse.redirect(url);
+
+            // 테마 헤더 유지
+            setThemeHeader(request, res);
+            return res;
+        }
+    }
+
+    // 기본 응답
+    const res = NextResponse.next();
+    setThemeHeader(request, res);
+    return res;
 }
 
-export function middleware(req: NextRequest) {
-    const { pathname, search } = req.nextUrl;
-    const hasAuth = Boolean(req.cookies.get(ACCESS_COOKIE)?.value);
-
-    if (hasAuth && GUEST_ONLY.has(pathname)) {
-        const url = req.nextUrl.clone();
-        url.pathname = '/';
-        return NextResponse.redirect(url);
-    }
-
-    if (!hasAuth && isProtectedPath(pathname)) {
-        const url = req.nextUrl.clone();
-        url.pathname = '/signin';
-        url.search = search
-            ? `${search}&redirect=${encodeURIComponent(pathname)}`
-            : `?redirect=${encodeURIComponent(pathname)}`;
-        return NextResponse.redirect(url);
-    }
-
-    return NextResponse.next();
+// 테마 헤더 공통 처리
+function setThemeHeader(req: NextRequest, res: NextResponse) {
+    const theme = req.cookies.get('theme')?.value || 'system';
+    const prefersDark = req.headers.get('sec-ch-prefers-color-scheme') === 'dark';
+    const resolved =
+        theme === 'dark' || (theme === 'system' && prefersDark) ? 'dark' : 'light';
+    res.headers.set('x-theme', resolved);
 }
 
 export const config = {
-    matcher: ['/((?!_next|.*\\..*|api).*)'],
+    // 기존 테마용 매처 유지, 보호 경로도 포함됨
+    matcher: ['/', '/((?!_next|api|favicon.ico).*)'],
 };

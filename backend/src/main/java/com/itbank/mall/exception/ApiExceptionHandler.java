@@ -65,12 +65,20 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(ApiResponse.fail(ex.getMessage()));
     }
+    
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<ApiResponse<String>> badCred(Exception ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.fail("이메일 또는 비밀번호가 올바르지 않습니다."));
+    }
+
 
     /* ====== 500 그 외 예외 ====== */
-
+    
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<String>> handleAny(Exception ex) {
         // 운영에서는 로깅 프레임워크로 스택트레이스 기록 권장
+    	ex.printStackTrace(); // (또는 log.error("Unhandled", ex))
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.fail("서버 오류가 발생했습니다."));
     }

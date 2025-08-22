@@ -16,6 +16,7 @@ public class MemberResponseDto {
     private String address;
     private String provider;
     private Boolean verified;
-    private String grade;              // ✅ 추가
+    private String role;
+    private String grade;
     private LocalDateTime createdAt;
 }

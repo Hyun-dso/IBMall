@@ -19,5 +19,4 @@ public interface MemberMapper {
     void updateMember(Member member);
     boolean existsByPhone(String phone);
     String findEmailById(@Param("memberId") Long memberId);
-    
 }

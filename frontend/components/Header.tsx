@@ -2,43 +2,58 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
 import type { User } from '@/types/auth';
-import { showToast } from '@/lib/toast';
-import Logo from './ui/Logo';
-import { signout } from '@/lib/api/auth.client';
-import { isSuccess } from '@/types/api';
 
-interface Props { user: User | null; }
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+interface Props {
+    user: User | null;
+}
 
 export default function Header({ user }: Props) {
+    const router = useRouter();
 
     const handleLogout = async () => {
         try {
-            const res = await signout();
-            if (!isSuccess(res)) {
-                showToast.error(res.message || '로그아웃에 실패했어요');
+            const res = await fetch(`/api/auth/signout`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+
+            if (!res.ok) {
+                const { message } = await res.json();
+                toast.error(message || '로그아웃 실패');
                 return;
             }
-            showToast.success('로그아웃에 성공했어요', { persist: true, showNow: false });
-            window.location.assign('/');
-        } catch (e) {
-            const msg = e instanceof Error ? e.message : '로그아웃 중 오류가 발생했습니다.';
-            showToast.error(msg);
+
+            toast.success('로그아웃되었습니다');
+            router.refresh();
+        } catch {
+            toast.error('로그아웃 중 오류가 발생했습니다.');
         }
     };
 
+    const nickname = user?.nickname || user?.name || (user?.email ? user.email.split('@')[0] : '사용자');
+    const isSeller = user?.role === 'SELLER';
+    const myHref = isSeller ? '/seller/dashboard' : '/mypage';
+
     return (
-        <header className="fixed top-0 left-0 w-full h-24 border-b border-primary z-50 backdrop-blur bg-white/25 dark:bg-dark-surface/25">
+        <header className="fixed top-0 left-0 w-full h-[var(--header-height)] border-b border-primary z-50 backdrop-blur bg-white/25 dark:bg-dark-surface/25">
             <div className="max-w-screen-xl mx-auto h-full flex items-center justify-between px-6">
+                <Logo withText={true} />
                 <nav className="flex gap-4 items-center">
-                    <Logo withText={true} />
                     {user ? (
                         <>
-                            <span className="text-sm text-text-secondary dark:text-dark-text-secondary">
-                                {user.nickname}님
-                            </span>
-                            <Button size="sm" onClick={handleLogout}>로그아웃</Button>
+                            <Link href={myHref} className="text-sm text-text-secondary dark:text-dark-text-secondary">
+                                {isSeller ? `판매자 ${nickname}님` : `${nickname}님`}
+                            </Link>
+                            <Button size="sm" onClick={handleLogout}>
+                                로그아웃
+                            </Button>
                         </>
                     ) : (
                         <>
@@ -53,5 +68,6 @@ export default function Header({ user }: Props) {
                 </nav>
             </div>
         </header>
+
     );
 }

@@ -11,6 +11,7 @@ public class MemberPaymentRequestDto {
     private int paidAmount;        // 실제 결제된 금액 (할인 적용 후)
     private int originalAmount;    // 총 주문 금액 (할인 전)
     private String status;
+    private String paymentId;
     private String transactionId;
     private String pgProvider;
 

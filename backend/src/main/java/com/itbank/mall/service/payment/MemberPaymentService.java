@@ -46,11 +46,13 @@ public class MemberPaymentService {
     /** 회원 단일 상품 결제 */
     @Transactional
     public void processSinglePayment(MemberPaymentRequestDto dto, Long memberId) {
-        final String txId = dto.getTransactionId();
+    	final String paymentId = dto.getPaymentId();
+        final String txId = (dto.getTransactionId() == null || dto.getTransactionId().isBlank())
+                ? paymentId : dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증
-        var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
+        var v = verificationService.verifyOrThrow(paymentId, txId, dto.getPaidAmount());
 
         // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
@@ -98,6 +100,7 @@ public class MemberPaymentService {
         Payment payment = new Payment();
         payment.setMemberId(memberId);
         payment.setOrderUid(orderUid);
+        payment.setPaymentId(paymentId);
         payment.setProductName("상품결제");
         payment.setOrderPrice(dto.getOriginalAmount());
         payment.setPaidAmount(v.getAmount());
@@ -125,11 +128,13 @@ public class MemberPaymentService {
     /** 회원 장바구니 결제 */
     @Transactional
     public void processCartPayment(MemberCartPaymentRequestDto dto, Long memberId) {
-        final String txId = dto.getTransactionId();
+    	final String paymentId = dto.getPaymentId();
+        final String txId = (dto.getTransactionId() == null || dto.getTransactionId().isBlank())
+                ? paymentId : dto.getTransactionId();
         final String orderUid = dto.getOrderUid();
 
         // (1) 서버 검증
-        var v = verificationService.verifyOrThrow(txId, dto.getPaidAmount());
+        var v = verificationService.verifyOrThrow(paymentId, txId, dto.getPaidAmount());
 
         // (2) 멱등 게이트 - txId 기준
         Payment existing = paymentMapper.findByTransactionId(txId);
@@ -177,6 +182,7 @@ public class MemberPaymentService {
         Payment payment = new Payment();
         payment.setMemberId(memberId);
         payment.setOrderUid(orderUid);
+        payment.setPaymentId(paymentId);
         payment.setProductName("장바구니 결제");
         payment.setOrderPrice(dto.getOriginalAmount());
         payment.setPaidAmount(v.getAmount());
@@ -221,11 +227,16 @@ public class MemberPaymentService {
         }
 
         // 1) 서버 단가 계산
-        int base = productMapper.getPriceById(dto.getProductId());
-        int extra = (dto.getProductOptionId() != null)
-                ? productOptionMapper.getExtraPriceById(dto.getProductOptionId())
-                : 0;
+        Integer base = productMapper.getPriceById(dto.getProductId());
+        if (base == null) throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+
+        int extra = 0;
+        if (dto.getProductOptionId() != null) {
+            Integer ep = productOptionMapper.getExtraPriceById(dto.getProductOptionId());
+            extra = (ep != null) ? ep : 0; // 옵션 ID가 무효면 0 처리(또는 422로 던져도 됨)
+        }
         int unitPrice = base + extra;
+
 
         // 2) 원자적 재고 차감
         int affected = (dto.getProductOptionId() != null)
@@ -318,11 +329,15 @@ public class MemberPaymentService {
         java.util.List<Line> calc = new java.util.ArrayList<>();
 
         for (MemberOrderItemDto l : lines) {
-            int base = productMapper.getPriceById(l.getProductId());
-            int extra = (l.getProductOptionId() != null)
-                    ? productOptionMapper.getExtraPriceById(l.getProductOptionId())
-                    : 0;
-            int unit = base + extra;
+        	Integer base = productMapper.getPriceById(l.getProductId());
+        	if (base == null) throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+
+        	int extra = 0;
+        	if (l.getProductOptionId() != null) {
+        	    Integer ep = productOptionMapper.getExtraPriceById(l.getProductOptionId());
+        	    extra = (ep != null) ? ep : 0; // 옵션 ID가 무효면 0 처리(또는 422로 던져도 됨)
+        	}
+        	int unit = base + extra;
 
             int affected = (l.getProductOptionId() != null)
                     ? productOptionMapper.decreaseStock(l.getProductOptionId(), l.getQuantity())
