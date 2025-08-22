@@ -183,9 +183,10 @@ jobs:
         run: |
           set -euo pipefail
           aws elbv2 modify-listener --listener-arn "$LISTENER_ARN" \
-            --default-actions 'Type=forward,ForwardConfig={"TargetGroups":[{"TargetGroupArn":"'"$IDLE_TG_ARN"'","Weight":1}]}'
+            --default-actions "Type=forward,ForwardConfig={TargetGroups=[{TargetGroupArn=\"${IDLE_TG_ARN}\",Weight=1}]}"
           aws elbv2 describe-listeners --listener-arn "$LISTENER_ARN" \
-            --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text || true
+            --query 'Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[0].TargetGroupArn' --output text || true
+
 
 # ==== 스위치 후 이전색 컨테이너 정리(프리티어 메모리 확보)
       - name: Cleanup previous color containers (optional)
@@ -234,8 +235,8 @@ jobs:
         run: |
           set -euo pipefail
           ACTIVE_TG=$(aws elbv2 describe-listeners --listener-arn "$LISTENER_ARN" \
-            --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
+            --query 'Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[0].TargetGroupArn' --output text)
           if [ "$ACTIVE_TG" = "$TG_BLUE_ARN" ]; then TARGET="$TG_GREEN_ARN"; else TARGET="$TG_BLUE_ARN"; fi
           aws elbv2 modify-listener --listener-arn "$LISTENER_ARN" \
-            --default-actions Type=forward,ForwardConfig='{"TargetGroups":[{"TargetGroupArn":"'"$TARGET"'","Weight":1}]}'
+            --default-actions "Type=forward,ForwardConfig={TargetGroups=[{TargetGroupArn=\"${TARGET}\",Weight=1}]}"
           echo "Rolled over to $TARGET"
