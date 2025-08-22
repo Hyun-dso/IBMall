@@ -19,6 +19,9 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
+    env:
+      SSH_OPTS: "-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
+      CLEANUP_OLD_COLOR: "true" # 필요시 "false"로 두면 이전색을 남겨둠(빠른 롤백 대비)
 
     steps:
       - name: Checkout
@@ -59,7 +62,6 @@ jobs:
           docker push "${{ steps.tags.outputs.IMAGE }}"
           docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
 
-      # ── AWS 자격 구성 ────────────────────────────────────────────────────────
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -67,7 +69,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ secrets.AWS_REGION }}
 
-      # ── 현재 활성/유휴 색상 감지 (리스너 기본 작업 기준) ─────────────────────
       - name: Detect active color (listener default action)
         id: color
         env:
@@ -95,27 +96,26 @@ jobs:
             echo "Unknown active target group: $ACTIVE_TG"; exit 1
           fi
 
-      # ── deploy.sh 배포 ───────────────────────────────────────────────────────
-      - name: Ship backend deploy script via Bastion
-        shell: bash
+      # ── Bastion key: once upload, reuse in all steps ────────────────────────
+      - name: Upload SSH key to Bastion (once)
+        env:
+          SSH_BASTION: ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}
         run: |
           set -euo pipefail
           echo "${{ secrets.BASTION_KEY }}" > bastion.pem
           chmod 600 bastion.pem
-          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
-          APP_USER="${{ secrets.APP_USER }}"
-          APP1="${{ secrets.APP1_HOST }}"
-          APP2="${{ secrets.APP2_HOST }}"
-          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
-
-          # 동일 키를 배스천에도 업로드(2nd hop에 사용)
           scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/bastion.pem
           ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/bastion.pem"
 
-          # deploy.sh → bastion
+      - name: Ship backend deploy script via Bastion
+        env:
+          SSH_BASTION: ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}
+          APP_USER:    ${{ secrets.APP_USER }}
+          APP1:        ${{ secrets.APP1_HOST }}
+          APP2:        ${{ secrets.APP2_HOST }}
+        run: |
+          set -euo pipefail
           scp $SSH_OPTS -i bastion.pem ./deploy/backend/deploy.sh "$SSH_BASTION":/tmp/deploy_back.sh
-
-          # bastion → each app server
           for HOST in "$APP1" "$APP2"; do
             ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
               "scp $SSH_OPTS -i /tmp/bastion.pem /tmp/deploy_back.sh ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
@@ -125,33 +125,18 @@ jobs:
                   sudo chmod +x /home/ubuntu/deploy/backend/deploy.sh'"
           done
 
-          # (원격) 배스천에 올린 키 삭제
-          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" 'sudo shred -u /tmp/bastion.pem 2>/dev/null || sudo rm -f /tmp/bastion.pem || true'
-          # (로컬 러너) 가져온 키 삭제
-          shred -u bastion.pem 2>/dev/null || rm -f bastion.pem || true
-
-      # ── 유휴 색상으로 두 앱서버 배포 ────────────────────────────────────────
       - name: Deploy idle color to app servers
         env:
-          IMAGE: ${{ steps.tags.outputs.IMAGE }}
-          GHCR_USER: ${{ secrets.GHCR_USER }}
-          GHCR_PAT:  ${{ secrets.GHCR_PAT }}
-          IDLE:      ${{ steps.color.outputs.idle }}
-        shell: bash
+          IMAGE:       ${{ steps.tags.outputs.IMAGE }}
+          GHCR_USER:   ${{ secrets.GHCR_USER }}
+          GHCR_PAT:    ${{ secrets.GHCR_PAT }}
+          IDLE:        ${{ steps.color.outputs.idle }}
+          SSH_BASTION: ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}
+          APP_USER:    ${{ secrets.APP_USER }}
+          APP1:        ${{ secrets.APP1_HOST }}
+          APP2:        ${{ secrets.APP2_HOST }}
         run: |
           set -euo pipefail
-          echo "${{ secrets.BASTION_KEY }}" > bastion.pem
-          chmod 600 bastion.pem
-          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
-          APP_USER="${{ secrets.APP_USER }}"
-          APP1="${{ secrets.APP1_HOST }}"
-          APP2="${{ secrets.APP2_HOST }}"
-          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
-
-          # 동일 키 업로드(없을 수도 있으니 보장)
-          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/bastion.pem
-          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/bastion.pem"
-
           for HOST in "$APP1" "$APP2"; do
             ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
               "ssh $SSH_OPTS -i /tmp/bastion.pem ${APP_USER}@${HOST} \
@@ -161,12 +146,6 @@ jobs:
                 sudo /home/ubuntu/deploy/backend/deploy.sh \"${IMAGE}\" \"${IDLE}\"'"
           done
 
-          # (원격) 배스천에 올린 키 삭제
-          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" 'sudo shred -u /tmp/bastion.pem 2>/dev/null || sudo rm -f /tmp/bastion.pem || true'
-          # (로컬 러너) 가져온 키 삭제
-          shred -u bastion.pem 2>/dev/null || rm -f bastion.pem || true
-
-      # ── 유휴 TG 헬스 체크 완료까지 대기(두 인스턴스 모두) ───────────────────
       - name: Wait for idle target group healthy
         env:
           IDLE_TG_ARN: ${{ steps.color.outputs.idle_tg }}
@@ -184,7 +163,6 @@ jobs:
             sleep 3
           done
 
-      # ── 리스너 기본 작업을 유휴 TG로 스위치(= 활성 전환) ─────────────────────
       - name: Switch listener default action to idle color
         env:
           LISTENER_ARN: ${{ secrets.LISTENER_ARN }}
@@ -196,26 +174,17 @@ jobs:
           aws elbv2 describe-listeners --listener-arn "$LISTENER_ARN" \
             --query 'Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[0].TargetGroupArn' --output text || true
 
-
-# ==== 스위치 후 이전색 컨테이너 정리(프리티어 메모리 확보)
       - name: Cleanup previous color containers (optional)
+        if: ${{ env.CLEANUP_OLD_COLOR == 'true' }}
         env:
-          ACTIVE: ${{ steps.color.outputs.active }}
+          ACTIVE:       ${{ steps.color.outputs.active }}
+          SSH_BASTION:  ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}
+          APP_USER:     ${{ secrets.APP_USER }}
+          APP1:         ${{ secrets.APP1_HOST }}
+          APP2:         ${{ secrets.APP2_HOST }}
         run: |
           set -euo pipefail
           echo "Cleaning old color: $ACTIVE"
-          echo "${{ secrets.BASTION_KEY }}" > bastion.pem
-          chmod 600 bastion.pem
-          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
-          APP_USER="${{ secrets.APP_USER }}"
-          APP1="${{ secrets.APP1_HOST }}"
-          APP2="${{ secrets.APP2_HOST }}"
-          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
-
-          # 동일 키 업로드(스텝마다 /tmp 초기화 대비)
-          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/bastion.pem
-          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/bastion.pem"
-
           for H in "$APP1" "$APP2"; do
             ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
               "ssh $SSH_OPTS -i /tmp/bastion.pem ${APP_USER}@${H} \
@@ -224,12 +193,14 @@ jobs:
                  sudo docker image prune -f || true'"
           done
 
-          # (원격) 배스천에 올린 키 삭제
+      - name: Wipe keys (bastion & runner)
+        env:
+          SSH_BASTION: ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}
+        run: |
+          set -euo pipefail
           ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" 'sudo shred -u /tmp/bastion.pem 2>/dev/null || sudo rm -f /tmp/bastion.pem || true'
-          # (로컬 러너) 가져온 키 삭제
           shred -u bastion.pem 2>/dev/null || rm -f bastion.pem || true
 
-  # ===== 수동 롤백(기본 작업 flip) =============================================
   rollback:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
