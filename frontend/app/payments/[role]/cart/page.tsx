@@ -49,7 +49,7 @@ export default function CartPaymentPage({ params }: { params: { role: PaymentRol
         recipientPhone: '',
     });
 
-    // 회원용 배송지 폼(구매자는 서버가 프로필로 결정)
+    // 회원용 배송지 폼(구매자는 서버 프로필 우선)
     const [memberForm, setMemberForm] = useState({
         recipientName: '',
         recipientPhone: '',
@@ -63,7 +63,6 @@ export default function CartPaymentPage({ params }: { params: { role: PaymentRol
     const detailRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
-        // SSR/CSR 전환에 따른 경고 방지
         // no-op
     }, []);
 
@@ -103,8 +102,7 @@ export default function CartPaymentPage({ params }: { params: { role: PaymentRol
     const total = useMemo(
         () =>
             items.reduce((acc, cur) => {
-                const unit =
-                    cur.isTimeSale && cur.timeSalePrice != null ? cur.timeSalePrice : cur.price;
+                const unit = cur.isTimeSale && cur.timeSalePrice != null ? cur.timeSalePrice : cur.price;
                 return acc + unit * cur.quantity;
             }, 0),
         [items]
@@ -200,11 +198,11 @@ export default function CartPaymentPage({ params }: { params: { role: PaymentRol
                 pgProvider: 'INICIS',
             };
 
-            // 카트 라인아이템
+            // 카트 라인아이템(서버에서 단가/합계 재계산)
             const lineItems = items.map((i) => ({
                 productId: Number(i.productId),
                 productOptionId: i.productOptionId ?? null,
-                productName: orderName,
+                productName: i.name,
                 quantity: Number(i.quantity),
             }));
 
@@ -250,7 +248,6 @@ export default function CartPaymentPage({ params }: { params: { role: PaymentRol
                     })),
                 };
 
-                // 서버 프록시 라우트에서 JWT 헤더 주입
                 const res = await fetch('/api/payments/member/cart', {
                     method: 'POST',
                     credentials: 'include',
@@ -281,17 +278,22 @@ export default function CartPaymentPage({ params }: { params: { role: PaymentRol
     return (
         <main className="min-h-screen px-4 py-8 bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary">
             <div className="mx-auto w-full max-w-3xl space-y-6">
-                <CartPanel
-                    embedded
-                    headerTitle="장바구니"
-                    footerPrimaryText="결제 진행"
-                    items={items}
-                    total={total}
-                    onQtyChange={(pid, qty, optId) => updateQty(pid, qty, optId ?? null)}
-                    onRemove={(pid, optId) => remove(pid, optId ?? null)}
-                    onCheckout={handleCheckout}
-                />
+                {/* 장바구니 섹션: 리스트만 카드로 감싸서 렌더링 */}
+                <section className={`p-6 ${CARD_CLASS}`}>
+                    <h2 className="text-lg font-semibold mb-4">장바구니</h2>
+                    {items.length === 0 ? (
+                        <div className="text-text-secondary dark:text-dark-text-secondary">담긴 상품이 없습니다.</div>
+                    ) : (
+                        <CartPanel
+                            items={items}
+                            onQtyChange={(pid, qty, optId) => updateQty(pid, qty, optId ?? null)}
+                            onRemove={(pid, optId) => remove(pid, optId ?? null)}
+                            className="space-y-2"
+                        />
+                    )}
+                </section>
 
+                {/* 주문/배송 및 결제 섹션 */}
                 <section className={`p-6 ${CARD_CLASS}`}>
                     <h2 className="text-lg font-semibold mb-4">주문/배송 정보</h2>
 

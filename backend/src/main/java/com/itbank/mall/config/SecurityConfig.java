@@ -53,6 +53,7 @@ public class SecurityConfig {
                     "/api/email/**",
                     "/api/password/**",
                     "/api/oauth2/**",
+                    "/api/track/guest/**",
 
                     "/api/products/**",
                     "/api/images/**",

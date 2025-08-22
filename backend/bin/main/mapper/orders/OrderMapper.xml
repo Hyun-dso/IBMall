@@ -172,36 +172,34 @@
 
 	<!-- LIST: 이름+전화+기간 (페이징) -->
   <select id="selectGuestOrdersByNamePhone" resultMap="OrderSummaryMap">
-    SELECT
-      <include refid="OrderBaseCols"/>,
-      /* 요약: "첫상품명 외 N개" */
-      CONCAT(
-        COALESCE((
-          SELECT p1.name
-          FROM order_items oi1
-          JOIN product p1 ON p1.product_id = oi1.product_id
-          WHERE oi1.order_id = o.order_id
-          ORDER BY oi1.id ASC
-          LIMIT 1
-        ), ''),
-        CASE
-          WHEN (SELECT COUNT(*) FROM order_items oi2 WHERE oi2.order_id = o.order_id) > 1
-          THEN CONCAT(' 외 ', (
-            (SELECT COUNT(*) FROM order_items oi3 WHERE oi3.order_id = o.order_id) - 1
-          ), '개')
-          ELSE ''
-        END
-      ) AS item_summary,
-      /* 배송 존재 여부 */
-      EXISTS (SELECT 1 FROM deliveries d WHERE d.order_id = o.order_id) AS has_delivery
-    FROM orders o
-    WHERE o.member_id IS NULL
-      AND o.buyer_name  = #{name}
-      AND o.buyer_phone = #{phone}
-      AND o.created_at <![CDATA[ >= ]]> #{from}
-      AND o.created_at <![CDATA[ < ]]> DATE_ADD(#{to}, INTERVAL 1 DAY)
-    ORDER BY o.created_at DESC
-    LIMIT #{size} OFFSET #{offset}
+SELECT
+  <include refid="OrderBaseCols"/>,
+  CONCAT(
+    COALESCE(p_first.name, ''),
+    CASE WHEN s.cnt > 1 THEN CONCAT(' 외 ', s.cnt - 1, '개') ELSE '' END
+  ) AS item_summary,
+  EXISTS (SELECT 1 FROM deliveries d WHERE d.order_id = o.order_id) AS has_delivery
+FROM orders o
+LEFT JOIN (
+  SELECT
+    oi.order_id,
+    COUNT(*)              AS cnt,
+    MIN(oi.order_item_id) AS first_item_id   -- 실제 PK 컬럼명으로 교체
+  FROM order_items oi
+  GROUP BY oi.order_id
+) s ON s.order_id = o.order_id
+LEFT JOIN order_items oi_first
+  ON oi_first.order_item_id = s.first_item_id -- 실제 PK 컬럼명으로 교체
+LEFT JOIN product p_first
+  ON p_first.product_id = oi_first.product_id
+WHERE o.member_id IS NULL
+  AND o.buyer_name  = #{name}
+  AND o.buyer_phone = #{phone}
+  AND o.created_at <![CDATA[ >= ]]> #{from}
+  AND o.created_at <![CDATA[ < ]]>  DATE_ADD(#{to}, INTERVAL 1 DAY)
+ORDER BY o.created_at DESC
+LIMIT #{size} OFFSET #{offset}
+
   </select>
 
 	<!-- DETAIL: 소유 검증 + 주문 기본 정보 -->

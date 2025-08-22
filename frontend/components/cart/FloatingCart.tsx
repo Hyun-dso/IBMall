@@ -10,6 +10,10 @@ import CartPanel from '@/components/cart/CartPanel';
 
 const MIN_DESKTOP_WIDTH = 0;
 
+const PANEL_CLASS =
+  'rounded-xl border border-border dark:border-dark-border bg-surface dark:bg-dark-surface shadow-lg';
+const SECTION_BORDER = 'border-border/60 dark:border-dark-border/60';
+
 export default function FloatingCart() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
@@ -23,7 +27,8 @@ export default function FloatingCart() {
   const total = useMemo(
     () =>
       items.reduce((acc, cur) => {
-        const unit = cur.isTimeSale && cur.timeSalePrice != null ? cur.timeSalePrice : cur.price;
+        const unit =
+          cur.isTimeSale && cur.timeSalePrice != null ? cur.timeSalePrice : cur.price;
         return acc + unit * cur.quantity;
       }, 0),
     [items]
@@ -60,24 +65,44 @@ export default function FloatingCart() {
           id="floating-cart-panel"
           className={[
             'transition-[max-height,opacity,margin-top] duration-200 overflow-hidden',
-            'rounded-xl border border-border dark:border-dark-border bg-surface dark:bg-dark-surface shadow-lg',
+            PANEL_CLASS,
             open ? 'opacity-100 max-h-[70vh] mt-2' : 'opacity-0 max-h-0 mt-0',
           ].join(' ')}
           role="dialog"
           aria-label="빠른 장바구니"
         >
-          <CartPanel
-            items={items}
-            total={total}
-            onQtyChange={updateQty}
-            onRemove={remove}
-            onCheckout={() => {
-              // /payments에서 SSR 분기로 각 role의 /cart로 이동
-              // 필요 시 intent 생성 단계로 바꾸면 이 부분만 교체
-              window.scrollTo({ top: 0 });
-              router.push('/payments');
-            }}
-          />
+          {/* Header */}
+          <header className={`px-4 py-3 border-b ${SECTION_BORDER}`}>
+            <h2 className="text-sm font-medium text-text-secondary dark:text-dark-text-secondary">
+              빠른 장바구니
+            </h2>
+          </header>
+
+          {/* Body: 리스트만 렌더링 */}
+          <div className="px-3 py-3 overflow-y-auto max-h-[50vh]">
+            <CartPanel items={items} onQtyChange={updateQty} onRemove={remove} />
+          </div>
+
+          {/* Footer */}
+          <footer className={`px-4 py-3 border-t ${SECTION_BORDER}`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-text-secondary dark:text-dark-text-secondary">합계</span>
+              <span className="font-semibold text-text-primary dark:text-dark-text-primary">
+                {total.toLocaleString()}원
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  window.scrollTo({ top: 0 });
+                  router.push('/payments');
+                }}
+              >
+                결제 진행
+              </Button>
+            </div>
+          </footer>
         </div>
       </div>
     </div>

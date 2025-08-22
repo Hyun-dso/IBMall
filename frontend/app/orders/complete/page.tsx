@@ -11,6 +11,7 @@ const currency = new Intl.NumberFormat('ko-KR');
 const dtfmt = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+/* ===== 타입 ===== */
 type MemberOrderDetail = {
     orderUid: string;
     createdAt: string;
@@ -19,7 +20,6 @@ type MemberOrderDetail = {
     items: { productId: number; productOptionId: number | null; productName: string; optionName: string | null; quantity: number; unitPrice: number }[];
     delivery?: { recipient: string; phone: string; address: string; trackingNumber: string; status: string } | null;
 };
-
 type GuestOrderDetail = {
     orderUid: string;
     createdAt: string;
@@ -28,32 +28,128 @@ type GuestOrderDetail = {
     items: { productId: number; productOptionId: number | null; productName: string; optionName: string | null; quantity: number; unitPrice: number }[];
     delivery?: { recipientMasked: string; phoneMasked: string; addressMasked: string; trackingNumber: string; status: string } | null;
 };
-
 type ViewModel = {
     orderUid: string;
     createdAt: string;
     status: string;
     totalPrice: number;
     items: { name: string; optionName: string | null; quantity: number; unitPrice: number }[];
-    delivery?: {
-        recipient: string;
-        phone: string;
-        address: string;
-        trackingNumber: string;
-        status: string;
-    } | null;
+    delivery?: { recipient: string; phone: string; address: string; trackingNumber: string; status: string } | null;
     source: 'member' | 'guest';
 };
 
+/* ===== 공통 API 언래퍼: success | code:SUCCESS 모두 대응 ===== */
+type AnyEnvelope<T> =
+    | { success: true; data: T; message: string | null }
+    | { success: false; error?: any; message?: string | null }
+    | { code: 'SUCCESS' | 'FAIL'; data?: T; message?: string | null };
+
+async function readApi<T>(url: string, init: RequestInit): Promise<{ ok: boolean; data?: T }> {
+    try {
+        const res = await fetch(url, init);
+        if (!res.ok) return { ok: false };
+        const json = (await res.json()) as AnyEnvelope<T>;
+        if ('success' in json) return json.success ? { ok: true, data: (json as any).data } : { ok: false };
+        if ('code' in json) return json.code === 'SUCCESS' ? { ok: true, data: (json as any).data } : { ok: false };
+        return { ok: false };
+    } catch {
+        return { ok: false };
+    }
+}
+
+/* ===== API 호출기 ===== */
+type MemberListDTO = {
+    content: { orderUid: string; createdAt: string; status: string; totalPrice: number; itemSummary: string; hasDelivery: boolean }[];
+    page: number; size: number; totalElements: number; totalPages: number;
+};
+async function tryFetchMemberDetail(candidateUid: string | null, signal: AbortSignal): Promise<ViewModel | null> {
+    if (!API_BASE) return null;
+    if (candidateUid) {
+        const d1 = await readApi<MemberOrderDetail>(`${API_BASE}/api/member/orders/${encodeURIComponent(candidateUid)}`, {
+            method: 'GET', credentials: 'include', signal,
+        });
+        if (d1.ok && d1.data) return toVMFromMember(d1.data);
+    }
+    const q = new URLSearchParams({ page: '0', size: '1', status: 'ALL' }).toString();
+    const list = await readApi<MemberListDTO>(`${API_BASE}/api/member/orders?${q}`, {
+        method: 'GET', credentials: 'include', signal,
+    });
+    const firstUid = list.ok ? list.data?.content?.[0]?.orderUid : null;
+    if (!firstUid) return null;
+    const d2 = await readApi<MemberOrderDetail>(`${API_BASE}/api/member/orders/${encodeURIComponent(firstUid)}`, {
+        method: 'GET', credentials: 'include', signal,
+    });
+    if (d2.ok && d2.data) return toVMFromMember(d2.data);
+    return null;
+}
+
+type GuestListDTO = {
+    content: { orderUid: string; createdAt: string; status: string; totalPrice: number; itemSummary: string; buyerNameMasked: string; buyerPhoneMasked: string; hasDelivery: boolean }[];
+    page: number; size: number; totalElements: number; totalPages: number;
+};
+async function tryFetchGuestDetail(name: string, phoneDigits: string, candidateUid: string | null, signal: AbortSignal): Promise<ViewModel | null> {
+    if (!API_BASE) return null;
+    const headers = { 'Content-Type': 'application/json' };
+
+    let orderUid = candidateUid;
+    if (!orderUid) {
+        const body = { name: String(name).trim(), phone: String(phoneDigits), page: 0, size: 1 };
+        const r = await readApi<GuestListDTO>(`${API_BASE}/api/track/guest/orders/search`, {
+            method: 'POST', credentials: 'include', headers, body: JSON.stringify(body), signal,
+        });
+        orderUid = r.ok ? r.data?.content?.[0]?.orderUid ?? null : null;
+        if (!orderUid) return null;
+    }
+
+    const bodyDetail = { name: String(name).trim(), phone: String(phoneDigits) };
+    const d = await readApi<GuestOrderDetail>(`${API_BASE}/api/track/guest/orders/${encodeURIComponent(orderUid)}`, {
+        method: 'POST', credentials: 'include', headers, body: JSON.stringify(bodyDetail), signal,
+    });
+    if (d.ok && d.data) return toVMFromGuest(d.data);
+    return null;
+}
+
+/* ===== 뷰모델 변환 ===== */
+function toVMFromMember(d: MemberOrderDetail): ViewModel {
+    return {
+        orderUid: d.orderUid,
+        createdAt: d.createdAt,
+        status: d.status,
+        totalPrice: d.totalPrice,
+        items: d.items.map((i) => ({ name: i.productName, optionName: i.optionName ?? null, quantity: i.quantity, unitPrice: i.unitPrice })),
+        delivery: d.delivery
+            ? { recipient: d.delivery.recipient, phone: d.delivery.phone, address: d.delivery.address, trackingNumber: d.delivery.trackingNumber, status: d.delivery.status }
+            : null,
+        source: 'member',
+    };
+}
+function toVMFromGuest(d: GuestOrderDetail): ViewModel {
+    return {
+        orderUid: d.orderUid,
+        createdAt: d.createdAt,
+        status: d.status,
+        totalPrice: d.totalPrice,
+        items: d.items.map((i) => ({ name: i.productName, optionName: i.optionName ?? null, quantity: i.quantity, unitPrice: i.unitPrice })),
+        delivery: d.delivery
+            ? { recipient: d.delivery.recipientMasked, phone: d.delivery.phoneMasked, address: d.delivery.addressMasked, trackingNumber: d.delivery.trackingNumber, status: d.delivery.status }
+            : null,
+        source: 'guest',
+    };
+}
+
+/* ===== 페이지 ===== */
 export default function OrderCompletePage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const orderUidParam = searchParams.get('orderUid');
-    const paymentIdParam = searchParams.get('paymentId'); // 결제 리디렉트에서 주로 포함됨
+
+    // 결제 리다이렉트/수동 접근 모두 대응
+    const qpOrderUid = searchParams.get('orderUid');
+    const qpPaymentId = searchParams.get('paymentId');
+    const qpName = searchParams.get('name');   // 게스트 즉시 조회 파라미터(선택)
+    const qpPhone = searchParams.get('phone'); // 게스트 즉시 조회 파라미터(선택)
 
     const [loading, setLoading] = useState(true);
     const [vm, setVm] = useState<ViewModel | null>(null);
-
     const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
@@ -63,56 +159,49 @@ export default function OrderCompletePage() {
 
         (async () => {
             setLoading(true);
-            // 1) 회원 상세 우선 시도(파라미터 있으면 상세, 없으면 최신 1건)
-            const vmMember = await tryFetchMemberDetail(orderUidParam, ac.signal);
-            if (vmMember) {
-                setVm(vmMember);
-                setLoading(false);
-                return;
+            const candidateUid = qpOrderUid || qpPaymentId || null;
+
+            // 1) name+phone 이 있으면 게스트 우선 조회 (바로 뜸)
+            if (qpName && qpPhone) {
+                const vmGuest = await tryFetchGuestDetail(qpName, normalizePhone(qpPhone), candidateUid, ac.signal);
+                if (vmGuest) { setVm(vmGuest); setLoading(false); return; }
+                if (qpOrderUid || qpPaymentId) { router.replace('/orders/complete', { scroll: false }); setLoading(false); return; }
             }
 
-            // 2) 게스트 힌트로 조회
+            // 2) 회원 우선 시도 (로그인 상태면 성공)
+            const vmMember = await tryFetchMemberDetail(candidateUid, ac.signal);
+            if (vmMember) { setVm(vmMember); setLoading(false); return; }
+
+            // 3) 세션 힌트 기반 게스트 조회
             const hintRaw = typeof window !== 'undefined' ? sessionStorage.getItem('guestOrderHint') : null;
             const hint = hintRaw ? safeParse(hintRaw) as { name?: string; phone?: string; orderUid?: string } : null;
-            const vmGuest = hint?.name && hint?.phone
-                ? await tryFetchGuestDetail(hint.name, normalizePhone(hint.phone), orderUidParam || hint.orderUid || null, ac.signal)
-                : null;
-
-            if (vmGuest) {
-                setVm(vmGuest);
-                setLoading(false);
-                return;
+            if (hint?.name && hint?.phone) {
+                const vmGuest = await tryFetchGuestDetail(hint.name, normalizePhone(hint.phone), candidateUid || hint.orderUid || null, ac.signal);
+                if (vmGuest) { setVm(vmGuest); setLoading(false); return; }
             }
 
-            // 3) 여기까지 실패했는데 쿼리 파라미터가 있었다면 기본값으로 복귀(쿼리 제거)
-            if (orderUidParam || paymentIdParam) {
+            // 4) 쿼리가 있었는데도 실패 → 쿼리 제거 후 기본 화면
+            if (qpOrderUid || qpPaymentId || qpName || qpPhone) {
                 router.replace('/orders/complete', { scroll: false });
-                setLoading(false);
-                return;
             }
-
-            // 4) 기본 화면(상세 없음)
             setVm(null);
             setLoading(false);
         })();
 
         return () => ac.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orderUidParam, paymentIdParam]);
+    }, [qpOrderUid, qpPaymentId, qpName, qpPhone]);
 
-    const headerTitle = useMemo(() => {
-        if (loading) return '주문을 확인하는 중...';
-        return '주문이 완료되었습니다.';
-    }, [loading]);
+    const headerTitle = useMemo(() => (loading ? '주문을 확인하는 중...' : '주문이 완료되었습니다.'), [loading]);
 
     return (
         <main className="min-h-screen px-4 py-8 bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary">
             <div className="mx-auto w-full max-w-3xl space-y-6">
                 <section className={`p-6 ${CARD_CLASS}`}>
                     <h1 className="text-2xl font-bold mb-2">{headerTitle}</h1>
-                    {paymentIdParam && (
+                    {qpPaymentId && (
                         <p className="text-sm text-text-secondary dark:text-dark-text-secondary">
-                            결제 식별자: {paymentIdParam}
+                            결제 식별자: {qpPaymentId}
                         </p>
                     )}
                 </section>
@@ -188,7 +277,7 @@ export default function OrderCompletePage() {
                         <div className="flex gap-2">
                             <Button className="flex-1" onClick={() => router.push('/')}>쇼핑 계속하기</Button>
                             <Button variant="outline" className="flex-1" onClick={() => router.push('/account/orders')}>주문 내역</Button>
-                            <Button variant="outline" className="flex-1" onClick={() => router.push('/track/guest')}>비회원 주문조회</Button>
+                            <Button variant="outline" className="flex-1" onClick={() => router.push('/track/order')}>비회원 주문조회</Button>
                         </div>
                     </section>
                 )}
@@ -197,7 +286,7 @@ export default function OrderCompletePage() {
     );
 }
 
-/* 내부 컴포넌트 */
+/* ===== 내부 컴포넌트/유틸 ===== */
 function InfoRow({ k, v, full }: { k: string; v: string; full?: boolean }) {
     return (
         <div className={full ? 'md:col-span-2' : ''}>
@@ -206,144 +295,6 @@ function InfoRow({ k, v, full }: { k: string; v: string; full?: boolean }) {
         </div>
     );
 }
-
-/* 유틸 */
 function safeParse(s: string) { try { return JSON.parse(s); } catch { return null; } }
 function normalizePhone(p: string) { return String(p || '').replace(/[^0-9]/g, ''); }
 function safeFormat(iso: string) { try { return dtfmt.format(new Date(iso)); } catch { return iso; } }
-
-/* API 호출기 */
-async function tryFetchMemberDetail(orderUidParam: string | null, signal: AbortSignal): Promise<ViewModel | null> {
-    if (!API_BASE) return null;
-    // 상세 먼저
-    if (orderUidParam) {
-        const d = await fetchJson<MemberOrderDetailResponse>(`${API_BASE}/api/member/orders/${encodeURIComponent(orderUidParam)}`, {
-            method: 'GET',
-            credentials: 'include',
-            signal,
-        });
-        if (d?.success && d.data) return toVMFromMember(d.data);
-    }
-    // 최신 1건
-    const q = new URLSearchParams({ page: '0', size: '1', status: 'ALL' }).toString();
-    const list = await fetchJson<MemberOrderListResponse>(`${API_BASE}/api/member/orders?${q}`, {
-        method: 'GET',
-        credentials: 'include',
-        signal,
-    });
-    const firstUid = list?.success ? list.data?.content?.[0]?.orderUid : null;
-    if (!firstUid) return null;
-
-    const d2 = await fetchJson<MemberOrderDetailResponse>(`${API_BASE}/api/member/orders/${encodeURIComponent(firstUid)}`, {
-        method: 'GET',
-        credentials: 'include',
-        signal,
-    });
-    if (d2?.success && d2.data) return toVMFromMember(d2.data);
-    return null;
-}
-
-async function tryFetchGuestDetail(name: string, phoneDigits: string, orderUidParam: string | null, signal: AbortSignal): Promise<ViewModel | null> {
-    if (!API_BASE) return null;
-    const headers = { 'Content-Type': 'application/json' };
-
-    let orderUid = orderUidParam;
-    if (!orderUid) {
-        const body = { name: String(name).trim(), phone: String(phoneDigits), page: 0, size: 1 };
-        const r = await fetchJson<GuestOrderListResponse>(`${API_BASE}/api/track/guest/orders/search`, {
-            method: 'POST',
-            credentials: 'include',
-            headers,
-            body: JSON.stringify(body),
-            signal,
-        });
-        orderUid = r?.success ? r.data?.content?.[0]?.orderUid ?? null : null;
-        if (!orderUid) return null;
-    }
-
-    const bodyDetail = { name: String(name).trim(), phone: String(phoneDigits) };
-    const d = await fetchJson<GuestOrderDetailResponse>(`${API_BASE}/api/track/guest/orders/${encodeURIComponent(orderUid)}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers,
-        body: JSON.stringify(bodyDetail),
-        signal,
-    });
-    if (d?.success && d.data) return toVMFromGuest(d.data);
-    return null;
-}
-
-async function fetchJson<T>(url: string, init: RequestInit): Promise<T | null> {
-    try {
-        const res = await fetch(url, init);
-        if (!res.ok) return null;
-        return (await res.json()) as T;
-    } catch {
-        return null;
-    }
-}
-
-/* 타입: API 응답 래퍼 */
-type SuccessWrap<T> = { success: true; data: T; message: string | null };
-type MemberOrderListResponse = SuccessWrap<{
-    content: { orderUid: string; createdAt: string; status: string; totalPrice: number; itemSummary: string; hasDelivery: boolean }[];
-    page: number; size: number; totalElements: number; totalPages: number;
-}>;
-type MemberOrderDetailResponse = SuccessWrap<MemberOrderDetail>;
-
-type GuestOrderListResponse = SuccessWrap<{
-    content: { orderUid: string; createdAt: string; status: string; totalPrice: number; itemSummary: string; buyerNameMasked: string; buyerPhoneMasked: string; hasDelivery: boolean }[];
-    page: number; size: number; totalElements: number; totalPages: number;
-}>;
-type GuestOrderDetailResponse = SuccessWrap<GuestOrderDetail>;
-
-/* 뷰모델 변환 */
-function toVMFromMember(d: MemberOrderDetail): ViewModel {
-    return {
-        orderUid: d.orderUid,
-        createdAt: d.createdAt,
-        status: d.status,
-        totalPrice: d.totalPrice,
-        items: d.items.map((i) => ({
-            name: i.productName,
-            optionName: i.optionName ?? null,
-            quantity: i.quantity,
-            unitPrice: i.unitPrice,
-        })),
-        delivery: d.delivery
-            ? {
-                recipient: d.delivery.recipient,
-                phone: d.delivery.phone,
-                address: d.delivery.address,
-                trackingNumber: d.delivery.trackingNumber,
-                status: d.delivery.status,
-            }
-            : null,
-        source: 'member',
-    };
-}
-
-function toVMFromGuest(d: GuestOrderDetail): ViewModel {
-    return {
-        orderUid: d.orderUid,
-        createdAt: d.createdAt,
-        status: d.status,
-        totalPrice: d.totalPrice,
-        items: d.items.map((i) => ({
-            name: i.productName,
-            optionName: i.optionName ?? null,
-            quantity: i.quantity,
-            unitPrice: i.unitPrice,
-        })),
-        delivery: d.delivery
-            ? {
-                recipient: d.delivery.recipientMasked,
-                phone: d.delivery.phoneMasked,
-                address: d.delivery.addressMasked,
-                trackingNumber: d.delivery.trackingNumber,
-                status: d.delivery.status,
-            }
-            : null,
-        source: 'guest',
-    };
-}
