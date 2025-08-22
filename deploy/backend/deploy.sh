@@ -35,6 +35,19 @@ if sudo docker ps -a --format '{{.Names}}' | grep -q "^${NAME}$"; then
   sudo docker rm -f "$NAME" >/dev/null 2>&1 || true
 fi
 
+# Also remove legacy container name if exists (to avoid 8080/8081 conflicts)
+if sudo docker ps -a --format '{{.Names}}' | grep -q "^${SERVICE_BASE}$"; then
+  echo "[deploy-backend] removing legacy container: ${SERVICE_BASE}"
+  sudo docker rm -f "${SERVICE_BASE}" >/dev/null 2>&1 || true
+fi
+
+# If some other container is already bound to the target port, kill it defensively
+OTHER_BINDING=$(sudo docker ps --format '{{.Names}}\t{{.Ports}}' | awk -v pat=":${PORT}->" 'index($0, pat){print $1}')
+if [ -n "${OTHER_BINDING:-}" ] && [ "$OTHER_BINDING" != "$NAME" ]; then
+  echo "[deploy-backend] port ${PORT} is busy by ${OTHER_BINDING}; removing it"
+  sudo docker rm -f "$OTHER_BINDING" >/dev/null 2>&1 || true
+fi
+
 # Run container on fixed host port (8080 for blue, 8081 for green)
 CID=$(sudo docker run -d --name "$NAME" -p ${PORT}:8080 \
   --restart=always \
@@ -49,7 +62,7 @@ echo "[deploy-backend] started container=$CID"
 echo -n "[deploy-backend] waiting health on :$PORT "
 deadline=$(( $(date +%s) + HEALTH_TIMEOUT ))
 OK=""
-while [ $(date +%s) -lt $deadline ]; do
+while [ "$(date +%s)" -lt "$deadline" ]; do
   if curl -fsS --max-time 3 "http://127.0.0.1:${PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
     echo "OK"; OK=1; break
   fi
