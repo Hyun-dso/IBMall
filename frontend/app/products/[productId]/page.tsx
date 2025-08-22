@@ -12,7 +12,6 @@ async function fetchProductById(id: string): Promise<Product | null> {
   try {
     const res = await fetch(`${baseUrl}/api/products/${id}`, { cache: 'no-store' });
     if (!res.ok) return null;
-
     const json = await res.json();
     return json.data?.product ?? null;
   } catch {
@@ -20,17 +19,17 @@ async function fetchProductById(id: string): Promise<Product | null> {
   }
 }
 
-export default async function ProductPage({ params }: any) {
-    const product = await fetchProductById((params as { productId: string }).productId);
-    if (!product) return notFound();
-
-  const product = await fetchProductById(productId);
-  if (!product) notFound();
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ productId: string }>;
+}) {
+  const { productId } = await params; // ✅ 한 번만 추출
+  const product = await fetchProductById(productId); // ✅ 한 번만 조회
+  if (!product) notFound(); // ✅ throw
 
   const displayPrice =
-    product.isTimeSale && product.timeSalePrice
-      ? product.timeSalePrice
-      : product.price;
+    product.isTimeSale && product.timeSalePrice ? product.timeSalePrice : product.price;
 
   return (
     <div className="w-full scroll-mt-32 px-6 pb-16 bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary min-h-screen">

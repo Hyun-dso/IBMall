@@ -16,7 +16,7 @@ export default async function PaymentsRoleLayout({
 
   // ✅ Next 15 기준 cookies()는 동기 사용
   const cookieStore = cookies();
-  const hasSession = Boolean(cookieStore.get('accessToken')?.value);
+  const hasSession = Boolean((await cookieStore).get('accessToken')?.value);
 
   if (role === 'member' && !hasSession) redirect('/signin?next=/payments/member/cart');
   if (role === 'guest' && hasSession) redirect('/payments/member/cart');
