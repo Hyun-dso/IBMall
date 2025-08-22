@@ -13,7 +13,7 @@ import lombok.Data;
 @RestController
 @RequestMapping("/api/track")
 @RequiredArgsConstructor
-public class PublicTrackingController {
+public class PublicParcelTrackingController  {
 
     private final DeliveryService deliveryService;
 

@@ -50,10 +50,13 @@ jobs:
 
       - name: Build & Push Docker image
         run: |
-          docker build -f frontend/Dockerfile -t "${{ steps.tags.outputs.IMAGE }}" frontend
-          docker tag "${{ steps.tags.outputs.IMAGE }}" "${{ steps.tags.outputs.IMAGE_MAIN }}"
-          docker push "${{ steps.tags.outputs.IMAGE }}"
-          docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
+          docker build \
+              --build-arg NEXT_PUBLIC_PORTONE_V2_STORE_ID='${{ vars.NEXT_PUBLIC_PORTONE_V2_STORE_ID }}' \
+              --build-arg NEXT_PUBLIC_PORTONE_V2_CHANNEL_KEY='${{ vars.NEXT_PUBLIC_PORTONE_V2_CHANNEL_KEY }}' \
+              -f frontend/Dockerfile -t "${{ steps.tags.outputs.IMAGE }}" frontend
+            docker tag "${{ steps.tags.outputs.IMAGE }}" "${{ steps.tags.outputs.IMAGE_MAIN }}"
+            docker push "${{ steps.tags.outputs.IMAGE }}"
+            docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
 
       - name: Ship frontend deploy scripts via Bastion
         run: |

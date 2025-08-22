@@ -192,6 +192,16 @@ public class GuestPaymentService {
         // 1) 서버 단가 계산
     	Integer base = productMapper.getPriceById(dto.getProductId());
     	if (base == null) throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+<<<<<<< HEAD
+=======
+
+    	int extra = 0;
+    	if (dto.getProductOptionId() != null) {
+    	    Integer ep = productOptionMapper.getExtraPriceById(dto.getProductOptionId());
+    	    extra = (ep != null) ? ep : 0; // 옵션 ID가 무효면 0 처리(또는 422로 던져도 됨)
+    	}
+    	int unitPrice = base + extra;
+>>>>>>> origin/0819
 
     	int extra = 0;
     	if (dto.getProductOptionId() != null) {

@@ -237,6 +237,7 @@ public class MemberPaymentService {
         }
         int unitPrice = base + extra;
 
+
         // 2) 원자적 재고 차감
         int affected = (dto.getProductOptionId() != null)
                 ? productOptionMapper.decreaseStock(dto.getProductOptionId(), dto.getQuantity())
@@ -337,6 +338,10 @@ public class MemberPaymentService {
         	    extra = (ep != null) ? ep : 0; // 옵션 ID가 무효면 0 처리(또는 422로 던져도 됨)
         	}
         	int unit = base + extra;
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/0819
 
             int affected = (l.getProductOptionId() != null)
                     ? productOptionMapper.decreaseStock(l.getProductOptionId(), l.getQuantity())
