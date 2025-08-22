@@ -118,6 +118,7 @@ docker run -d --name "${NEW_NAME}" \
   -p "${NEW_PORT}:3000" \
   --restart=always \
   -e NODE_ENV=production \
+  -e NEXT_PUBLIC_API_BASE_URL="${NEXT_PUBLIC_API_BASE_URL:-}" \
   "${IMAGE}"
 
 ROLLBACK_NEW_NAME="${NEW_NAME}"
