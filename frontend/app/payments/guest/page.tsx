@@ -1,10 +1,9 @@
-// /app/payments/guest/page.tsx (Server Component)
+// /app/payments/guest/page.tsx
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
-export default function Page({ searchParams }: { searchParams: { productId?: string } }) {
-    const { productId } = searchParams;
-    if (productId) {
-        redirect(`/payments/guest/single?productId=${productId}`);
-    }
+export default async function GuestPaymentsIndex() {
+    const hasSession = Boolean((await cookies()).get('accessToken')?.value);
+    if (hasSession) redirect('/payments/member/cart');
     redirect('/payments/guest/cart');
 }

@@ -11,7 +11,7 @@ public interface ProductOptionMapper {
     int decreaseStock(@Param("optionId") Long optionId,
             @Param("qty") int qty);
 
-int getExtraPriceById(@Param("optionId") Long optionId);
+    Integer getExtraPriceById(@Param("optionId") Long optionId);
     int insert(ProductOption option);   // 객체라 @Param 불필요
     int deleteById(@Param("id") Long id); // ← @Param
     int update(ProductOption option);   // 객체라 @Param 불필요

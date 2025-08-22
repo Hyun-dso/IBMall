@@ -57,3 +57,39 @@ export interface GuestCartPaymentRequest {
     recipientAddress: string;
     items: GuestCartPaymentItem[];
 }
+
+export type PaymentRole = 'member' | 'guest';
+export type PaymentFlow = 'single' | 'cart';
+
+export interface OrderIntentPayload {
+    intentId: string;
+    productId: number;
+    optionId?: number | null;
+    quantity: number;
+    unitPrice: number;
+    currency: 'KRW';
+    // 서버가 계산·봉인한 값들: 할인, 타임세일, 재고 스냅샷 등
+    sealedAt: string;
+    expiresAt: string;
+}
+
+
+export type CreateCartIntentInput = {
+    role: PaymentRole;
+    items: Array<{
+        productId: number;
+        productOptionId: number | null;
+        quantity: number;
+    }>;
+};
+
+export type VerifyIntentResponse = {
+    intent: OrderIntentPayload;
+    orderName: string;
+    product: {
+        productId: number;
+        name: string;
+        thumbnailUrl: string | null;
+        optionName: string | null;
+    };
+};

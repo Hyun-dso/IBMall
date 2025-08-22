@@ -190,12 +190,16 @@ public class GuestPaymentService {
     /** 단일 주문 생성 (서버 계산/재고 차감/옵션ID 저장) */
     private Long createOrderAndDeliveryForSingle(GuestPaymentRequestDto dto, int verifiedPaidAmount) {
         // 1) 서버 단가 계산
-        int base = productMapper.getPriceById(dto.getProductId());
-        int extra = (dto.getProductOptionId() != null)
-                ? productOptionMapper.getExtraPriceById(dto.getProductOptionId())
-                : 0;
-        int unitPrice = base + extra;
+    	Integer base = productMapper.getPriceById(dto.getProductId());
+    	if (base == null) throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
 
+    	int extra = 0;
+    	if (dto.getProductOptionId() != null) {
+    	    Integer ep = productOptionMapper.getExtraPriceById(dto.getProductOptionId());
+    	    extra = (ep != null) ? ep : 0; // 옵션 ID가 무효면 0 처리(또는 422로 던져도 됨)
+    	}
+    	int unitPrice = base + extra;
+    	
         // 2) 원자적 재고 차감 (옵션 우선)
         int affected = (dto.getProductOptionId() != null)
                 ? productOptionMapper.decreaseStock(dto.getProductOptionId(), dto.getQuantity())
@@ -274,11 +278,15 @@ public class GuestPaymentService {
         java.util.List<Line> calc = new java.util.ArrayList<>();
 
         for (GuestOrderItemDto l : lines) {
-            int base = productMapper.getPriceById(l.getProductId());
-            int extra = (l.getProductOptionId() != null)
-                    ? productOptionMapper.getExtraPriceById(l.getProductOptionId())
-                    : 0;
-            int unit = base + extra;
+        	Integer base = productMapper.getPriceById(l.getProductId());
+        	if (base == null) throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+
+        	int extra = 0;
+        	if (l.getProductOptionId() != null) {
+        	    Integer ep = productOptionMapper.getExtraPriceById(l.getProductOptionId());
+        	    extra = (ep != null) ? ep : 0; // 옵션 ID가 무효면 0 처리(또는 422로 던져도 됨)
+        	}
+        	int unit = base + extra;
 
             int affected = (l.getProductOptionId() != null)
                     ? productOptionMapper.decreaseStock(l.getProductOptionId(), l.getQuantity())

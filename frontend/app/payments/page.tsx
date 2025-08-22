@@ -1,22 +1,12 @@
-// /app/pay/page.tsx
+// /app/payments/page.tsx
 import { redirect } from 'next/navigation';
-import { getUserFromServer } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { getUserFromServer } from '@/lib/auth';
 
-export default async function PayRouterPage({ searchParams }: { searchParams: Record<string, string> }) {
-    const cookie = (await headers()).get('cookie') || '';
-    const user = await getUserFromServer(cookie);
-
-    const productId = searchParams.productId;
-
-    if (!productId) {
-        // 필수 파라미터 누락 시 에러 처리
-        throw new Error('productId는 필수입니다.');
-    }
-
-    const redirectUrl = user
-        ? `/payments/member?productId=${productId}`
-        : `/payments/guest?productId=${productId}`;
-
-    redirect(redirectUrl);
+export default async function PaymentsIndexPage() {
+  const cookie = (await headers()).get('cookie') || '';
+  const user = await getUserFromServer(cookie);
+  // 서버 쿠키 기반 회원 여부 판별
+  if (user) redirect('/payments/member');
+  redirect('/payments/guest');
 }

@@ -1,16 +1,17 @@
-// /app/payments/guest/single/page.tsx
+// /components/payments/SinglePaymentPage.tsx
 'use client';
 
-import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ProductLineItem } from '@/types/cart';
-import type { GuestPaymentForm } from '@/types/forms';
-import type { OrderIntentPayload } from '@/types/payment'; // intent 타입은 /types로 분리
+import { useRouter, useSearchParams } from 'next/navigation';
 import ProductLineItemCard from '@/components/ProductLineItemCard';
 import Button from '@/components/ui/Button';
 import PortOne, { isPortOneError } from '@portone/browser-sdk/v2';
-import { validate } from '@/lib/validators/engine';
 import { showToast } from '@/lib/toast';
+import { validate } from '@/lib/validators/engine';
+import type { PaymentRole, OrderIntentPayload } from '@/types/payment';
+import type { ProductLineItem } from '@/types/cart';
+import type { GuestPaymentForm } from '@/types/forms';
+import { verifyOrderIntent, completeGuestSinglePayment } from '@/lib/payments/client';
 
 const CARD_CLASS =
     'border border-border dark:border-dark-border rounded-lg bg-surface dark:bg-dark-surface shadow-sm';
@@ -21,47 +22,23 @@ const currency = new Intl.NumberFormat('ko-KR');
 
 function genPaymentId() {
     const parts = [...crypto.getRandomValues(new Uint32Array(2))].map((w) =>
-        w.toString(16).padStart(8, '0')
+        w.toString(16).padStart(8, '0'),
     );
     return parts.join('');
 }
 
-// 의도 검증 API 호출: 실제 경로/스키마는 백엔드 명세로 확정 필요
-async function verifyOrderIntent(intentId: string) {
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL;
-    const res = await fetch(`${base}/api/orders/intent/verify?intent=${encodeURIComponent(intentId)}`, {
-        method: 'GET',
-        credentials: 'include',
-        cache: 'no-store',
-    });
-    if (!res.ok) {
-        let msg = '의도 검증 실패';
-        try {
-            const j = await res.json();
-            msg = j.message || msg;
-        } catch { }
-        throw new Error(msg);
-    }
-    // 서버는 OrderIntentPayload와 결제용 표시 이름(orderName)을 반환한다고 가정
-    return res.json() as Promise<{
-        intent: OrderIntentPayload;
-        orderName: string;           // 예: "[단일] 상품명 옵션명 x수량"
-        product: {
-            productId: number;
-            name: string;
-            thumbnailUrl: string | null;
-            optionName: string | null;
-        };
-    }>;
-}
+type Props = { role: PaymentRole };
 
-export default function GuestPaymentPage() {
+export default function SinglePaymentPage({ role }: Props) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const intentId = searchParams.get('intent'); // productId는 더 이상 사용하지 않음
+    const intentId = searchParams.get('intent');
 
-    const [submitting, setSubmitting] = useState(false);
+    const [intent, setIntent] = useState<OrderIntentPayload | null>(null);
+    const [product, setProduct] = useState<ProductLineItem | null>(null);
+    const [orderName, setOrderName] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     const [form, setForm] = useState<GuestPaymentForm>({
@@ -75,15 +52,10 @@ export default function GuestPaymentPage() {
         recipientPhone: '',
     });
 
-    const [product, setProduct] = useState<ProductLineItem | null>(null);
-    const [intent, setIntent] = useState<OrderIntentPayload | null>(null);
-    const [orderName, setOrderName] = useState<string>('');
-
     const detailRef = useRef<HTMLInputElement>(null);
     const [postcodeLoaded, setPostcodeLoaded] = useState(false);
     const [popupOpened, setPopupOpened] = useState(false);
 
-    // 우편번호 스크립트 로딩
     const ensurePostcodeScript = async () => {
         if (postcodeLoaded) return;
         if ((window as any).daum?.Postcode) {
@@ -113,7 +85,6 @@ export default function GuestPaymentPage() {
         }).open();
     };
 
-    // 의도 검증 → 안전한 결제 소스 구성
     useEffect(() => {
         if (!intentId) {
             setErrorMsg('잘못된 접근입니다. 의도 토큰이 없습니다.');
@@ -122,59 +93,49 @@ export default function GuestPaymentPage() {
         (async () => {
             try {
                 setLoading(true);
-                const { intent: iv, orderName: oname, product: p } = await verifyOrderIntent(intentId);
-
-                // intent 기반으로 단일 아이템 카드 구성. 수량/가격은 서버가 고정/검증.
+                const { intent: iv, orderName: oname, product: p } = await verifyOrderIntent(intentId, role);
                 const unit = iv.unitPrice;
                 const qty = iv.quantity;
-                const paidAmount = unit * qty;
-
                 const item: ProductLineItem = {
                     productId: p.productId,
                     name: p.name,
-                    price: unit,                 // 단일 기준 가격을 price로 세팅
-                    timeSalePrice: null,         // 의도 기준이면 더 이상 개별 타임세일 계산 필요 없음
-                    isTimeSale: false,           // 서버가 unitPrice에 반영했다고 가정
+                    price: unit,
+                    timeSalePrice: null,
+                    isTimeSale: false,
                     thumbnailUrl: p.thumbnailUrl ?? null,
                     quantity: qty,
-                    paidAmount,
+                    paidAmount: unit * qty,
                     optionName: p.optionName ?? null,
                     productOptionId: iv.optionId ?? null,
-                    disableQuantityControls: true, // 의도 고정. 조작 불가
+                    disableQuantityControls: true,
                     showDeleteButton: false,
                 };
-
                 setIntent(iv);
                 setOrderName(oname);
                 setProduct(item);
             } catch (e: any) {
-                setErrorMsg(e?.message || '의도 검증 중 오류가 발생했습니다.');
+                setErrorMsg(e?.message || '의도 검증 실패');
             } finally {
                 setLoading(false);
             }
         })();
-    }, [intentId]);
+    }, [intentId, role]);
 
     const setField = <K extends keyof GuestPaymentForm>(k: K, v: GuestPaymentForm[K]) =>
         setForm((prev) => ({ ...prev, [k]: v }));
 
     const amount = useMemo(() => {
         if (!product) return 0;
-        return product.price * product.quantity; // 이미 intent에서 고정됨
+        return product.price * product.quantity;
     }, [product]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!intent || !product) return;
-        if (amount <= 0) {
-            showToast.error('유효하지 않은 결제 금액입니다.', { group: 'payment' });
-            return;
-        }
 
-        const { ok, errors } = validate('guestPayment', form);
-        if (!ok) {
-            const first = Object.values(errors)[0];
+        const check = validate('guestPayment', form);
+        if (!check.ok) {
+            const first = Object.values(check.errors)[0];
             if (first) showToast.error(first, { group: 'payment' });
             return;
         }
@@ -190,7 +151,6 @@ export default function GuestPaymentPage() {
             if (submitting) return;
             setSubmitting(true);
 
-            // 결제 요청: 금액과 주문명은 intent에서 파생된 안전한 값 사용
             const payment = await PortOne.requestPayment({
                 storeId,
                 channelKey,
@@ -215,49 +175,27 @@ export default function GuestPaymentPage() {
                 return;
             }
 
-            // 서버 검증 및 주문 저장: 서버는 client 가격/상품 식별자를 신뢰하지 말고 intent 기준으로 재계산
-            try {
-                const res = await fetch('/api/payments/guest/single', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        // 결제 식별
-                        orderUid: payment.paymentId,
-                        paymentId: payment.paymentId,
+            // 게스트 단일 결제 완료 콜 → 서버는 intent 기준으로 정산해야 함
+            const ok = await completeGuestSinglePayment({
+                intentId: intent.intentId,
+                paymentId: payment.paymentId,
+                orderUid: payment.paymentId,
+                // 레거시 호환 필드(서버는 신뢰하지 말고 무시 가능)
+                productId: product.productId,
+                productOptionId: product.productOptionId,
+                quantity: product.quantity,
+                orderPrice: product.price,
+                paidAmount: amount,
+                buyerName: form.buyerName,
+                buyerEmail: form.buyerEmail,
+                buyerPhone: form.buyerPhone,
+                recipientName: form.sendToOther ? form.recipientName : form.buyerName,
+                recipientPhone: form.sendToOther ? form.recipientPhone : form.buyerPhone,
+                recipientAddress: `${form.address1} ${form.address2}`.trim(),
+            });
 
-                        // 서버용 의도 토큰
-                        intentId: intent.intentId, // 서버가 필수로 검증해야 함
-
-                        // 레거시/호환 필드(서버는 무시 가능, 최종은 intent로 산정)
-                        productId: product.productId,
-                        productOptionId: product.productOptionId,
-                        productName: product.name,
-                        orderPrice: product.price,
-                        paidAmount: amount,
-                        quantity: product.quantity,
-
-                        // 구매자/수령인
-                        buyerName: form.buyerName,
-                        buyerEmail: form.buyerEmail,
-                        buyerPhone: form.buyerPhone,
-                        recipientName: form.sendToOther ? form.recipientName : form.buyerName,
-                        recipientPhone: form.sendToOther ? form.recipientPhone : form.buyerPhone,
-                        recipientAddress: `${form.address1} ${form.address2}`.trim(),
-                    }),
-                });
-
-                if (!res.ok) {
-                    let msg = '결제 검증 실패';
-                    try {
-                        const j = await res.json();
-                        msg = j.message || msg;
-                    } catch { }
-                    showToast.error(msg, { group: 'payment' });
-                    return;
-                }
-            } catch {
-                showToast.error('결제 검증 요청 실패', { group: 'payment' });
+            if (!ok) {
+                showToast.error('결제 검증 실패', { group: 'payment' });
                 return;
             }
 
@@ -270,7 +208,6 @@ export default function GuestPaymentPage() {
         }
     };
 
-    // 의도 누락/오류 대체 UI
     if (!intentId) {
         return (
             <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-background dark:bg-dark-background text-text-primary dark:text-dark-text-primary">
@@ -300,14 +237,14 @@ export default function GuestPaymentPage() {
                     {loading ? (
                         <div className="text-text-secondary dark:text-dark-text-secondary">상품 정보를 불러오는 중...</div>
                     ) : product ? (
-                        <ProductLineItemCard item={product} onQuantityChange={() => { /* 단일 결제는 수량 고정 */ }} />
+                        <ProductLineItemCard item={product} onQuantityChange={() => { }} />
                     ) : (
                         <div className="text-error">상품을 찾을 수 없습니다.</div>
                     )}
                 </div>
 
                 <form noValidate onSubmit={handleSubmit} className={`w-full max-w-md p-6 ${CARD_CLASS}`}>
-                    <h1 className="text-2xl font-bold mb-6 text-center">게스트 결제</h1>
+                    <h1 className="text-2xl font-bold mb-6 text-center">결제 정보</h1>
 
                     <div className="mb-6">
                         <h2 className="text-lg font-semibold mb-2">구매자 정보</h2>
@@ -340,56 +277,12 @@ export default function GuestPaymentPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-lg font-semibold">배송지</h2>
-                        <Switch
-                            checked={form.sendToOther}
-                            onChange={(v) => setField('sendToOther', v)}
-                            label="다른 사람에게 보내기"
-                        />
-                    </div>
-
-                    <div className="mb-6 border border-border dark:border-dark-border rounded-md overflow-hidden bg-surface dark:bg-dark-surface">
-                        <input
-                            name="address1"
-                            placeholder="주소"
-                            value={form.address1}
-                            readOnly
-                            onClick={openPostcodePopup}
-                            onFocus={openPostcodePopup}
-                            required
-                            className={`${INPUT_CLASS} border-b border-border dark:border-dark-border cursor-pointer`}
-                        />
-                        <input
-                            name="address2"
-                            placeholder="상세주소"
-                            value={form.address2}
-                            ref={detailRef}
-                            onChange={(e) => setField('address2', e.target.value)}
-                            required
-                            className={`${INPUT_CLASS} ${form.sendToOther ? 'border-b border-border dark:border-dark-border' : ''}`}
-                        />
-                        {form.sendToOther && (
-                            <>
-                                <input
-                                    name="recipientName"
-                                    placeholder="수령인 이름"
-                                    value={form.recipientName ?? ''}
-                                    onChange={(e) => setField('recipientName', e.target.value)}
-                                    required
-                                    className={`${INPUT_CLASS} border-b border-border dark:border-dark-border`}
-                                />
-                                <input
-                                    name="recipientPhone"
-                                    placeholder="수령인 연락처"
-                                    value={form.recipientPhone ?? ''}
-                                    onChange={(e) => setField('recipientPhone', e.target.value)}
-                                    required
-                                    className={INPUT_CLASS}
-                                />
-                            </>
-                        )}
-                    </div>
+                    <AddressBlock
+                        form={form}
+                        setField={setField}
+                        openPostcodePopup={openPostcodePopup}
+                        detailRef={detailRef}
+                    />
 
                     <div className="mb-4 flex items-center justify-between">
                         <span className="text-text-secondary dark:text-dark-text-secondary">결제 금액</span>
@@ -402,6 +295,73 @@ export default function GuestPaymentPage() {
                 </form>
             </div>
         </main>
+    );
+}
+
+function AddressBlock({
+    form,
+    setField,
+    openPostcodePopup,
+    detailRef,
+}: {
+    form: GuestPaymentForm;
+    setField: <K extends keyof GuestPaymentForm>(k: K, v: GuestPaymentForm[K]) => void;
+    openPostcodePopup: () => Promise<void>;
+    detailRef: React.RefObject<HTMLInputElement | null>;
+}) {
+    return (
+        <>
+            <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold">배송지</h2>
+                <Switch
+                    checked={form.sendToOther}
+                    onChange={(v) => setField('sendToOther', v)}
+                    label="다른 사람에게 보내기"
+                />
+            </div>
+
+            <div className="mb-6 border border-border dark:border-dark-border rounded-md overflow-hidden bg-surface dark:bg-dark-surface">
+                <input
+                    name="address1"
+                    placeholder="주소"
+                    value={form.address1}
+                    readOnly
+                    onClick={openPostcodePopup}
+                    onFocus={openPostcodePopup}
+                    required
+                    className={`${INPUT_CLASS} border-b border-border dark:border-dark-border cursor-pointer`}
+                />
+                <input
+                    name="address2"
+                    placeholder="상세주소"
+                    value={form.address2}
+                    ref={detailRef}
+                    onChange={(e) => setField('address2', e.target.value)}
+                    required
+                    className={`${INPUT_CLASS} ${form.sendToOther ? 'border-b border-border dark:border-dark-border' : ''}`}
+                />
+                {form.sendToOther && (
+                    <>
+                        <input
+                            name="recipientName"
+                            placeholder="수령인 이름"
+                            value={form.recipientName ?? ''}
+                            onChange={(e) => setField('recipientName', e.target.value)}
+                            required
+                            className={`${INPUT_CLASS} border-b border-border dark:border-dark-border`}
+                        />
+                        <input
+                            name="recipientPhone"
+                            placeholder="수령인 연락처"
+                            value={form.recipientPhone ?? ''}
+                            onChange={(e) => setField('recipientPhone', e.target.value)}
+                            required
+                            className={INPUT_CLASS}
+                        />
+                    </>
+                )}
+            </div>
+        </>
     );
 }
 

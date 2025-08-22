@@ -9,5 +9,5 @@ public interface ProductMapper {
     int decreaseStock(@Param("productId") Long productId,
                       @Param("qty") int qty);
 
-    int getPriceById(@Param("productId") Long productId);
+    Integer getPriceById(@Param("productId") Long productId);
 }

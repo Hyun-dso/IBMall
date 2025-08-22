@@ -15,4 +15,5 @@ export interface Product {
 export interface ProductBuyProps {
     productId: number;
     quantity?: number;
+    mode: string | null;
 }
