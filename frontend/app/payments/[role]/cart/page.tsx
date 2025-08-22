@@ -26,11 +26,8 @@ function genPaymentId() {
     return parts.join('');
 }
 
-// ❌ props로 params 받지 않음
-export default function CartPaymentPage() {
-    const { role: roleRaw } = useParams<{ role: PaymentRole }>(); // ✅ URL 파라미터 읽기
-    const role = roleRaw as PaymentRole; // "guest" | "member" 전제
-
+export default function CartPaymentPage({ params }: any) {
+    const role = (params as { role: PaymentRole }).role;
     const router = useRouter();
 
     const items = useCartStore((s) => s.items);
@@ -113,7 +110,7 @@ export default function CartPaymentPage() {
 
     const orderName = useMemo(() => {
         if (!items.length) return '';
-        const first = items[0].name;
+        const first = items[0]!.name;
         const rest = items.length - 1;
         return rest > 0 ? `${first} 외 ${rest}개` : first;
     }, [items]);

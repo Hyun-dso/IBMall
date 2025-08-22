@@ -212,13 +212,14 @@ export async function serverJSON<T>(path: string, init?: RequestInit): Promise<J
     const cookie = (await cookies()).toString();
     const h = await headers();
 
+    const forwardHost = h.get('host');
     const res = await fetch(`${API_BASE}${path}`, {
         ...init,
         headers: {
             accept: 'application/json',
             ...(init?.headers || {}),
             cookie,
-            'x-forwarded-host': h.get('host') ?? undefined,
+            ...(forwardHost ? { 'x-forwarded-host': forwardHost } : {}),
         },
         cache: 'no-store',
     });

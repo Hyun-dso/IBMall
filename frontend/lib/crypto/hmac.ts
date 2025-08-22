@@ -17,7 +17,7 @@ export function verifyHmac(token: string, secret: string): { ok: boolean; payloa
   const got = Buffer.from(sig.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
   if (expected.length !== got.length) return { ok: false };
   let same = 0;
-  for (let i = 0; i < expected.length; i++) same |= expected[i] ^ got[i];
+  for (let i = 0; i < expected.length; i++) same |= expected[i]! ^ got[i]!;
   if (same !== 0) return { ok: false };
   try {
     return { ok: true, payload: JSON.parse(body.toString('utf8')) };

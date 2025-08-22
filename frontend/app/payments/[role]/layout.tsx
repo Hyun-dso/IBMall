@@ -6,13 +6,11 @@ import type { PaymentRole } from '@/types/payment';
 type Params = { role: PaymentRole };
 
 export default async function PaymentsRoleLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<Params>; // ✅ Promise로 선언
-}) {
-  const { role } = await params;        // ✅ await로 추출
+    children,
+    params,
+}: { children: React.ReactNode; params: any }) {
+    const { role } = params as { role: 'member' | 'guest' };
+    if (role !== 'member' && role !== 'guest') notFound();
 
   if (role !== 'member' && role !== 'guest') notFound();
 

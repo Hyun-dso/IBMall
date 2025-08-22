@@ -27,6 +27,10 @@ export interface ProductLineItem extends CartItem {
     paidAmount?: number; // 사용한다면 계산 값(파생). 스토어 저장 금지.
 }
 
+export interface CheckoutCartItem extends CartItem {
+    productOptionId: number;
+}
+
 /**
  * 바깥에서 add 시 넘길 수 있는 느슨한 입력 형식.
  * undefined 허용, factory가 정규화한다.
