@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation'; // ✅ useParams 추가
 import { useCartStore } from '@/stores/useCartStore';
 import CartPanel from '@/components/cart/CartPanel';
 import Button from '@/components/ui/Button';
@@ -26,8 +26,11 @@ function genPaymentId() {
     return parts.join('');
 }
 
-export default function CartPaymentPage({ params }: { params: { role: PaymentRole } }) {
-    const role = params.role;
+// ❌ props로 params 받지 않음
+export default function CartPaymentPage() {
+    const { role: roleRaw } = useParams<{ role: PaymentRole }>(); // ✅ URL 파라미터 읽기
+    const role = roleRaw as PaymentRole; // "guest" | "member" 전제
+
     const router = useRouter();
 
     const items = useCartStore((s) => s.items);
