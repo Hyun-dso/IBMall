@@ -20,12 +20,9 @@ async function fetchProductById(id: string): Promise<Product | null> {
   }
 }
 
-export default async function ProductPage({
-  params,
-}: {
-  params: Promise<{ productId: string }>; // ✅ Promise로 선언
-}) {
-  const { productId } = await params;     // ✅ await로 추출
+export default async function ProductPage({ params }: any) {
+    const product = await fetchProductById((params as { productId: string }).productId);
+    if (!product) return notFound();
 
   const product = await fetchProductById(productId);
   if (!product) notFound();
