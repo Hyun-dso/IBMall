@@ -59,6 +59,7 @@ jobs:
           docker push "${{ steps.tags.outputs.IMAGE }}"
           docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
 
+      # ── AWS 자격 구성 ────────────────────────────────────────────────────────
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -66,19 +67,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ secrets.AWS_REGION }}
 
-      # ── Determine active/idle color from ALB rule forward target ──────────────
-      - name: Detect active color (ALB rule)
+      # ── 현재 활성/유휴 색상 감지 (리스너 기본 작업 기준) ─────────────────────
+      - name: Detect active color (listener default action)
         id: color
         env:
           TG_BLUE_ARN:  ${{ secrets.TG_BLUE_ARN }}
           TG_GREEN_ARN: ${{ secrets.TG_GREEN_ARN }}
-          RULE_ARN:     ${{ secrets.RULE_ARN }}     # /api* forward rule
+          LISTENER_ARN: ${{ secrets.LISTENER_ARN }}
         run: |
           set -euo pipefail
-          ACTIVE_TG=$(aws elbv2 describe-rules --rule-arns "$RULE_ARN" \
-            --query 'Rules[0].Actions[0].ForwardConfig.TargetGroups[0].TargetGroupArn' --output text)
+          ACTIVE_TG=$(aws elbv2 describe-listeners --listener-arn "$LISTENER_ARN" \
+            --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
           echo "ACTIVE_TG=$ACTIVE_TG"
-
           if [ "$ACTIVE_TG" = "$TG_BLUE_ARN" ]; then
             echo "active=blue"  >> $GITHUB_OUTPUT
             echo "idle=green"   >> $GITHUB_OUTPUT
@@ -88,12 +88,11 @@ jobs:
             echo "idle=blue"    >> $GITHUB_OUTPUT
             echo "idle_tg=$TG_BLUE_ARN" >> $GITHUB_OUTPUT
           else
-            echo "Unknown active target group ARN: $ACTIVE_TG"
-            exit 1
+            echo "Unknown active target group: $ACTIVE_TG"; exit 1
           fi
 
-      # ── Ship deploy script via Bastion ────────────────────────────────────────
-      - name: Ship backend deploy script
+      # ── deploy.sh 배포 ───────────────────────────────────────────────────────
+      - name: Ship backend deploy script via Bastion
         shell: bash
         run: |
           set -euo pipefail
@@ -104,15 +103,22 @@ jobs:
           APP1="${{ secrets.APP1_HOST }}"
           APP2="${{ secrets.APP2_HOST }}"
 
-          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/deploy.sh "$SSH_BASTION":/tmp/deploy_back.sh
+          # bastion에 2nd hop 키 올려두기
+          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
 
+          # deploy.sh를 bastion로 → 거기서 각 앱서버로 복사
+          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/deploy.sh "$SSH_BASTION":/tmp/deploy_back.sh
           for HOST in "$APP1" "$APP2"; do
             ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
-              "scp -o StrictHostKeyChecking=no -i /dev/stdin /tmp/deploy_back.sh ${APP_USER}@${HOST}:/tmp/deploy_back.sh <<< \"\" && \
-               ssh -o StrictHostKeyChecking=no ${APP_USER}@${HOST} 'sudo mkdir -p /home/ubuntu/deploy/backend && sudo mv /tmp/deploy_back.sh /home/ubuntu/deploy/backend/deploy.sh && sudo chmod +x /home/ubuntu/deploy/backend/deploy.sh'"
+              "scp -o StrictHostKeyChecking=no -i /tmp/app.pem /tmp/deploy_back.sh ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
+               ssh -o StrictHostKeyChecking=no -i /tmp/app.pem ${APP_USER}@${HOST} \
+                 'sudo mkdir -p /home/ubuntu/deploy/backend && \
+                  sudo mv /tmp/deploy_back.sh /home/ubuntu/deploy/backend/deploy.sh && \
+                  sudo chmod +x /home/ubuntu/deploy/backend/deploy.sh'"
           done
 
-      # ── Deploy idle color to BOTH app servers (rolling but same color) ───────
+      # ── 유휴 색상으로 두 앱서버 배포 ────────────────────────────────────────
       - name: Deploy idle color to app servers
         env:
           IMAGE: ${{ steps.tags.outputs.IMAGE }}
@@ -129,7 +135,6 @@ jobs:
           APP1="${{ secrets.APP1_HOST }}"
           APP2="${{ secrets.APP2_HOST }}"
 
-          # provide a key on bastion for 2nd hop if needed
           scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
           ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
 
@@ -141,19 +146,36 @@ jobs:
                 sudo /home/ubuntu/deploy/backend/deploy.sh \"${IMAGE}\" \"${IDLE}\"'"
           done
 
-      # ── Switch ALB rule to the IDLE target group (becomes active) ────────────
-      - name: Switch ALB rule to idle color
+      # ── 유휴 TG 헬스 체크 완료까지 대기(두 인스턴스 모두) ───────────────────
+      - name: Wait for idle target group healthy
         env:
-          IDLE_TG_ARN:  ${{ steps.color.outputs.idle_tg }}
-          RULE_ARN:     ${{ secrets.RULE_ARN }}
+          IDLE_TG_ARN: ${{ steps.color.outputs.idle_tg }}
         run: |
           set -euo pipefail
-          aws elbv2 modify-rule --rule-arn "$RULE_ARN" \
-            --actions Type=forward,ForwardConfig='{ "TargetGroups":[{"TargetGroupArn":"'"$IDLE_TG_ARN"'","Weight":1}] }'
-          echo "Switched ALB rule to $IDLE_TG_ARN"
+          deadline=$(( $(date +%s) + 180 ))
+          while true; do
+            states=$(aws elbv2 describe-target-health --target-group-arn "$IDLE_TG_ARN" \
+              --query 'TargetHealthDescriptions[*].TargetHealth.State' --output text || true)
+            echo "target states: $states"
+            if [ -n "$states" ] && ! grep -qE '(initial|unhealthy|draining|unavailable)' <<< "$states"; then
+              echo "Idle TG healthy"; break
+            fi
+            [ $(date +%s) -lt $deadline ] || { echo "Timeout waiting for healthy"; exit 1; }
+            sleep 3
+          done
 
-  # ─────────────────────────────────────────────────────────────────────────────
+      # ── 리스너 기본 작업을 유휴 TG로 스위치(= 활성 전환) ─────────────────────
+      - name: Switch listener default action to idle color
+        env:
+          LISTENER_ARN: ${{ secrets.LISTENER_ARN }}
+          IDLE_TG_ARN:  ${{ steps.color.outputs.idle_tg }}
+        run: |
+          set -euo pipefail
+          aws elbv2 modify-listener --listener-arn "$LISTENER_ARN" \
+            --default-actions Type=forward,ForwardConfig='{"TargetGroups":[{"TargetGroupArn":"'"$IDLE_TG_ARN"'","Weight":1}]}'
+          echo "Switched to $IDLE_TG_ARN"
 
+  # ===== 수동 롤백(기본 작업 flip) =============================================
   rollback:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -169,20 +191,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ secrets.AWS_REGION }}
 
-      - name: Rollback switch (flip ALB to the other color)
+      - name: Flip listener to the other color
         env:
           TG_BLUE_ARN:  ${{ secrets.TG_BLUE_ARN }}
           TG_GREEN_ARN: ${{ secrets.TG_GREEN_ARN }}
-          RULE_ARN:     ${{ secrets.RULE_ARN }}
+          LISTENER_ARN: ${{ secrets.LISTENER_ARN }}
         run: |
           set -euo pipefail
-          ACTIVE_TG=$(aws elbv2 describe-rules --rule-arns "$RULE_ARN" \
-            --query 'Rules[0].Actions[0].ForwardConfig.TargetGroups[0].TargetGroupArn' --output text)
-          if [ "$ACTIVE_TG" = "$TG_BLUE_ARN" ]; then
-            TARGET="$TG_GREEN_ARN"
-          else
-            TARGET="$TG_BLUE_ARN"
-          fi
-          aws elbv2 modify-rule --rule-arn "$RULE_ARN" \
-            --actions Type=forward,ForwardConfig='{ "TargetGroups":[{"TargetGroupArn":"'"$TARGET"'","Weight":1}] }'
-          echo "Rollback switch done. Now forwarding to: $TARGET"
+          ACTIVE_TG=$(aws elbv2 describe-listeners --listener-arn "$LISTENER_ARN" \
+            --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
+          if [ "$ACTIVE_TG" = "$TG_BLUE_ARN" ]; then TARGET="$TG_GREEN_ARN"; else TARGET="$TG_BLUE_ARN"; fi
+          aws elbv2 modify-listener --listener-arn "$LISTENER_ARN" \
+            --default-actions Type=forward,ForwardConfig='{"TargetGroups":[{"TargetGroupArn":"'"$TARGET"'","Weight":1}]}'
+          echo "Rolled over to $TARGET"
