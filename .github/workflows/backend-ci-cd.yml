@@ -78,6 +78,10 @@ jobs:
           set -euo pipefail
           ACTIVE_TG=$(aws elbv2 describe-listeners --listener-arn "$LISTENER_ARN" \
             --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
+          if [ -z "$ACTIVE_TG" ] || [ "$ACTIVE_TG" = "None" ]; then
+            ACTIVE_TG=$(aws elbv2 describe-listeners --listener-arn "$LISTENER_ARN" \
+              --query 'Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[0].TargetGroupArn' --output text)
+          fi
           echo "ACTIVE_TG=$ACTIVE_TG"
           if [ "$ACTIVE_TG" = "$TG_BLUE_ARN" ]; then
             echo "active=blue"  >> $GITHUB_OUTPUT
@@ -102,17 +106,20 @@ jobs:
           APP_USER="${{ secrets.APP_USER }}"
           APP1="${{ secrets.APP1_HOST }}"
           APP2="${{ secrets.APP2_HOST }}"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
 
-          # bastion에 2nd hop 키 올려두기
-          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
-          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+          # 2nd hop key to bastion
+          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
 
-          # deploy.sh를 bastion로 → 거기서 각 앱서버로 복사
-          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/deploy.sh "$SSH_BASTION":/tmp/deploy_back.sh
+          # deploy.sh → bastion
+          scp $SSH_OPTS -i bastion.pem ./deploy/backend/deploy.sh "$SSH_BASTION":/tmp/deploy_back.sh
+
+          # bastion → each app server
           for HOST in "$APP1" "$APP2"; do
-            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
-              "scp -o StrictHostKeyChecking=no -i /tmp/app.pem /tmp/deploy_back.sh ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
-               ssh -o StrictHostKeyChecking=no -i /tmp/app.pem ${APP_USER}@${HOST} \
+            ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
+              "scp $SSH_OPTS -i /tmp/app.pem /tmp/deploy_back.sh ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
+               ssh $SSH_OPTS -i /tmp/app.pem ${APP_USER}@${HOST} \
                  'sudo mkdir -p /home/ubuntu/deploy/backend && \
                   sudo mv /tmp/deploy_back.sh /home/ubuntu/deploy/backend/deploy.sh && \
                   sudo chmod +x /home/ubuntu/deploy/backend/deploy.sh'"
@@ -134,17 +141,21 @@ jobs:
           APP_USER="${{ secrets.APP_USER }}"
           APP1="${{ secrets.APP1_HOST }}"
           APP2="${{ secrets.APP2_HOST }}"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
 
-          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
-          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+          # ensure 2nd hop key exists on bastion
+          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
+          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
 
           for HOST in "$APP1" "$APP2"; do
-            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
-              "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
-               'echo \"${GHCR_PAT}\" | sudo docker login ghcr.io -u \"${GHCR_USER}\" --password-stdin && \
+            ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
+              "ssh $SSH_OPTS -i /tmp/app.pem ${APP_USER}@${HOST} \
+               'set -euo pipefail;
+                echo \"${GHCR_PAT}\" | sudo docker login ghcr.io -u \"${GHCR_USER}\" --password-stdin;
                 ENV_FILE=/home/ubuntu/env/backend.prod DATA_ROOT=/home/ubuntu/upload SPRING_PROFILES_ACTIVE=prod \
                 sudo /home/ubuntu/deploy/backend/deploy.sh \"${IMAGE}\" \"${IDLE}\"'"
           done
+
 
       # ── 유휴 TG 헬스 체크 완료까지 대기(두 인스턴스 모두) ───────────────────
       - name: Wait for idle target group healthy
@@ -172,8 +183,32 @@ jobs:
         run: |
           set -euo pipefail
           aws elbv2 modify-listener --listener-arn "$LISTENER_ARN" \
-            --default-actions Type=forward,ForwardConfig='{"TargetGroups":[{"TargetGroupArn":"'"$IDLE_TG_ARN"'","Weight":1}]}'
-          echo "Switched to $IDLE_TG_ARN"
+            --default-actions 'Type=forward,ForwardConfig={"TargetGroups":[{"TargetGroupArn":"'"$IDLE_TG_ARN"'","Weight":1}]}'
+          aws elbv2 describe-listeners --listener-arn "$LISTENER_ARN" \
+            --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text || true
+
+# ==== 스위치 후 이전색 컨테이너 정리(프리티어 메모리 확보)
+      - name: Cleanup previous color containers (optional)
+        env:
+          ACTIVE: ${{ steps.color.outputs.active }}
+        run: |
+          set -euo pipefail
+          echo "Cleaning old color: $ACTIVE"
+          echo "${{ secrets.BASTION_KEY }}" > bastion.pem
+          chmod 600 bastion.pem
+          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
+          APP_USER="${{ secrets.APP_USER }}"
+          APP1="${{ secrets.APP1_HOST }}"
+          APP2="${{ secrets.APP2_HOST }}"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
+
+          for H in "$APP1" "$APP2"; do
+            ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
+              "ssh $SSH_OPTS -i /tmp/app.pem ${APP_USER}@${H} \
+               'sudo docker rm -f ibmall-backend-'"$ACTIVE"' || true; \
+                 sudo docker rm -f ibmall-backend || true; \
+                 sudo docker image prune -f || true'"
+          done
 
   # ===== 수동 롤백(기본 작업 flip) =============================================
   rollback:
