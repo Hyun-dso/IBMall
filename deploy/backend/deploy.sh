@@ -13,7 +13,7 @@ HEALTH_PATH="${HEALTH_PATH:-/actuator/health}"
 
 # Health wait configs (tunable via env)
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-120}"   # seconds
-HEALTH_INTERVAL="${HEALTH_INTERVAL:-2}"   # seconds
+HEALTH_INTERVAL="${HEALTH_INTERVAL:-5}"   # seconds
 
 case "$COLOR" in
   blue)  PORT=8080; NAME="${SERVICE_BASE}-blue" ;;
@@ -53,6 +53,7 @@ CID=$(sudo docker run -d --name "$NAME" -p ${PORT}:8080 \
   --restart=always \
   --env-file "$ENV_FILE" \
   -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE}" \
+  -e MANAGEMENT_HEALTH_DB_ENABLED=false \
   -v "${DATA_ROOT}:${DATA_ROOT}:rw" \
   --label "app=ibmall-backend" --label "color=${COLOR}" \
   "$IMAGE")
