@@ -7,7 +7,6 @@ on:
       - "backend/**"
       - "deploy/backend/**"
       - ".github/workflows/backend-ci-cd.yml"
-  # 프론트처럼 수동 롤백도 지원
   workflow_dispatch:
     inputs:
       image:
@@ -25,13 +24,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Gradle 빌드 (JDK 17)
       - name: Set up JDK 17 (Gradle cache)
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
-          cache: 'gradle'
+          cache: gradle
 
       - name: Build (backend)
         working-directory: backend
@@ -39,7 +37,6 @@ jobs:
           chmod +x gradlew
           ./gradlew clean bootJar -x test
 
-      # GHCR 이미지 태그 (소문자)
       - name: Set image tags
         id: tags
         run: |
@@ -62,8 +59,41 @@ jobs:
           docker push "${{ steps.tags.outputs.IMAGE }}"
           docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
 
-      # 스크립트 배포 (레포 → 배스천 → 각 앱서버)
-      - name: Ship backend deploy scripts via Bastion
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      # ── Determine active/idle color from ALB rule forward target ──────────────
+      - name: Detect active color (ALB rule)
+        id: color
+        env:
+          TG_BLUE_ARN:  ${{ secrets.TG_BLUE_ARN }}
+          TG_GREEN_ARN: ${{ secrets.TG_GREEN_ARN }}
+          RULE_ARN:     ${{ secrets.RULE_ARN }}     # /api* forward rule
+        run: |
+          set -euo pipefail
+          ACTIVE_TG=$(aws elbv2 describe-rules --rule-arns "$RULE_ARN" \
+            --query 'Rules[0].Actions[0].ForwardConfig.TargetGroups[0].TargetGroupArn' --output text)
+          echo "ACTIVE_TG=$ACTIVE_TG"
+
+          if [ "$ACTIVE_TG" = "$TG_BLUE_ARN" ]; then
+            echo "active=blue"  >> $GITHUB_OUTPUT
+            echo "idle=green"   >> $GITHUB_OUTPUT
+            echo "idle_tg=$TG_GREEN_ARN" >> $GITHUB_OUTPUT
+          elif [ "$ACTIVE_TG" = "$TG_GREEN_ARN" ]; then
+            echo "active=green" >> $GITHUB_OUTPUT
+            echo "idle=blue"    >> $GITHUB_OUTPUT
+            echo "idle_tg=$TG_BLUE_ARN" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown active target group ARN: $ACTIVE_TG"
+            exit 1
+          fi
+
+      # ── Ship deploy script via Bastion ────────────────────────────────────────
+      - name: Ship backend deploy script
         shell: bash
         run: |
           set -euo pipefail
@@ -74,32 +104,21 @@ jobs:
           APP1="${{ secrets.APP1_HOST }}"
           APP2="${{ secrets.APP2_HOST }}"
 
-          # 2번째 홉용 키를 배스천에 임시 복사
-          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
-          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/deploy.sh "$SSH_BASTION":/tmp/deploy_back.sh
 
-          # 레포 → 배스천
-          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/deploy.sh   "$SSH_BASTION":/tmp/deploy_back.sh
-          scp -o StrictHostKeyChecking=no -i bastion.pem ./deploy/backend/rollback.sh "$SSH_BASTION":/tmp/rollback_back.sh || true
-
-          # 배스천 → 각 앱서버 배치
           for HOST in "$APP1" "$APP2"; do
             ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
-              "scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/deploy_back.sh   ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
-               ( [ -f /tmp/rollback_back.sh ] && scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem /tmp/rollback_back.sh ${APP_USER}@${HOST}:/tmp/rollback_back.sh || true ) && \
-               ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
-                 'mkdir -p /home/ubuntu/deploy/backend && \
-                  sudo mv /tmp/deploy_back.sh   /home/ubuntu/deploy/backend/deploy.sh && \
-                  ( [ -f /tmp/rollback_back.sh ] && sudo mv /tmp/rollback_back.sh /home/ubuntu/deploy/backend/rollback.sh || true ) && \
-                  sudo chmod +x /home/ubuntu/deploy/backend/*.sh || true'"
+              "scp -o StrictHostKeyChecking=no -i /dev/stdin /tmp/deploy_back.sh ${APP_USER}@${HOST}:/tmp/deploy_back.sh <<< \"\" && \
+               ssh -o StrictHostKeyChecking=no ${APP_USER}@${HOST} 'sudo mkdir -p /home/ubuntu/deploy/backend && sudo mv /tmp/deploy_back.sh /home/ubuntu/deploy/backend/deploy.sh && sudo chmod +x /home/ubuntu/deploy/backend/deploy.sh'"
           done
 
-      # 롤링 배포 (앱서버1 → OK → 앱서버2)
-      - name: Deploy to app servers (rolling)
+      # ── Deploy idle color to BOTH app servers (rolling but same color) ───────
+      - name: Deploy idle color to app servers
         env:
           IMAGE: ${{ steps.tags.outputs.IMAGE }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
           GHCR_PAT:  ${{ secrets.GHCR_PAT }}
+          IDLE:      ${{ steps.color.outputs.idle }}
         shell: bash
         run: |
           set -euo pipefail
@@ -110,7 +129,7 @@ jobs:
           APP1="${{ secrets.APP1_HOST }}"
           APP2="${{ secrets.APP2_HOST }}"
 
-          # 2번째 홉용 키
+          # provide a key on bastion for 2nd hop if needed
           scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
           ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
 
@@ -119,37 +138,51 @@ jobs:
               "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
                'echo \"${GHCR_PAT}\" | sudo docker login ghcr.io -u \"${GHCR_USER}\" --password-stdin && \
                 ENV_FILE=/home/ubuntu/env/backend.prod DATA_ROOT=/home/ubuntu/upload SPRING_PROFILES_ACTIVE=prod \
-                sudo /home/ubuntu/deploy/backend/deploy.sh \"${IMAGE}\"'"
+                sudo /home/ubuntu/deploy/backend/deploy.sh \"${IMAGE}\" \"${IDLE}\"'"
           done
 
-  # ===== 수동 롤백 잡 =====
+      # ── Switch ALB rule to the IDLE target group (becomes active) ────────────
+      - name: Switch ALB rule to idle color
+        env:
+          IDLE_TG_ARN:  ${{ steps.color.outputs.idle_tg }}
+          RULE_ARN:     ${{ secrets.RULE_ARN }}
+        run: |
+          set -euo pipefail
+          aws elbv2 modify-rule --rule-arn "$RULE_ARN" \
+            --actions Type=forward,ForwardConfig='{ "TargetGroups":[{"TargetGroupArn":"'"$IDLE_TG_ARN"'","Weight":1}] }'
+          echo "Switched ALB rule to $IDLE_TG_ARN"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+
   rollback:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Roll back to specific image via Bastion
-        shell: bash
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Rollback switch (flip ALB to the other color)
+        env:
+          TG_BLUE_ARN:  ${{ secrets.TG_BLUE_ARN }}
+          TG_GREEN_ARN: ${{ secrets.TG_GREEN_ARN }}
+          RULE_ARN:     ${{ secrets.RULE_ARN }}
         run: |
           set -euo pipefail
-          IMAGE="${{ inputs.image }}"
-          echo "Rollback target image: $IMAGE"
-
-          echo "${{ secrets.BASTION_KEY }}" > bastion.pem
-          chmod 600 bastion.pem
-          SSH_BASTION="${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}"
-          APP_USER="${{ secrets.APP_USER }}"
-          APP1="${{ secrets.APP1_HOST }}"
-          APP2="${{ secrets.APP2_HOST }}"
-
-          # 2-hop key
-          scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
-          ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
-
-          for HOST in "$APP1" "$APP2"; do
-            ssh -o StrictHostKeyChecking=no -i bastion.pem "$SSH_BASTION" \
-              "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem ${APP_USER}@${HOST} \
-               'sudo /home/ubuntu/deploy/backend/rollback.sh \"${IMAGE}\"'"
-          done
+          ACTIVE_TG=$(aws elbv2 describe-rules --rule-arns "$RULE_ARN" \
+            --query 'Rules[0].Actions[0].ForwardConfig.TargetGroups[0].TargetGroupArn' --output text)
+          if [ "$ACTIVE_TG" = "$TG_BLUE_ARN" ]; then
+            TARGET="$TG_GREEN_ARN"
+          else
+            TARGET="$TG_BLUE_ARN"
+          fi
+          aws elbv2 modify-rule --rule-arn "$RULE_ARN" \
+            --actions Type=forward,ForwardConfig='{ "TargetGroups":[{"TargetGroupArn":"'"$TARGET"'","Weight":1}] }'
+          echo "Rollback switch done. Now forwarding to: $TARGET"

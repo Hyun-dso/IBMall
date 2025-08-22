@@ -30,7 +30,7 @@ jobs:
 
       - name: Build (frontend)
         working-directory: frontend
-        run: NODE_ENV=production npm run build -- --no-lint
+        run: NODE_ENV=production npm run dev
 
       # GHCR 이미지 경로는 소문자만 허용
       - name: Set image tags
