@@ -108,9 +108,9 @@ jobs:
           APP2="${{ secrets.APP2_HOST }}"
           SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
 
-          # 2nd hop key to bastion
-          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
-          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+          # 동일 키를 배스천에도 업로드(2nd hop에 사용)
+          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/bastion.pem
+          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/bastion.pem"
 
           # deploy.sh → bastion
           scp $SSH_OPTS -i bastion.pem ./deploy/backend/deploy.sh "$SSH_BASTION":/tmp/deploy_back.sh
@@ -118,12 +118,17 @@ jobs:
           # bastion → each app server
           for HOST in "$APP1" "$APP2"; do
             ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
-              "scp $SSH_OPTS -i /tmp/app.pem /tmp/deploy_back.sh ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
-               ssh $SSH_OPTS -i /tmp/app.pem ${APP_USER}@${HOST} \
+              "scp $SSH_OPTS -i /tmp/bastion.pem /tmp/deploy_back.sh ${APP_USER}@${HOST}:/tmp/deploy_back.sh && \
+               ssh $SSH_OPTS -i /tmp/bastion.pem ${APP_USER}@${HOST} \
                  'sudo mkdir -p /home/ubuntu/deploy/backend && \
                   sudo mv /tmp/deploy_back.sh /home/ubuntu/deploy/backend/deploy.sh && \
                   sudo chmod +x /home/ubuntu/deploy/backend/deploy.sh'"
           done
+
+          # (원격) 배스천에 올린 키 삭제
+          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" 'sudo shred -u /tmp/bastion.pem 2>/dev/null || sudo rm -f /tmp/bastion.pem || true'
+          # (로컬 러너) 가져온 키 삭제
+          shred -u bastion.pem 2>/dev/null || rm -f bastion.pem || true
 
       # ── 유휴 색상으로 두 앱서버 배포 ────────────────────────────────────────
       - name: Deploy idle color to app servers
@@ -143,19 +148,23 @@ jobs:
           APP2="${{ secrets.APP2_HOST }}"
           SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
 
-          # ensure 2nd hop key exists on bastion
-          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/app.pem
-          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/app.pem"
+          # 동일 키 업로드(없을 수도 있으니 보장)
+          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/bastion.pem
+          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/bastion.pem"
 
           for HOST in "$APP1" "$APP2"; do
             ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
-              "ssh $SSH_OPTS -i /tmp/app.pem ${APP_USER}@${HOST} \
+              "ssh $SSH_OPTS -i /tmp/bastion.pem ${APP_USER}@${HOST} \
                'set -euo pipefail;
                 echo \"${GHCR_PAT}\" | sudo docker login ghcr.io -u \"${GHCR_USER}\" --password-stdin;
                 ENV_FILE=/home/ubuntu/env/backend.prod DATA_ROOT=/home/ubuntu/upload SPRING_PROFILES_ACTIVE=prod \
                 sudo /home/ubuntu/deploy/backend/deploy.sh \"${IMAGE}\" \"${IDLE}\"'"
           done
 
+          # (원격) 배스천에 올린 키 삭제
+          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" 'sudo shred -u /tmp/bastion.pem 2>/dev/null || sudo rm -f /tmp/bastion.pem || true'
+          # (로컬 러너) 가져온 키 삭제
+          shred -u bastion.pem 2>/dev/null || rm -f bastion.pem || true
 
       # ── 유휴 TG 헬스 체크 완료까지 대기(두 인스턴스 모두) ───────────────────
       - name: Wait for idle target group healthy
@@ -203,13 +212,22 @@ jobs:
           APP2="${{ secrets.APP2_HOST }}"
           SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=20 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o IdentitiesOnly=yes"
 
+          # 동일 키 업로드(스텝마다 /tmp 초기화 대비)
+          scp $SSH_OPTS -i bastion.pem bastion.pem "$SSH_BASTION":/tmp/bastion.pem
+          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" "chmod 600 /tmp/bastion.pem"
+
           for H in "$APP1" "$APP2"; do
             ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" \
-              "ssh $SSH_OPTS -i /tmp/app.pem ${APP_USER}@${H} \
+              "ssh $SSH_OPTS -i /tmp/bastion.pem ${APP_USER}@${H} \
                'sudo docker rm -f ibmall-backend-'"$ACTIVE"' || true; \
                  sudo docker rm -f ibmall-backend || true; \
                  sudo docker image prune -f || true'"
           done
+
+          # (원격) 배스천에 올린 키 삭제
+          ssh $SSH_OPTS -i bastion.pem "$SSH_BASTION" 'sudo shred -u /tmp/bastion.pem 2>/dev/null || sudo rm -f /tmp/bastion.pem || true'
+          # (로컬 러너) 가져온 키 삭제
+          shred -u bastion.pem 2>/dev/null || rm -f bastion.pem || true
 
   # ===== 수동 롤백(기본 작업 flip) =============================================
   rollback:
