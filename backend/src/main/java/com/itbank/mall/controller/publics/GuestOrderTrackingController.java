@@ -2,9 +2,12 @@ package com.itbank.mall.controller.publics;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.itbank.mall.dto.track.GuestOrderDetailResponse;
 import com.itbank.mall.dto.track.GuestOrderSearchRequest;
 import com.itbank.mall.dto.track.GuestOrderSearchResponse;
 import com.itbank.mall.response.ApiResponse;
@@ -43,6 +46,8 @@ public class GuestOrderTrackingController {
             @RequestBody OwnerVerifyRequest owner) {
 
         var detail = trackingQueryService.findGuestOrderDetail(orderUid, owner.getName(), owner.getPhone());
+
+        System.out.println("[SYSOUT] orderUid=" + orderUid + ", name=" + owner.getName() + ", phone=" + owner.getPhone());
         if (detail == null) {
             // 소유 불일치 또는 주문 없음 → 구체 정보 노출 없이 404 또는 200 빈결과 정책 중 택1
             // 여기선 404로 처리

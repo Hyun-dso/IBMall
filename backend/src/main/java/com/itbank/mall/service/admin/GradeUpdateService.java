@@ -110,6 +110,11 @@ public class GradeUpdateService {
         }
         return updateAndLog(memberId, previousGrade, newGrade, reason, dryRun);
     }
+    
+    @Transactional
+    public boolean updateMemberGradeByMemberId(Long memberId) {
+        return updateMemberGradeByMemberId(memberId, "ADMIN_SINGLE_UPDATE", false);
+    }
 
     // ✅ 변경 이력 조회(기존)
     public List<GradeChangeLogDto> getGradeChangeLogs() {
