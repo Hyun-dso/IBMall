@@ -20,7 +20,7 @@ public class WishlistController {
 
     // ✅ 찜 목록 조회
     @GetMapping("/{memberId}")
-    public ResponseEntity<ApiResponse<List<WishlistDto>>> getWishlist(@PathVariable Long memberId) {
+    public ResponseEntity<ApiResponse<List<WishlistDto>>> getWishlist(@PathVariable("memberId") Long memberId) {
         List<WishlistDto> wishlist = wishlistService.getWishlist(memberId);
         return ResponseEntity.ok(ApiResponse.ok(wishlist));
     }

@@ -6,18 +6,18 @@
 <mapper namespace="com.itbank.mall.mapper.member.WishlistMapper">
 
     <!-- 찜 목록 조회 -->
-    <select id="selectWishlistByMemberId" resultType="com.itbank.mall.dto.wishlist.WishlistDto">
-        SELECT
-            w.wishlist_id,
-            w.member_id,
-            w.product_id,
-            p.name AS productName,
-            p.thumbnail_url AS imageUrl,
-            p.price
-        FROM wishlist w
-        JOIN product p ON w.product_id = p.product_id
-        WHERE w.member_id = #{memberId}
-    </select>
+<select id="selectWishlistByMemberId" resultType="com.itbank.mall.dto.wishlist.WishlistDto">
+    SELECT
+        w.wishlist_id   AS wishlistId,
+        w.member_id     AS memberId,
+        w.product_id    AS productId,
+        p.name          AS productName,
+        p.thumbnail_url AS imageUrl,
+        p.price         AS price
+    FROM wishlist w
+    JOIN product p ON w.product_id = p.product_id
+    WHERE w.member_id = #{memberId}
+</select>
 
     <!-- 찜 추가 -->
     <insert id="insertWishlist">
