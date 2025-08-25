@@ -73,9 +73,7 @@ export default function LoginPage() {
 
     return (
         <form noValidate onSubmit={handleSubmit} className={`${CENTER_CONTENT} ${FORM_CLASS} text-text-primary dark:text-dark-text-primary`}>
-            <div className="w-full flex items-center justify-center">
-                <Logo />
-            </div>
+            <Logo />
             <h1 className="text-2xl font-bold mb-6 text-center">로그인</h1>
 
             <div className="mb-6 border border-border dark:border-dark-border rounded-md overflow-hidden bg-surface dark:bg-dark-surface">

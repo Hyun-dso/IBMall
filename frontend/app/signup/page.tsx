@@ -7,7 +7,6 @@ import Button from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import type { SignupForm } from '@/types/forms';
 import { validate, validateField } from '@/lib/validators/engine';
-import { normalizePhone } from '@/lib/validators/rules';
 import { showToast } from '@/lib/toast';
 import {
     FORM_CLASS,
@@ -17,6 +16,35 @@ import {
     SR_ONLY,
     CENTER_CONTENT
 } from '@/constants/styles';
+
+
+import { isEmail, isPhone, isPasswordValid, isPasswordConfirmed, normalizeEmail, normalizePhoneKR } from '@/lib/validators/rules';
+
+async function onSubmit(form: { email: string; phone: string; pw: string; pw2: string }) {
+    if (!isEmail(form.email)) {
+        showToast.error('이메일 형식이 올바르지 않습니다.', { group: 'signup' });
+        return;
+    }
+    if (!isPhone(form.phone)) {
+        showToast.error('전화번호를 확인하세요. 예) 010-1234-5678', { group: 'signup' });
+        return;
+    }
+    if (!isPasswordValid(form.pw, { requireSpecial: true })) {
+        showToast.error('비밀번호는 8–64자, 영문/숫자/특수문자 포함이어야 합니다.', { group: 'signup' });
+        return;
+    }
+    if (!isPasswordConfirmed(form.pw, form.pw2)) {
+        showToast.error('비밀번호가 일치하지 않습니다.', { group: 'signup' });
+        return;
+    }
+
+    const payload = {
+        email: normalizeEmail(form.email),
+        phone: normalizePhoneKR(form.phone),
+        password: form.pw,
+    };
+    // fetch('/api/members/signup', { ... })
+}
 
 
 export default function SignupPage() {
@@ -120,122 +148,123 @@ export default function SignupPage() {
         }
     };
 
-    return (<form noValidate onSubmit={handleSubmit} className={`${CENTER_CONTENT} ${FORM_CLASS} text-text-primary dark:text-dark-text-primary`}>
-        <div className="w-full flex items-center justify-center">
-            <Logo />
-        </div>
-        <h1 className="text-2xl font-bold mb-6 text-center">회원가입</h1>
+    return (
+        <form noValidate onSubmit={handleSubmit} className={`${CENTER_CONTENT} ${FORM_CLASS} text-text-primary dark:text-dark-text-primary`}>
+            <div className="w-full flex items-center justify-center">
+                <Logo />
+            </div>
+            <h1 className="text-2xl font-bold mb-6 text-center">회원가입</h1>
 
-        {/* 이메일 + 비밀번호 */}
-        <div className={`mb-4 ${INPUT_GROUP_CLASS}`}>
-            <label htmlFor="email" className={SR_ONLY}>이메일</label>
-            <input
-                id="email"
-                type="email"
-                placeholder="이메일"
-                required
-                value={form.email}
-                onChange={(e) => setField('email', e.target.value)}
-                className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
-                autoComplete="email"
-                disabled={submitting}
-            />
-            <label htmlFor="password" className={SR_ONLY}>비밀번호</label>
-            <input
-                id="password"
-                type="password"
-                placeholder="비밀번호"
-                required
-                value={form.password}
-                onChange={(e) => setField('password', e.target.value)}
-                className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
-                autoComplete="new-password"
-                disabled={submitting}
-            />
-            <label htmlFor="confirmPassword" className={SR_ONLY}>비밀번호 확인</label>
-            <input
-                id="confirmPassword"
-                type="password"
-                placeholder="비밀번호 확인"
-                required
-                value={form.confirmPassword}
-                onChange={(e) => setField('confirmPassword', e.target.value)}
-                onBlur={onBlurConfirm}
-                className={INPUT_CLASS}
-                autoComplete="new-password"
-                disabled={submitting}
-            />
-        </div>
+            {/* 이메일 + 비밀번호 */}
+            <div className={`mb-4 ${INPUT_GROUP_CLASS}`}>
+                <label htmlFor="email" className={SR_ONLY}>이메일</label>
+                <input
+                    id="email"
+                    type="email"
+                    placeholder="이메일"
+                    required
+                    value={form.email}
+                    onChange={(e) => setField('email', e.target.value)}
+                    className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
+                    autoComplete="email"
+                    disabled={submitting}
+                />
+                <label htmlFor="password" className={SR_ONLY}>비밀번호</label>
+                <input
+                    id="password"
+                    type="password"
+                    placeholder="비밀번호"
+                    required
+                    value={form.password}
+                    onChange={(e) => setField('password', e.target.value)}
+                    className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
+                    autoComplete="new-password"
+                    disabled={submitting}
+                />
+                <label htmlFor="confirmPassword" className={SR_ONLY}>비밀번호 확인</label>
+                <input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="비밀번호 확인"
+                    required
+                    value={form.confirmPassword}
+                    onChange={(e) => setField('confirmPassword', e.target.value)}
+                    onBlur={onBlurConfirm}
+                    className={INPUT_CLASS}
+                    autoComplete="new-password"
+                    disabled={submitting}
+                />
+            </div>
 
-        {/* 이름 + 닉네임 */}
-        <div className={`mb-4 ${INPUT_GROUP_CLASS}`}>
-            <label htmlFor="name" className={SR_ONLY}>이름</label>
-            <input
-                id="name"
-                type="text"
-                placeholder="이름"
-                required
-                value={form.name}
-                onChange={(e) => setField('name', e.target.value)}
-                className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
-                autoComplete="name"
-                disabled={submitting}
-            />
-            <label htmlFor="nickname" className={SR_ONLY}>닉네임</label>
-            <input
-                id="nickname"
-                type="text"
-                placeholder="닉네임"
-                required
-                value={form.nickname}
-                onChange={(e) => setField('nickname', e.target.value)}
-                className={INPUT_CLASS}
-                autoComplete="nickname"
-                disabled={submitting}
-            />
-        </div>
+            {/* 이름 + 닉네임 */}
+            <div className={`mb-4 ${INPUT_GROUP_CLASS}`}>
+                <label htmlFor="name" className={SR_ONLY}>이름</label>
+                <input
+                    id="name"
+                    type="text"
+                    placeholder="이름"
+                    required
+                    value={form.name}
+                    onChange={(e) => setField('name', e.target.value)}
+                    className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
+                    autoComplete="name"
+                    disabled={submitting}
+                />
+                <label htmlFor="nickname" className={SR_ONLY}>닉네임</label>
+                <input
+                    id="nickname"
+                    type="text"
+                    placeholder="닉네임"
+                    required
+                    value={form.nickname}
+                    onChange={(e) => setField('nickname', e.target.value)}
+                    className={INPUT_CLASS}
+                    autoComplete="nickname"
+                    disabled={submitting}
+                />
+            </div>
 
-        {/* 연락처 + 주소 (선택 입력) */}
-        <div className={`mb-6 ${INPUT_GROUP_CLASS}`}>
-            <label htmlFor="phone" className={SR_ONLY}>연락처</label>
-            <input
-                id="phone"
-                type="text"
-                placeholder="연락처(선택)"
-                value={form.phone}
-                onChange={(e) => onChangePhone(e.target.value)}
-                className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
-                autoComplete="tel"
-                disabled={submitting}
-            />
-            <label htmlFor="address1" className={SR_ONLY}>주소</label>
-            <input
-                id="address1"
-                type="text"
-                placeholder="주소(선택)"
-                value={form.address1}
-                readOnly
-                onClick={handleSearchAddress}
-                onFocus={handleSearchAddress}
-                className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS} cursor-pointer`}
-                disabled={submitting}
-            />
-            <label htmlFor="address2" className={SR_ONLY}>상세주소</label>
-            <input
-                id="address2"
-                type="text"
-                placeholder="상세주소(선택)"
-                value={form.address2}
-                ref={detailRef}
-                onChange={(e) => setField('address2', e.target.value)}
-                className={INPUT_CLASS}
-                disabled={submitting}
-            />
-        </div>
+            {/* 연락처 + 주소 (선택 입력) */}
+            <div className={`mb-6 ${INPUT_GROUP_CLASS}`}>
+                <label htmlFor="phone" className={SR_ONLY}>연락처</label>
+                <input
+                    id="phone"
+                    type="text"
+                    placeholder="연락처(선택)"
+                    value={form.phone}
+                    onChange={(e) => onChangePhone(e.target.value)}
+                    className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
+                    autoComplete="tel"
+                    disabled={submitting}
+                />
+                <label htmlFor="address1" className={SR_ONLY}>주소</label>
+                <input
+                    id="address1"
+                    type="text"
+                    placeholder="주소(선택)"
+                    value={form.address1}
+                    readOnly
+                    onClick={handleSearchAddress}
+                    onFocus={handleSearchAddress}
+                    className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS} cursor-pointer`}
+                    disabled={submitting}
+                />
+                <label htmlFor="address2" className={SR_ONLY}>상세주소</label>
+                <input
+                    id="address2"
+                    type="text"
+                    placeholder="상세주소(선택)"
+                    value={form.address2}
+                    ref={detailRef}
+                    onChange={(e) => setField('address2', e.target.value)}
+                    className={INPUT_CLASS}
+                    disabled={submitting}
+                />
+            </div>
 
-        <Button type="submit" full disabled={submitting} className="font-bold">
-            {submitting ? '처리 중...' : '회원가입'}
-        </Button>
-    </form>
+            <Button type="submit" full disabled={submitting} className="font-bold">
+                {submitting ? '처리 중...' : '회원가입'}
+            </Button>
+        </form>
     );
 }
