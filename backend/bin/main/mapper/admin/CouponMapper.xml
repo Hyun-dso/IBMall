@@ -5,15 +5,28 @@
 
 <mapper namespace="com.itbank.mall.mapper.admin.CouponMapper">
 
-    <!-- 쿠폰 등록 -->
-    <insert id="insertCoupon" parameterType="com.itbank.mall.dto.admin.coupon.CouponDto">
-        INSERT INTO coupon (code, discount_percent, expires_at)
-        VALUES (#{code}, #{discountPercent}, #{expiresAt})
-    </insert>
+  <!-- [C] 쿠폰 등록 -->
+  <insert id="insertCoupon" parameterType="com.itbank.mall.dto.admin.coupon.CouponDto">
+    INSERT INTO coupon (code, discount_percent, expires_at)
+    VALUES (#{code}, #{discountPercent}, #{expiresAt})
+  </insert>
 
-    <!-- 쿠폰 전체 조회 -->
-    <select id="selectAllCoupons" resultType="com.itbank.mall.entity.coupon.CouponEntity">
-        SELECT * FROM coupon ORDER BY created_at DESC
-    </select>
+  <!-- [R] 전체 조회 : created_at 있으면 이 버전 -->
+  <select id="selectAllCoupons" resultType="com.itbank.mall.entity.coupon.CouponEntity">
+    SELECT
+      c.coupon_id        AS couponId,
+      c.code             AS code,
+      c.discount_percent AS discountPercent,
+      c.expires_at       AS expiresAt,
+      c.created_at       AS createdAt
+    FROM coupon c
+    ORDER BY c.created_at DESC
+  </select>
+
+  <!-- [D] 쿠폰 삭제 -->
+  <delete id="deleteCouponById" parameterType="long">
+    DELETE FROM coupon
+    WHERE coupon_id = #{couponId}
+  </delete>
 
 </mapper>
