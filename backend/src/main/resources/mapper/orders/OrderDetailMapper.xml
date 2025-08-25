@@ -18,7 +18,8 @@
       oi.quantity       AS quantity,
       (oi.quantity * oi.price) AS itemTotal,  <!-- ✅ 옵션가 포함 단가(oi.price) 기준으로 합계 계산 -->
 
-      d.address         AS deliveryAddress,
+      d.address1         AS deliveryAddress1,
+      d.address2         AS deliveryAddress2,
       d.recipient       AS recipient,
       d.phone           AS phone,
       d.tracking_number AS trackingNumber,

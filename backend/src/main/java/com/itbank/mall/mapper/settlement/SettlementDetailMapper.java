@@ -36,4 +36,12 @@ public interface SettlementDetailMapper {
                                      @Param("productId") Long productId,
                                      @Param("categoryId") Long categoryId,
                                      @Param("status") String status);
+    
+    String selectPaymentStatusByOrderId(Long orderId);
+
+    int existsPaidPaymentByOrderId(Long orderId);
+    
+    int sumOrderItemsAmount(Long orderId);            // Σ(oi.price * oi.quantity)
+    Integer selectPaymentPaidAmount(Long orderId);    // payment.paid_amount (최신 1건)
+    Integer selectOrdersTotalPrice(Long orderId);     // orders.total_price
 }

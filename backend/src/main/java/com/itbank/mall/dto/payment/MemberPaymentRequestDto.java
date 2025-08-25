@@ -28,5 +28,6 @@ public class MemberPaymentRequestDto {
     // 배송 정보
     private String recipientName;
     private String recipientPhone;
-    private String recipientAddress;
+    private String recipientAddress1; // 주소
+    private String recipientAddress2; // 상세 주소
 }

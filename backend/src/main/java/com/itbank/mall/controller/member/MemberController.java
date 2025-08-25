@@ -78,7 +78,7 @@ public class MemberController {
 
         MemberResponseDto dto = new MemberResponseDto(
             m.getId(), m.getEmail(), m.getName(), m.getNickname(), m.getPhone(),
-            m.getAddress(), m.getProvider(), m.getVerified(), m.getRole(), m.getGrade(), m.getCreatedAt()
+            m.getAddress1(), m.getAddress2(), m.getProvider(), m.getVerified(), m.getRole(), m.getGrade(), m.getCreatedAt()
         );
 
         return ApiResponse.ok(dto);

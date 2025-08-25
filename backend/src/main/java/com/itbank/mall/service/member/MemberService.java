@@ -55,7 +55,8 @@ public class MemberService {
         member.setName(dto.getName());
         member.setNickname(dto.getNickname());
         member.setPhone(dto.getPhone());       // ✅ 추가
-        member.setAddress(dto.getAddress());   // ✅ 추가
+        member.setAddress1(dto.getAddress1());   // ✅ 추가
+        member.setAddress2(dto.getAddress2());   // ✅ 추가
         member.setProvider("local");
         member.setProviderId(null);
         member.setVerified(false);
@@ -99,7 +100,8 @@ public class MemberService {
         if (dto.getName() != null) member.setName(dto.getName());
         if (dto.getNickname() != null) member.setNickname(dto.getNickname());
         if (dto.getPhone() != null) member.setPhone(dto.getPhone());
-        if (dto.getAddress() != null) member.setAddress(dto.getAddress());
+        if (dto.getAddress1() != null) member.setAddress1(dto.getAddress1());
+        if (dto.getAddress2() != null) member.setAddress2(dto.getAddress2());
 
         memberMapper.updateMember(member);
     }
