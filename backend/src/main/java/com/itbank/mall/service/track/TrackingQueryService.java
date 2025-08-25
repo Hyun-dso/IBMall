@@ -1,9 +1,7 @@
 package com.itbank.mall.service.track;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,11 +13,10 @@ import com.itbank.mall.dto.track.GuestOrderSearchResponse;
 import com.itbank.mall.dto.track.GuestOrderSummaryDto;
 import com.itbank.mall.mapper.orders.DeliveryMapper;
 import com.itbank.mall.mapper.orders.OrderMapper;
-
-// 아래 Row 클래스들은 다음 단계에서 함께 제공할 예정
-import com.itbank.mall.mapper.row.OrderSummaryRow;
 import com.itbank.mall.mapper.row.OrderDetailRow;
 import com.itbank.mall.mapper.row.OrderItemRow;
+// 아래 Row 클래스들은 다음 단계에서 함께 제공할 예정
+import com.itbank.mall.mapper.row.OrderSummaryRow;
 
 import lombok.RequiredArgsConstructor;
 
@@ -97,7 +94,8 @@ public class TrackingQueryService {
         if (delivery != null) {
             brief.setRecipientMasked(maskName(delivery.getRecipient()));
             brief.setPhoneMasked(maskPhone(delivery.getPhone()));
-            brief.setAddressMasked(maskAddress(delivery.getAddress()));
+            brief.setAddress1Masked(maskAddress1(delivery.getAddress1()));
+            brief.setAddress2Masked(maskAddress2(delivery.getAddress2()));
             brief.setTrackingNumber(delivery.getTrackingNumber());
             brief.setStatus(delivery.getStatus());
         } else {
@@ -187,11 +185,19 @@ public class TrackingQueryService {
         return head + "****" + tail;
     }
 
-    /** 주소 마스킹: 마지막 3~5자 정도 치환 (단순 정책) */
-    private static String maskAddress(String address) {
-        if (address == null || address.isBlank()) return "";
-        String a = address.trim();
-        if (a.length() <= 5) return "***";
-        return a.substring(0, a.length() - 3) + "***";
+    /** 주소1(도로명) 마스킹: 앞 8자 노출 후 *** */
+    private static String maskAddress1(String address1) {
+        if (address1 == null || address1.isBlank()) return "";
+        String a = address1.trim();
+        int keep = Math.min(a.length(), 8);
+        return a.substring(0, keep) + " ***";
+    }
+
+    /** 주소2(상세) 마스킹: 앞 1~2자 노출 후 *** */
+    private static String maskAddress2(String address2) {
+        if (address2 == null || address2.isBlank()) return "";
+        String a = address2.trim();
+        int keep = Math.min(a.length(), 2);
+        return a.substring(0, keep) + "***";
     }
 }

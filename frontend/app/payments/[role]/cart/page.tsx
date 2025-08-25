@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation'; // ✅ useParams 추가
 import { useCartStore } from '@/stores/useCartStore';
 import CartPanel from '@/components/cart/CartPanel';
 import Button from '@/components/ui/Button';

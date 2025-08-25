@@ -28,5 +28,6 @@ public class GuestPaymentRequestDto {
     // 수령자 정보 (deliveries 테이블에 저장)
     private String recipientName; // 수령인 이름
     private String recipientPhone; // 수령인 휴대폰 번호
-    private String recipientAddress; // 수령인 주소
+    private String recipientAddress1; // 주소
+    private String recipientAddress2; // 상세 주소
 }

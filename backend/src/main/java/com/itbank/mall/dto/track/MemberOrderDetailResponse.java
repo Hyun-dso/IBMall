@@ -19,7 +19,8 @@ public class MemberOrderDetailResponse {
     public static class Delivery {
         private String recipient;
         private String phone;
-        private String address;
+        private String address1;
+        private String address2;
         private String trackingNumber;
         private String status;
     }

@@ -91,7 +91,8 @@ public class MemberOrderQueryService {
         if (delivery != null) {
             d.setRecipient(delivery.getRecipient());
             d.setPhone(delivery.getPhone());
-            d.setAddress(delivery.getAddress());
+            d.setAddress1(delivery.getAddress1());
+            d.setAddress2(delivery.getAddress2());
             d.setTrackingNumber(delivery.getTrackingNumber());
             d.setStatus(delivery.getStatus());
         } else {

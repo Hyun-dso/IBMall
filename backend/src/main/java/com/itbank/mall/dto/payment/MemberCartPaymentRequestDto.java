@@ -25,8 +25,9 @@ public class MemberCartPaymentRequestDto {
     // 배송 정보
     private String recipientName;
     private String recipientPhone;
-    private String recipientAddress;
-
+    private String recipientAddress1; // 주소
+    private String recipientAddress2; // 상세 주소
+    
     // 장바구니 상품 정보
     private List<MemberOrderItemDto> items;
 }
