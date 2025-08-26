@@ -84,4 +84,9 @@ public class DeliveryService {
     public void updateStatus(Long orderId, String status) {
         deliveryMapper.updateStatus(orderId, status);
     }
+    /** 조회: orderId로 배송 엔티티 가져오기 */
+    @Transactional(readOnly = true)
+    public DeliveryEntity findByOrderId(Long orderId) {
+        return deliveryMapper.findByOrderId(orderId);
+    }
 }

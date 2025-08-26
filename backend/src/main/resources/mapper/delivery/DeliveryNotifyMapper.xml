@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.delivery.DeliveryNotifyMapper">
+  <select id="selectNotifyInfoByOrderId" parameterType="long"
+          resultType="com.itbank.mall.event.delivery.DeliveryNotifyInfo">
+    SELECT
+      o.order_id        AS orderId,
+      m.email           AS memberEmail,
+      m.nickname        AS memberNickname,
+      d.tracking_number AS trackingNumber,
+      d.status          AS status
+    FROM orders o
+    JOIN member m     ON m.member_id = o.member_id
+    JOIN deliveries d ON d.order_id  = o.order_id
+    WHERE o.order_id = #{orderId}
+    LIMIT 1
+  </select>
+</mapper>

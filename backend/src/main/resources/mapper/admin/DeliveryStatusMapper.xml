@@ -6,13 +6,14 @@
   
 <mapper namespace="com.itbank.mall.mapper.admin.DeliveryStatusMapper">
 
-    <update id="updateOrderStatus">
-        UPDATE deliveries
-        SET status = #{status}
-        <if test="trackingNumber != null">
-            , tracking_number = #{trackingNumber}
-        </if>
-        WHERE order_id = #{orderId}
-    </update>
+  <update id="updateOrderStatus">
+  UPDATE deliveries
+  SET status = #{status},
+      tracking_number = CASE
+          WHEN #{status} = 'SHIPPING' THEN COALESCE(#{trackingNumber}, tracking_number)
+          ELSE tracking_number
+      END
+  WHERE order_id = #{orderId}
+</update>
 
 </mapper>
