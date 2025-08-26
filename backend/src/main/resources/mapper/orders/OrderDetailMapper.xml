@@ -33,7 +33,7 @@
     WHERE o.order_id = #{orderId}
   </select>
   
-    <!-- 주문 UID 로 주문 상세 조회 -->
+  <!-- 주문 UID 로 주문 상세 조회 -->
   <select id="findOrderDetailByUid" resultType="com.itbank.mall.dto.orders.OrderDetailDto">
     SELECT
       o.order_id        AS orderId,
@@ -59,6 +59,7 @@
     JOIN deliveries d   ON o.order_id = d.order_id
 
     WHERE o.order_uid = #{orderUid}
-  	</select>
+  </select>
+
 
 </mapper>

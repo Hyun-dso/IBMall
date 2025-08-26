@@ -54,6 +54,23 @@ type GuestOrderDetail = {
   } | null;
 };
 
+type OrderDetailDto = {
+  orderId: number;
+  createdAt: string;
+  orderStatus: string;
+  buyerName: string;
+  productName: string;
+  productPrice: number;
+  quantity: number;
+  itemTotal: number;
+  deliveryAddress1: string;
+  deliveryAddress2: string;
+  recipient: string;
+  phone: string;
+  trackingNumber: string;
+  deliveryStatus: string;
+};
+
 // ===== 유틸 =====
 function normalizePhone(p: string) {
   return String(p || '').replace(/[^0-9]/g, '');
@@ -162,21 +179,44 @@ export default function TrackOrderPage() {
     setLoading(true);
     setDetail(null);
     try {
-      const body = { name: nm, phone: ph };
-      const r = await fetchJson<ApiResponse<GuestOrderDetail>>(
-        `${API_BASE}/api/track/guest/orders/${encodeURIComponent(uid)}`,
+      const r = await fetchJson<OrderDetailDto>(
+        `${API_BASE}/api/order-detail/${encodeURIComponent(uid)}`,
         {
-          method: 'POST',
+          method: 'GET',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
         }
       );
-      if (!(r && r.code === 'SUCCESS')) {
+      if (!r) {
         showToast.error('주문 상세 조회에 실패했어요');
         return;
       }
-      setDetail(r.data);
+      const delivery = r.recipient
+        ? {
+            recipientMasked: r.recipient,
+            phoneMasked: r.phone,
+            addressMasked: `${r.deliveryAddress1} ${r.deliveryAddress2}`.trim(),
+            trackingNumber: r.trackingNumber,
+            status: r.deliveryStatus,
+          }
+        : null;
+      const detail: GuestOrderDetail = {
+        orderUid: uid,
+        createdAt: r.createdAt,
+        status: r.orderStatus,
+        totalPrice: r.itemTotal,
+        items: [
+          {
+            productId: 0,
+            productOptionId: null,
+            productName: r.productName,
+            optionName: null,
+            quantity: r.quantity,
+            unitPrice: r.productPrice,
+          },
+        ],
+        delivery,
+      };
+      setDetail(detail);
       // 완료 페이지 힌트 저장
       try {
         sessionStorage.setItem('guestOrderHint', JSON.stringify({ name: nm, phone: ph, orderUid: uid }));
