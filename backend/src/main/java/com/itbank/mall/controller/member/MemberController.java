@@ -34,7 +34,7 @@ public class MemberController {
     public ApiResponse<String> signup(@RequestBody SignupRequestDto dto) {
         try {
             memberService.signup(dto);
-            return ApiResponse.ok(null, "회원가입 성공! 이메일 인증 시 비밀번호 찾기 등 추가로 정보를 받아 볼 수 있습니다.");
+            return ApiResponse.ok(null, "회원가입 성공! 즐거운 쇼핑 되세요.");
         } catch (IllegalArgumentException e) {
             return ApiResponse.fail(e.getMessage());
         } catch (Exception e) {
