@@ -27,7 +27,7 @@ public class MypageController {
 
         MemberResponseDto dto = new MemberResponseDto(
             m.getId(), m.getEmail(), m.getName(), m.getNickname(), m.getPhone(),
-            m.getAddress(), m.getProvider(), m.getVerified(), m.getGrade(), m.getRole(), m.getCreatedAt()
+            m.getAddress1(), m.getAddress2(), m.getProvider(), m.getVerified(), m.getRole(), m.getGrade(), m.getCreatedAt()
         );
 
         return ResponseEntity.ok(ApiResponse.ok(dto));

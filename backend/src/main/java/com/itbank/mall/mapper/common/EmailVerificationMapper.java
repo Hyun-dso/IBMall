@@ -18,4 +18,5 @@ public interface EmailVerificationMapper {
     
     void updateMemberVerified(@Param("email") String email);
     void invalidatePreviousTokens(@Param("email") String email);
+    LocalDateTime findLastCreatedAtByEmail(@Param("email") String email);
 }

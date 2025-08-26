@@ -11,4 +11,5 @@ public class GradeChangeLogDto {
     private String previousGrade;
     private String newGrade;
     private LocalDateTime changedAt;
+    private String reason;
 }

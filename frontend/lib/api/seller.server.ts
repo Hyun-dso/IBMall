@@ -8,6 +8,7 @@ import type { SellerDashboard, SellerOrder, SellerProduct, PageResult } from '@/
 const ENDPOINTS = {
     dashboard: '/api/seller/dashboard',
     orders: '/api/seller/orders',
+    orderDetail: '/api/order-detail',
     products: '/api/seller/products',
 };
 
@@ -29,6 +30,19 @@ export async function listSellerOrders(params: { page: number; size: number }): 
         return res.data;
     } catch {
         return { items: [], page: 1, size: params.size, totalElements: 0, totalPages: 0 };
+    }
+}
+
+export async function getOrderDetail(orderUid: string): Promise<any | null> {
+    try {
+        const res = await apiFetchServer<ApiResponse<any>>(
+            `${ENDPOINTS.orderDetail}/${encodeURIComponent(orderUid)}`,
+            { method: 'GET', timeoutMs: 15000 },
+        );
+        if (!isSuccess(res)) return null;
+        return res.data;
+    } catch {
+        return null;
     }
 }
 

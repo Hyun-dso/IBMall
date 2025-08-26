@@ -227,11 +227,16 @@ public class MemberPaymentService {
         }
 
         // 1) 서버 단가 계산
-        int base = productMapper.getPriceById(dto.getProductId());
-        int extra = (dto.getProductOptionId() != null)
-                ? productOptionMapper.getExtraPriceById(dto.getProductOptionId())
-                : 0;
+        Integer base = productMapper.getPriceById(dto.getProductId());
+        if (base == null) throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+
+        int extra = 0;
+        if (dto.getProductOptionId() != null) {
+            Integer ep = productOptionMapper.getExtraPriceById(dto.getProductOptionId());
+            extra = (ep != null) ? ep : 0; // 옵션 ID가 무효면 0 처리(또는 422로 던져도 됨)
+        }
         int unitPrice = base + extra;
+
 
         // 2) 원자적 재고 차감
         int affected = (dto.getProductOptionId() != null)
@@ -275,7 +280,8 @@ public class MemberPaymentService {
         delivery.setOrderId(order.getOrderId());
         delivery.setRecipient(dto.getRecipientName());
         delivery.setPhone(dto.getRecipientPhone());
-        delivery.setAddress(dto.getRecipientAddress());
+        delivery.setAddress1(dto.getRecipientAddress1());
+        delivery.setAddress2(dto.getRecipientAddress2());
         delivery.setStatus("READY");
         deliveryService.saveDelivery(delivery);
 
@@ -324,11 +330,15 @@ public class MemberPaymentService {
         java.util.List<Line> calc = new java.util.ArrayList<>();
 
         for (MemberOrderItemDto l : lines) {
-            int base = productMapper.getPriceById(l.getProductId());
-            int extra = (l.getProductOptionId() != null)
-                    ? productOptionMapper.getExtraPriceById(l.getProductOptionId())
-                    : 0;
-            int unit = base + extra;
+        	Integer base = productMapper.getPriceById(l.getProductId());
+        	if (base == null) throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+
+        	int extra = 0;
+        	if (l.getProductOptionId() != null) {
+        	    Integer ep = productOptionMapper.getExtraPriceById(l.getProductOptionId());
+        	    extra = (ep != null) ? ep : 0; // 옵션 ID가 무효면 0 처리(또는 422로 던져도 됨)
+        	}
+        	int unit = base + extra;
 
             int affected = (l.getProductOptionId() != null)
                     ? productOptionMapper.decreaseStock(l.getProductOptionId(), l.getQuantity())
@@ -374,7 +384,8 @@ public class MemberPaymentService {
         delivery.setOrderId(order.getOrderId());
         delivery.setRecipient(dto.getRecipientName());
         delivery.setPhone(dto.getRecipientPhone());
-        delivery.setAddress(dto.getRecipientAddress());
+        delivery.setAddress1(dto.getRecipientAddress1());
+        delivery.setAddress2(dto.getRecipientAddress2());
         delivery.setStatus("READY");
         deliveryService.saveDelivery(delivery);
 

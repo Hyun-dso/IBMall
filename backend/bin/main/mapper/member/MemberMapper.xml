@@ -10,7 +10,9 @@
 		<result property="name" column="name" />
 		<result property="nickname" column="nickname" />
 		<result property="phone" column="phone" />
-		<result property="address" column="address" />
+		<result property="address1" column="address1" />
+		<result property="address2" column="address2" />
+		<result property="role" column="role" />
 		<result property="provider" column="provider" />
 		<result property="providerId" column="provider_id" />
 		<result property="verified" column="is_verified" javaType="boolean" />
@@ -20,10 +22,10 @@
 
 	<insert id="insertMember">
 		INSERT INTO member (
-		email, password, name, nickname, phone, address,
+		email, password, name, nickname, phone, address1, address2,
 		provider, provider_id, is_verified, role, grade
 		) VALUES (
-		#{email}, #{password}, #{name}, #{nickname}, #{phone}, #{address},
+		#{email}, #{password}, #{name}, #{nickname}, #{phone}, #{address1}, #{address2},
 		#{provider}, #{providerId}, false, 'USER', #{grade}
 		)
 	</insert>
@@ -34,7 +36,8 @@
 		name = #{name},
 		nickname = #{nickname},
 		phone = #{phone},
-		address = #{address}
+		address1 = #{address1},
+		address2 = #{address2}
 		WHERE id = #{id}
 	</update>
 
@@ -64,10 +67,10 @@
 
 	<insert id="insertByGoogle" parameterType="com.itbank.mall.entity.member.Member">
 		INSERT INTO member (
-		email, password, name, nickname, phone, address,
+		email, password, name, nickname, phone, address1, address2,
 		provider, provider_id, is_verified, role, grade
 		) VALUES (
-		#{email}, #{password}, #{name}, #{nickname}, #{phone}, #{address},
+		#{email}, #{password}, #{name}, #{nickname}, #{phone}, #{address1}, #{address2},
 		'google', #{providerId}, 1, 'USER', #{grade}
 		)
 	</insert>

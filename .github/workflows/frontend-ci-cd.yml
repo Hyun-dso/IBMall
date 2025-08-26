@@ -50,10 +50,14 @@ jobs:
 
       - name: Build & Push Docker image
         run: |
-          docker build -f frontend/Dockerfile -t "${{ steps.tags.outputs.IMAGE }}" frontend
-          docker tag "${{ steps.tags.outputs.IMAGE }}" "${{ steps.tags.outputs.IMAGE_MAIN }}"
-          docker push "${{ steps.tags.outputs.IMAGE }}"
-          docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
+          docker build \
+              --build-arg NEXT_PUBLIC_PORTONE_V2_STORE_ID='${{ vars.NEXT_PUBLIC_PORTONE_V2_STORE_ID }}' \
+              --build-arg NEXT_PUBLIC_PORTONE_V2_CHANNEL_KEY='${{ vars.NEXT_PUBLIC_PORTONE_V2_CHANNEL_KEY }}' \
+              --build-arg NEXT_PUBLIC_API_BASE_URL='${{ vars.NEXT_PUBLIC_API_BASE_URL }}' \
+              -f frontend/Dockerfile -t "${{ steps.tags.outputs.IMAGE }}" frontend
+            docker tag "${{ steps.tags.outputs.IMAGE }}" "${{ steps.tags.outputs.IMAGE_MAIN }}"
+            docker push "${{ steps.tags.outputs.IMAGE }}"
+            docker push "${{ steps.tags.outputs.IMAGE_MAIN }}"
 
       - name: Ship frontend deploy scripts via Bastion
         run: |
@@ -92,6 +96,7 @@ jobs:
           IMAGE: ${{ steps.tags.outputs.IMAGE }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
           GHCR_PAT:  ${{ secrets.GHCR_PAT }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
         run: |
           echo "${{ secrets.BASTION_KEY }}" > bastion.pem
           chmod 600 bastion.pem
@@ -103,11 +108,11 @@ jobs:
           scp -o StrictHostKeyChecking=no -i bastion.pem bastion.pem $SSH_BASTION:/tmp/app.pem
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION "chmod 600 /tmp/app.pem"
 
-          # 프론트 배포 실행 (헬스체크 경로는 /api/health)
+          # 프론트 배포 실행 (헬스체크는 deploy.sh 기본값 /healthz 사용)
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION \
             "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /tmp/app.pem $SSH_WEB \
              'echo \"$GHCR_PAT\" | sudo docker login ghcr.io -u \"$GHCR_USER\" --password-stdin && \
-              HEALTH_PATH=/api/health sudo /home/ubuntu/deploy/frontend/deploy.sh \"$IMAGE\"'"
+              sudo /home/ubuntu/deploy/frontend/deploy.sh \"$IMAGE\"'"
 
           # (선택) 배스천 임시 키 삭제
           ssh -o StrictHostKeyChecking=no -i bastion.pem $SSH_BASTION 'shred -u /tmp/app.pem' || true

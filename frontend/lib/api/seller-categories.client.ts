@@ -50,3 +50,9 @@ export async function createSellerCategory(name: string): Promise<CreateCategory
         return { ok: false, message: '네트워크 오류' };
     }
 }
+
+export async function fetchSellerCategories() {
+    const res = await fetch('/api/admin/categories', { credentials: 'include' });
+    if (!res.ok) throw new Error('카테고리 불러오기 실패');
+    return res.json();
+}

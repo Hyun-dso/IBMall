@@ -28,7 +28,8 @@ public class GuestCartPaymentRequestDto {
     // 수령자 정보
     private String recipientName;
     private String recipientPhone;
-    private String recipientAddress;
+    private String recipientAddress1;
+    private String recipientAddress2;
 
     // 🧩 장바구니 내 상품 리스트
     private List<GuestOrderItemDto> items;

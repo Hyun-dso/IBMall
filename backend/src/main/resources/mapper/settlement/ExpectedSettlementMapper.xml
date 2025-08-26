@@ -5,7 +5,7 @@
 
 <mapper namespace="com.itbank.mall.mapper.settlement.ExpectedSettlementMapper">
 
-    <!-- 1) 기간 삭제: 저장/조회와 동일 '기준 시간' 컬럼 사용 -->
+    <!-- 1) 기간 삭제: 스냅샷 컬럼(payment_created_at) 기준 -->
     <delete id="deleteByDateRange">
         DELETE FROM expected_settlement
         WHERE payment_created_at BETWEEN #{startDate} AND #{endDate}
@@ -14,21 +14,24 @@
     <!-- 2) 저장: 기준 시간 = orders.created_at
             - payment는 status만 검증 (시간으로 필터링하지 않음)
             - order_id, price, qty 등은 orders/order_items/product에서만 가져옴 -->
-<insert id="insertByDateRangeFromOrders">
-  INSERT INTO expected_settlement (
-      order_id, product_id, product_name, quantity, final_price, payment_created_at
-  )
-  SELECT
-      o.order_id,
-      p.product_id,
-      p.name,
-      oi.quantity,
-      (oi.price * oi.quantity) AS final_price,
-      o.created_at AS payment_created_at
-  FROM orders o
-  JOIN order_items oi ON o.order_id = oi.order_id
-  JOIN product p      ON oi.product_id = p.product_id
-  WHERE o.created_at BETWEEN #{startDate} AND #{endDate}
+    <!-- 2) 저장: 결제 시각(pay.created_at) 기준, 결제는 PAID만 인정 -->
+    <insert id="insertByDateRangeFromOrders">
+      INSERT INTO expected_settlement (
+          order_id, product_id, product_name, quantity, final_price, payment_created_at
+      )
+      SELECT
+          o.order_id,
+          p.product_id,
+          p.name,
+          oi.quantity,
+          (oi.price * oi.quantity) AS final_price,
+          pay.created_at AS payment_created_at
+      FROM orders o
+      JOIN order_items oi ON o.order_id = oi.order_id
+      JOIN product p      ON oi.product_id = p.product_id
+      JOIN payment pay    ON pay.order_id = o.order_id
+      WHERE pay.status = 'PAID'
+        AND pay.created_at BETWEEN #{startDate} AND #{endDate}
  <!--   AND EXISTS (
       SELECT 1
       FROM payment pay
@@ -39,10 +42,10 @@
         /* (선택) 주문시각 근처 결제만 인정: 6시간 이내 */
         AND ABS(TIMESTAMPDIFF(MINUTE, pay.created_at, o.created_at)) &lt;= 360
     ) -->
-</insert>
+	</insert>
 
 
-    <!-- 3) 조회: 저장과 동일한 '기준 시간' 컬럼으로 필터 -->
+    <!-- 3) 조회: 스냅샷 컬럼(payment_created_at) 기준 -->
     <select id="selectByDateRange" resultType="com.itbank.mall.dto.settlement.ExpectedSettlementDto">
         SELECT
             id,

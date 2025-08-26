@@ -43,7 +43,8 @@ public class DeliveryService {
             DeliveryEntity e = new DeliveryEntity();
             e.setOrderId(orderId);
             // 스키마가 NOT NULL이라 플레이스홀더 사용(관리자 화면에서 수정 가능)
-            e.setAddress("-");
+            e.setAddress1("-");
+            e.setAddress2("-");
             e.setRecipient("-");
             e.setPhone("-");
             e.setStatus("READY");

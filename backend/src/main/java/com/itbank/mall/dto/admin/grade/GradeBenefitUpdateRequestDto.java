@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class GradeBenefitUpdateRequestDto {
-    private int discountPercent;
-    private int mileageRate;
+    private Integer discountPercent;
+    private Integer mileageRate;
 }

@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV = [
-    { href: '/seller', label: '대시보드' },
-    { href: '/seller/products', label: '상품' },
+    { href: '/seller/dashboard', label: '대시보드' },
     { href: '/seller/orders', label: '주문' },
+    { href: '/seller/categories', label: '카테고리' },
+    { href: '/seller/products', label: '상품' },
 ];
 
 export default function SellerNav() {

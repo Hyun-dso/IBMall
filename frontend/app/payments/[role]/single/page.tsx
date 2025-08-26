@@ -3,13 +3,14 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ProductLineItem } from '@/types/cart';
 import ProductLineItemCard from '@/components/ProductLineItemCard';
 import Button from '@/components/ui/Button';
 import PortOne, { isPortOneError } from '@portone/browser-sdk/v2';
-import { toast } from 'react-hot-toast';
-import type { GuestPaymentForm } from '@/types/forms';
 import { validate } from '@/lib/validators/engine';
+import { showToast } from '@/lib/toast';
+
+import type { ProductLineItem } from '@/types/cart';
+import type { GuestPaymentForm } from '@/types/forms';
 
 const CARD_CLASS =
     'border border-border dark:border-dark-border rounded-lg bg-surface dark:bg-dark-surface shadow-sm';
@@ -18,19 +19,25 @@ const INPUT_CLASS =
 
 const currency = new Intl.NumberFormat('ko-KR');
 
+function normalizeDigits(p: string) {
+    return String(p || '').replace(/[^0-9]/g, '');
+}
+
 function genPaymentId() {
     const parts = [...crypto.getRandomValues(new Uint32Array(2))].map((w) =>
-        w.toString(16).padStart(8, '0')
+        w.toString(16).padStart(8, '0'),
     );
     return parts.join('');
 }
 
-export default function GuestPaymentPage() {
+export default function GuestSinglePaymentPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const productId = searchParams.get('productId');
 
+    const [product, setProduct] = useState<ProductLineItem | null>(null);
     const [quantity, setQuantity] = useState(1);
+    const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const [form, setForm] = useState<GuestPaymentForm>({
@@ -44,12 +51,10 @@ export default function GuestPaymentPage() {
         recipientPhone: '',
     });
 
-    const [product, setProduct] = useState<ProductLineItem | null>(null);
-    const [loading, setLoading] = useState(false);
-
-    const detailRef = useRef<HTMLInputElement>(null);
+    // 다음 우편번호 팝업
     const [postcodeLoaded, setPostcodeLoaded] = useState(false);
     const [popupOpened, setPopupOpened] = useState(false);
+    const detailRef = useRef<HTMLInputElement>(null);
 
     const ensurePostcodeScript = async () => {
         if (postcodeLoaded) return;
@@ -72,7 +77,7 @@ export default function GuestPaymentPage() {
         setPopupOpened(true);
         new (window as any).daum.Postcode({
             oncomplete: (data: any) => {
-                setForm((prev) => ({ ...prev, address1: data.address as string }));
+                setForm((prev) => ({ ...prev, address1: String(data.address || '') }));
                 setPopupOpened(false);
                 setTimeout(() => detailRef.current?.focus(), 0);
             },
@@ -80,6 +85,7 @@ export default function GuestPaymentPage() {
         }).open();
     };
 
+    // 상품 조회
     useEffect(() => {
         if (!productId) return;
         (async () => {
@@ -87,73 +93,83 @@ export default function GuestPaymentPage() {
                 setLoading(true);
                 const res = await fetch(
                     `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/products/${productId}`,
-                    { credentials: 'include' }
+                    { credentials: 'include' },
                 );
                 if (!res.ok) {
-                    toast.error('상품 조회 실패');
+                    let msg = '상품 조회 실패';
+                    try {
+                        const j = await res.json();
+                        msg = j?.message || msg;
+                    } catch { }
+                    showToast.error(msg, { group: 'payment' });
                     return;
                 }
                 const json = await res.json();
                 const data = json.data.product;
-                setProduct({
+
+                const line: ProductLineItem = {
                     productId: data.productId,
                     name: data.name,
-                    price: data.price,
-                    timeSalePrice: data.timeSalePrice ?? undefined,
-                    isTimeSale: data.isTimeSale === true,
-                    thumbnailUrl: data.thumbnailUrl,
-                    quantity,
-                    optionName: undefined,
+                    price: data.price, // 서버가 최종 검증하므로 여기선 표시/요청값
+                    isTimeSale: Boolean(data.isTimeSale),
+                    timeSalePrice: typeof data.timeSalePrice === 'number' ? data.timeSalePrice : null,
+                    thumbnailUrl: data.thumbnailUrl ?? null,
+                    optionName: data.optionName ?? null,
+                    quantity: 1,
                     disableQuantityControls: false,
                     showDeleteButton: false,
-                });
+                    productOptionId: null
+                };
+                setProduct(line);
             } catch {
-                toast.error('에러 발생');
+                showToast.error('상품 정보를 불러오는 중 오류가 발생했어요', { group: 'payment' });
             } finally {
                 setLoading(false);
             }
         })();
     }, [productId]);
 
-    const handleQuantityChange = (newQty: number) => {
-        if (newQty < 1) return;
-        setQuantity(newQty);
-        setProduct((prev) => (prev ? { ...prev, quantity: newQty } : prev));
-    };
-
     const setField = <K extends keyof GuestPaymentForm>(k: K, v: GuestPaymentForm[K]) =>
         setForm((prev) => ({ ...prev, [k]: v }));
 
     const unitPrice = useMemo(() => {
         if (!product) return 0;
-        return product.isTimeSale && product.timeSalePrice ? product.timeSalePrice : product.price;
+        // 필요 시 타임세일 표시가를 결제금액에 반영하려면 아래 주석을 사용
+        // return product.isTimeSale && product.timeSalePrice != null ? product.timeSalePrice : product.price;
+        return product.price;
     }, [product]);
 
     const amount = useMemo(() => unitPrice * quantity, [unitPrice, quantity]);
 
+    const handleQuantityChange = (q: number) => {
+        if (q < 1) return;
+        setQuantity(q);
+        setProduct((prev) => (prev ? { ...prev, quantity: q } : prev));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 금액 0 방지
+        if (!productId || !product) {
+            showToast.error('상품 정보가 없습니다.', { group: 'payment' });
+            return;
+        }
         if (amount <= 0) {
-            toast.error('유효하지 않은 결제 금액');
+            showToast.error('유효하지 않은 결제 금액입니다.', { group: 'payment' });
             return;
         }
 
-        // 폼 검증
         const { ok, errors } = validate('guestPayment', form);
         if (!ok) {
             const first = Object.values(errors)[0];
-            if (first) toast.error(first);
+            if (first) showToast.error(first, { group: 'payment' });
             return;
         }
-        if (!product) return;
 
-        // env 검증
         const storeId = process.env.NEXT_PUBLIC_PORTONE_V2_STORE_ID;
         const channelKey = process.env.NEXT_PUBLIC_PORTONE_V2_CHANNEL_KEY;
         if (!storeId || !channelKey) {
-            toast.error('결제 설정 누락');
+            showToast.error('결제 설정이 누락되었습니다.', { group: 'payment' });
             return;
         }
 
@@ -161,60 +177,105 @@ export default function GuestPaymentPage() {
             if (submitting) return;
             setSubmitting(true);
 
+            const orderName =
+                quantity > 1 ? `${product.name} x${quantity}` : product.name;
+
             const payment = await PortOne.requestPayment({
                 storeId,
                 channelKey,
                 paymentId: genPaymentId(),
-                orderName: product.name,
+                orderName,
                 totalAmount: amount,
                 currency: 'CURRENCY_KRW',
                 payMethod: 'CARD',
                 customer: {
-                    fullName: form.buyerName,
-                    email: form.buyerEmail,
-                    phoneNumber: form.buyerPhone,
+                    fullName: form.buyerName.trim(),
+                    email: form.buyerEmail.trim(),
+                    phoneNumber: form.buyerPhone.trim(),
                 },
-                // customData 미사용(일부 PG 제한)
             });
 
-            // 창 닫힘/사용자 취소
             if (!payment) {
-                toast.error('결제가 취소되었습니다.');
+                showToast.error('결제가 취소되었습니다.', { group: 'payment' });
                 return;
             }
-
-            // PortOne/PG 실패 응답
             if (isPortOneError(payment)) {
-                toast.error(payment.pgMessage || payment.message || '결제 실패');
+                showToast.error(payment.pgMessage || payment.message || '결제 실패', { group: 'payment' });
                 return;
             }
 
-            // 서버 검증 및 저장
+            const tx = String(payment.paymentId || '').trim();
+            if (!tx) {
+                showToast.error('결제 식별자가 비어 있습니다(paymentId).', { group: 'payment' });
+                return;
+            }
+
+            // 서버 검증/주문 저장 — Next API 프록시를 통해 백엔드로 전달
             try {
+                const payload = {
+                    // 멱등/식별
+                    orderUid: tx,
+                    paymentId: tx,
+                    transactionId: tx,
+
+                    // 금액(서버가 최종 검증)
+                    paidAmount: amount,
+                    orderPrice: amount,
+
+                    // 상품
+                    productId: Number(productId),
+                    productOptionId: product.productOptionId ?? null,
+                    productName: product.name,
+                    quantity,
+
+                    // 구매자/수령자
+                    buyerName: form.buyerName.trim(),
+                    buyerEmail: form.buyerEmail.trim(),
+                    buyerPhone: form.buyerPhone.trim(),
+                    recipientName: (form.sendToOther ? form.recipientName : form.buyerName).trim(),
+                    recipientPhone: (form.sendToOther ? form.recipientPhone : form.buyerPhone).trim(),
+                    recipientAddress: `${form.address1} ${form.address2}`.trim(),
+
+                    // 참고값(서버에서 PG 조회로 덮어씀)
+                    paymentMethod: 'CARD',
+                    status: 'PAID',
+                    pgProvider: 'INICIS',
+                };
+
                 const res = await fetch('/api/payments/guest/single', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentId: payment.paymentId, amount }),
+                    body: JSON.stringify(payload),
                 });
+
                 if (!res.ok) {
                     let msg = '결제 검증 실패';
                     try {
                         const j = await res.json();
-                        msg = j.message || msg;
+                        msg = j?.message || msg;
                     } catch { }
-                    toast.error(msg);
+                    showToast.error(msg, { group: 'payment' });
                     return;
                 }
             } catch {
-                toast.error('결제 검증 요청 실패');
+                showToast.error('결제 검증 요청 실패', { group: 'payment' });
                 return;
             }
-
-            toast.success('결제가 완료되었습니다.');
-            router.push(`/orders/complete?paymentId=${payment.paymentId}`);
-        } catch (err: any) {
-            toast.error(err?.message || '결제 요청 중 오류 발생');
+            try {
+                sessionStorage.setItem(
+                    'guestOrderHint',
+                    JSON.stringify({
+                        name: form.buyerName.trim(),
+                        phone: normalizeDigits(form.buyerPhone),
+                        orderUid: tx, // paymentId == orderUid 로 사용
+                    })
+                );
+            } catch { }
+            showToast.success('결제가 완료되었습니다.', { group: 'payment', persist: true, showNow: false });
+            router.push(`/orders/complete?paymentId=${encodeURIComponent(tx)}`);
+        } catch {
+            showToast.error('결제 요청 중 오류가 발생했어요', { group: 'payment' });
         } finally {
             setSubmitting(false);
         }
@@ -341,7 +402,7 @@ export default function GuestPaymentPage() {
     );
 }
 
-/* 내부 컴포넌트: 토글 스위치 */
+/* 내부 토글 스위치 */
 function Switch({
     checked,
     onChange,

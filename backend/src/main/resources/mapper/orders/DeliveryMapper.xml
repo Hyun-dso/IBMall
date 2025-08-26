@@ -7,6 +7,7 @@
 
   <!-- 기존 UPSERT -->
   <insert id="insertDelivery" parameterType="com.itbank.mall.entity.orders.DeliveryEntity">
+
 		INSERT INTO deliveries (order_id, address1, address2, recipient, phone,
 		tracking_number, status)
 		VALUES (#{orderId}, #{address1}, #{address2}, #{recipient}, #{phone},
@@ -19,6 +20,17 @@
 		phone = VALUES(phone),
 		tracking_number = IFNULL(tracking_number, VALUES(tracking_number)),
 		status = VALUES(status)
+
+    INSERT INTO deliveries (order_id, address1, address2, recipient, phone, tracking_number, status)
+    VALUES (#{orderId}, #{address1}, #{address2}, #{recipient}, #{phone}, #{trackingNumber}, #{status})
+    ON DUPLICATE KEY UPDATE
+      address1         = VALUES(address1),
+      address2         = VALUES(address2),
+      recipient       = VALUES(recipient),
+      phone           = VALUES(phone),
+      tracking_number = IFNULL(tracking_number, VALUES(tracking_number)),
+      status          = VALUES(status)
+
   </insert>
 
 	  <update id="updateTrackingNumber">
@@ -36,6 +48,7 @@
 
   <select id="findByOrderId" parameterType="long"
           resultType="com.itbank.mall.entity.orders.DeliveryEntity">
+
 		SELECT
 		delivery_id AS deliveryId,
 		order_id AS orderId,
@@ -48,6 +61,20 @@
 		FROM deliveries
 		WHERE order_id = #{orderId}
 		LIMIT 1
+
+    SELECT
+      delivery_id AS deliveryId,
+      order_id    AS orderId,
+      address1,
+      address2,
+      recipient,
+      phone,
+      tracking_number AS trackingNumber,
+      status
+    FROM deliveries
+    WHERE order_id = #{orderId}
+    LIMIT 1
+
   </select>
 
   <!-- ✅ 추가: 트래킹번호로 단건 조회 -->
@@ -56,7 +83,8 @@
     SELECT
       delivery_id AS deliveryId,
       order_id    AS orderId,
-      address,
+      address1,
+      address2,
       recipient,
       phone,
       tracking_number AS trackingNumber,

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { Category } from '@/types/category';
 import Button from '@/components/ui/Button';
 import { showToast } from '@/lib/toast';
-import { createSellerCategory } from '@/lib/api/seller-categories.client';
+import { createSellerCategory, fetchSellerCategories } from '@/lib/api/seller-categories.client';
 import { INPUT_CLASS, INPUT_DIVIDER_CLASS, INPUT_GROUP_CLASS, CENTER_CONTENT, FORM_CLASS } from '@/constants/styles';
 
 type Props = { initialCategories: Category[] }; // ← 필수
@@ -41,6 +41,15 @@ export default function ProductCreateForm({ initialCategories }: Props) {
         showToast.error('상품 등록 API 연결 필요');
     };
 
+    const loadCategories = async () => {
+        try {
+            const r = await fetchSellerCategories();
+            setCats(r.data);
+        } catch (err) {
+            showToast.error('카테고리 불러오기 실패');
+        }
+    };
+
     return (
         <form onSubmit={submitProduct} className="border border-border dark:border-dark-border rounded-xl p-6 bg-surface dark:bg-dark-surface space-y-4">
             <h1 className="text-lg font-semibold">새 상품 등록</h1>
@@ -50,9 +59,12 @@ export default function ProductCreateForm({ initialCategories }: Props) {
                 <select
                     className="mt-1 w-full px-4 py-3 bg-transparent border border-border dark:border-dark-border rounded-lg"
                     value={catId}
+                    onFocus={loadCategories}   // 포커스 시 로드
                     onChange={(e) => setCatId(e.target.value ? Number(e.target.value) : '')}
                 >
-                    {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {cats.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
                 </select>
             </label>
 

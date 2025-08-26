@@ -1,47 +1,82 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="${1:?Usage: deploy.sh <image>}"
-SERVICE="${SERVICE:-ibmall-backend}"      # 컨테이너 이름 (고정)
-PORT="${PORT:-8080}"                      # 호스트/컨테이너 모두 8080
-HEALTH_PATH="${HEALTH_PATH:-/actuator/health}"
+# Usage: deploy.sh <image> <color>   # color: blue|green
+IMAGE="${1:?Usage: deploy.sh <image> <color>}"
+COLOR="${2:?Usage: deploy.sh <image> <color> (blue|green)}"
+
+SERVICE_BASE="${SERVICE_BASE:-ibmall-backend}"
 ENV_FILE="${ENV_FILE:-/home/ubuntu/env/backend.prod}"
+DATA_ROOT="${DATA_ROOT:-/home/ubuntu/upload}"
+SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-prod}"
+HEALTH_PATH="${HEALTH_PATH:-/actuator/health}"
 
-NAME="${SERVICE}"
+# Health wait configs (tunable via env)
+HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-120}"   # seconds
+HEALTH_INTERVAL="${HEALTH_INTERVAL:-5}"   # seconds
 
-echo "[deploy-backend] image=$IMAGE port=$PORT health=$HEALTH_PATH"
+case "$COLOR" in
+  blue)  PORT=8080; NAME="${SERVICE_BASE}-blue" ;;
+  green) PORT=8081; NAME="${SERVICE_BASE}-green" ;;
+  *) echo "color must be blue or green"; exit 2 ;;
+esac
 
-# 이미지 풀
+echo "[deploy-backend] image=$IMAGE color=$COLOR port=$PORT health=$HEALTH_PATH name=$NAME"
+
+# Always pull latest of the tag
 sudo docker pull "$IMAGE"
 
-# 기존 컨테이너 있으면 정리
+# Ensure bind-mount dirs exist
+sudo mkdir -p "${DATA_ROOT}/productImg" "${DATA_ROOT}/messageImg"
+
+# Remove same-color container if exists
 if sudo docker ps -a --format '{{.Names}}' | grep -q "^${NAME}$"; then
-  echo "[deploy-backend] stopping old container..."
+  echo "[deploy-backend] removing old container: $NAME"
   sudo docker rm -f "$NAME" >/dev/null 2>&1 || true
 fi
 
-# EFS 루트(호스트) 경로 준비
-DATA_ROOT="${DATA_ROOT:-/home/ubuntu/upload}"
-sudo mkdir -p "${DATA_ROOT}/productImg" "${DATA_ROOT}/messageImg"
+# Also remove legacy container name if exists (to avoid 8080/8081 conflicts)
+if sudo docker ps -a --format '{{.Names}}' | grep -q "^${SERVICE_BASE}$"; then
+  echo "[deploy-backend] removing legacy container: ${SERVICE_BASE}"
+  sudo docker rm -f "${SERVICE_BASE}" >/dev/null 2>&1 || true
+fi
 
-# 새 컨테이너 실행 (EFS 마운트 ↔ 컨테이너 동일 경로)
-sudo docker run -d --name "$NAME" -p ${PORT}:${PORT} \
+# If some other container is already bound to the target port, kill it defensively
+OTHER_BINDING=$(sudo docker ps --format '{{.Names}}\t{{.Ports}}' | awk -v pat=":${PORT}->" 'index($0, pat){print $1}')
+if [ -n "${OTHER_BINDING:-}" ] && [ "$OTHER_BINDING" != "$NAME" ]; then
+  echo "[deploy-backend] port ${PORT} is busy by ${OTHER_BINDING}; removing it"
+  sudo docker rm -f "$OTHER_BINDING" >/dev/null 2>&1 || true
+fi
+
+# Run container on fixed host port (8080 for blue, 8081 for green)
+CID=$(sudo docker run -d --name "$NAME" -p ${PORT}:8080 \
   --restart=always \
   --env-file "$ENV_FILE" \
-  -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-prod}" \
+  -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE}" \
+  -e MANAGEMENT_HEALTH_DB_ENABLED=false \
   -v "${DATA_ROOT}:${DATA_ROOT}:rw" \
-  "$IMAGE"
+  --label "app=ibmall-backend" --label "color=${COLOR}" \
+  "$IMAGE")
+echo "[deploy-backend] started container=$CID"
 
-# 헬스체크 대기
+# Health wait (local)
 echo -n "[deploy-backend] waiting health on :$PORT "
-for i in {1..60}; do
-  if curl -fsS "http://127.0.0.1:${PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
-    echo "OK"; break
+deadline=$(( $(date +%s) + HEALTH_TIMEOUT ))
+OK=""
+while [ "$(date +%s)" -lt "$deadline" ]; do
+  if curl -fsS --max-time 3 "http://127.0.0.1:${PORT}${HEALTH_PATH}" >/dev/null 2>&1; then
+    echo "OK"; OK=1; break
   fi
-  echo -n "."; sleep 1
+  echo -n "."; sleep "$HEALTH_INTERVAL"
 done
-curl -fsS "http://127.0.0.1:${PORT}${HEALTH_PATH}" >/dev/null 2>&1 || { echo >&2 "[deploy-backend] health check FAILED"; exit 1; }
 
-# 오래된 이미지 정리(선택)
+if [ -z "${OK:-}" ]; then
+  echo >&2 "[deploy-backend] health check FAILED on :$PORT"
+  echo "---- last 200 lines of container logs ($NAME) ----"
+  sudo docker logs --tail=200 "$NAME" || true
+  exit 1
+fi
+
+# Optional: prune dangling images
 sudo docker image prune -f >/dev/null 2>&1 || true
-echo "[deploy-backend] done"
+echo "[deploy-backend] done ($COLOR @ :$PORT is UP)"

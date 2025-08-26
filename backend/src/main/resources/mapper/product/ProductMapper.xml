@@ -14,7 +14,7 @@
     </update>
 
     <!-- 상품 기본가 조회 -->
-    <select id="getPriceById" parameterType="long" resultType="int">
+    <select id="getPriceById" parameterType="long" resultType="java.lang.Integer">
         SELECT price
         FROM product
         WHERE product_id = #{productId}

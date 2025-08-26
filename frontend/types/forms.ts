@@ -31,8 +31,8 @@ export interface GuestPaymentForm {
     address1: string;
     address2: string;
     sendToOther: boolean;
-    recipientName?: string;
-    recipientPhone?: string;
+    recipientName: string;
+    recipientPhone: string;
 }
 
 export type AnyForm = SignupForm | ProfileUpdateForm | GuestPaymentForm;

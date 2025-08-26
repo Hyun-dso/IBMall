@@ -7,9 +7,9 @@ import Button from '@/components/ui/Button';
 
 const NAV = [
     { href: '/seller/dashboard', label: '대시보드' },
-    { href: '/seller/products', label: '상품' },
     { href: '/seller/orders', label: '주문' },
     { href: '/seller/categories', label: '카테고리' },
+    { href: '/seller/products', label: '상품' },
 ];
 
 export default function SellerNav() {
