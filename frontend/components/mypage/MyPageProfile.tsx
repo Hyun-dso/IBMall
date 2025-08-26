@@ -104,7 +104,6 @@ export default function MyPageProfile({ initialMember }: { initialMember: User }
                     className={`${INPUT_CLASS} ${INPUT_DIVIDER_CLASS}`}
                     placeholder="이름"
 
-                    {...(loadData ? { onClick } : {})}
                     onChange={onChange('name')}
                 />
                 <input

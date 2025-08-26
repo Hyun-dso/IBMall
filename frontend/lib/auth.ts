@@ -9,7 +9,7 @@ export async function getUserFromServer(cookie: string): Promise<User | null> {
 
   if (!accessToken) return null;
 
-  const res = await fetch(`/api/members/me`, {
+  const res = await fetch(`http://localhost:8080/api/members/me`, {
     headers: {
       Cookie: `accessToken=${accessToken}`,
     },
