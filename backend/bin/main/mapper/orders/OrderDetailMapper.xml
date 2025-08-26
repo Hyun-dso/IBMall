@@ -32,5 +32,33 @@
 
     WHERE o.order_id = #{orderId}
   </select>
+  
+    <!-- 주문 UID 로 주문 상세 조회 -->
+  <select id="findOrderDetailByUid" resultType="com.itbank.mall.dto.orders.OrderDetailDto">
+    SELECT
+      o.order_id        AS orderId,
+      o.created_at      AS createdAt,
+      o.status          AS orderStatus,
+      o.buyer_name      AS buyerName,
+      p.name            AS productName,
+      p.price           AS productPrice,
+      -- p.image_url      AS imageUrl,
+      oi.quantity       AS quantity,
+      (oi.quantity * oi.price) AS itemTotal,
+
+      d.address1         AS deliveryAddress1,
+      d.address2         AS deliveryAddress2,
+      d.recipient       AS recipient,
+      d.phone           AS phone,
+      d.tracking_number AS trackingNumber,
+      d.status          AS deliveryStatus
+
+    FROM orders o
+    JOIN order_items oi ON o.order_id = oi.order_id
+    JOIN product p      ON oi.product_id = p.product_id
+    JOIN deliveries d   ON o.order_id = d.order_id
+
+    WHERE o.order_uid = #{orderUid}
+  	</select>
 
 </mapper>

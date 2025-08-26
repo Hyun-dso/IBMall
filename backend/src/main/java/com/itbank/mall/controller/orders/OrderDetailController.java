@@ -16,12 +16,12 @@ public class OrderDetailController {
 
     /**
      * 주문 상세 정보 JSON 반환 (단일 DTO로 구성)
-     * @param orderId 주문 번호
+     * @param Uid 주문 고유 UID
      * @return OrderDetailDto (주문 + 상품 + 배송 정보)
      */
-    @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDetailDto> getOrderDetail(@PathVariable ("orderId")Long orderId) {
-        OrderDetailDto dto = orderDetailService.getOrderDetailById(orderId);
+    @GetMapping("/{orderUid}")
+    public ResponseEntity<OrderDetailDto> getOrderDetail(@PathVariable("orderUid") String orderUid) {
+        OrderDetailDto dto = orderDetailService.getOrderDetailByUid(orderUid);
         return ResponseEntity.ok(dto);
     }
 }
