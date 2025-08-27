@@ -46,36 +46,22 @@
     WHERE order_id = #{orderId}
   </update>
 
-  <select id="findByOrderId" parameterType="long"
-          resultType="com.itbank.mall.entity.orders.DeliveryEntity">
+<select id="findByOrderId" parameterType="long"
+        resultType="com.itbank.mall.entity.orders.DeliveryEntity">
+  SELECT
+    delivery_id     AS deliveryId,
+    order_id        AS orderId,
+    address1        AS address1,
+    address2        AS address2,
+    recipient,
+    phone,
+    tracking_number AS trackingNumber,
+    status
+  FROM deliveries
+  WHERE order_id = #{orderId}
+  LIMIT 1
+</select>
 
-		SELECT
-		delivery_id AS deliveryId,
-		order_id AS orderId,
-		address1 AS address1,
-		address2 AS address2,
-		recipient,
-		phone,
-		tracking_number AS trackingNumber,
-		status
-		FROM deliveries
-		WHERE order_id = #{orderId}
-		LIMIT 1
-
-    SELECT
-      delivery_id AS deliveryId,
-      order_id    AS orderId,
-      address1,
-      address2,
-      recipient,
-      phone,
-      tracking_number AS trackingNumber,
-      status
-    FROM deliveries
-    WHERE order_id = #{orderId}
-    LIMIT 1
-
-  </select>
 
   <!-- ✅ 추가: 트래킹번호로 단건 조회 -->
   <select id="findByTrackingNumber" parameterType="string"

@@ -1,20 +1,52 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
+<!-- Delivery 알림 메일용 조회 Mapper -->
 <mapper namespace="com.itbank.mall.mapper.delivery.DeliveryNotifyMapper">
-  <select id="selectNotifyInfoByOrderId" parameterType="long"
-          resultType="com.itbank.mall.event.delivery.DeliveryNotifyInfo">
+
+  <!-- 주문 요약 + 수신자 -->
+  <select id="findDeliveryNotifySummaryByOrderId"
+          parameterType="long"
+          resultType="com.itbank.mall.event.delivery.DeliveryNotifySummaryDto">
     SELECT
-      o.order_id        AS orderId,
-      m.email           AS memberEmail,
-      m.nickname        AS memberNickname,
-      d.tracking_number AS trackingNumber,
-      d.status          AS status
+      o.order_id                                   AS orderId,
+      o.order_uid                                  AS orderUid,
+      pay.transaction_id                           AS transactionId,
+      d.tracking_number                            AS trackingNumber,
+      d.status                                     AS deliveryStatus,
+
+      COALESCE(SUM(oi.price * oi.quantity), 0)     AS totalAmount,
+      COALESCE(COUNT(oi.order_item_id), 0)         AS itemCount,
+
+      m.email                                      AS memberEmail,
+      m.nickname                                   AS memberNickname
     FROM orders o
-    JOIN member m     ON m.member_id = o.member_id
-    JOIN deliveries d ON d.order_id  = o.order_id
+    JOIN member m            ON m.id = o.member_id
+    LEFT JOIN order_items oi ON oi.order_id = o.order_id
+    LEFT JOIN payment pay    ON pay.order_id = o.order_id
+    LEFT JOIN deliveries d   ON d.order_id = o.order_id
     WHERE o.order_id = #{orderId}
-    LIMIT 1
+    GROUP BY
+      o.order_id, o.order_uid, pay.transaction_id, d.tracking_number, d.status,
+      m.email, m.nickname
   </select>
+
+  <!-- 주문 상품 라인 -->
+  <select id="findDeliveryNotifyLinesByOrderId"
+          parameterType="long"
+          resultType="com.itbank.mall.event.delivery.DeliveryNotifyLineDto">
+    SELECT
+      p.name                          AS productName,
+      oi.quantity                     AS quantity,
+      oi.price                        AS unitPrice,
+      (oi.price * oi.quantity)        AS lineTotal,
+      IFNULL(p.thumbnail_url, '')     AS imageUrl   <!-- image_url 제거 -->
+    FROM order_items oi
+    JOIN product p ON p.product_id = oi.product_id
+    WHERE oi.order_id = #{orderId}
+    ORDER BY oi.order_item_id ASC
+  </select>
+
 </mapper>
