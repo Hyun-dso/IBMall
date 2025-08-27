@@ -133,8 +133,8 @@
     <result property="hasDelivery" column="has_delivery"/>
   </resultMap>
 
-	<!-- Row(VO) 매핑: 상세 헤더 -->
-  <resultMap id="OrderDetailMap" type="com.itbank.mall.mapper.row.OrderDetailRow">
+	<!-- Row(VO) 매핑: 상세 헤더 -->  
+<resultMap id="OrderDetailMap" type="com.itbank.mall.mapper.row.OrderDetailRow">
     <id     property="orderId"    column="order_id"/>
     <result property="orderUid"   column="order_uid"/>
     <result property="createdAt"  column="created_at"/>
