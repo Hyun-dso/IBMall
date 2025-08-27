@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itbank.mall.mapper.orders.OrderDetailQueryMapper">
+
+  <!-- (1) 주문 헤더 단건 조회 -->
+  <select id="selectOrderHeaderByUid" parameterType="string"
+          resultType="com.itbank.mall.mapper.row.OrderDetailRow">
+    SELECT
+      o.order_id         AS orderId,
+      o.order_uid        AS orderUid,
+      o.created_at       AS createdAt,
+      o.status           AS status,
+      o.total_price      AS totalPrice,
+      o.buyer_name       AS buyerName,
+      o.buyer_phone      AS buyerPhone,
+
+      d.recipient        AS recipient,
+      d.phone            AS deliveryPhone,
+      d.address1         AS address1,
+      d.address2         AS address2,
+      d.tracking_number  AS trackingNumber,
+      d.status           AS deliveryStatus,
+
+      p.paid_amount      AS paidAmount   -- 응답에는 안 쓰지만 검증용
+    FROM orders o
+    LEFT JOIN deliveries d ON d.order_id = o.order_id
+    LEFT JOIN payment p    ON p.order_id = o.order_id
+    WHERE o.order_uid = #{orderUid}
+    LIMIT 1
+  </select>
+
+  <!-- (2) 주문 아이템 리스트 -->
+  <select id="selectOrderItemsByOrderId" parameterType="long"
+          resultType="com.itbank.mall.mapper.row.OrderItemRow">
+    SELECT
+      oi.order_id            AS orderId,
+      oi.product_id          AS productId,
+      oi.product_option_id   AS productOptionId,
+      pr.name                AS productName,
+      po.option_value        AS optionName,
+      oi.quantity            AS quantity,
+      oi.price               AS unitPrice
+    FROM order_items oi
+    JOIN product pr        ON pr.product_id = oi.product_id
+    LEFT JOIN product_option po ON po.id = oi.product_option_id
+    WHERE oi.order_id = #{orderId}
+    ORDER BY oi.order_item_id ASC
+  </select>
+
+</mapper>
