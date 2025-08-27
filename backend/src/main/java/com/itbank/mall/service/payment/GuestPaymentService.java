@@ -242,7 +242,8 @@ public class GuestPaymentService {
         delivery.setOrderId(order.getOrderId());
         delivery.setRecipient(dto.getRecipientName());
         delivery.setPhone(dto.getRecipientPhone());
-        delivery.setAddress(dto.getRecipientAddress());
+        delivery.setAddress1(dto.getRecipientAddress1());
+        delivery.setAddress2(dto.getRecipientAddress2());
         delivery.setStatus("READY");
         deliveryService.saveDelivery(delivery);
 
@@ -332,7 +333,8 @@ public class GuestPaymentService {
         delivery.setOrderId(order.getOrderId());
         delivery.setRecipient(dto.getRecipientName());
         delivery.setPhone(dto.getRecipientPhone());
-        delivery.setAddress(dto.getRecipientAddress());
+        delivery.setAddress1(dto.getRecipientAddress1());
+        delivery.setAddress2(dto.getRecipientAddress2());
         delivery.setStatus("READY");
         deliveryService.saveDelivery(delivery);
 

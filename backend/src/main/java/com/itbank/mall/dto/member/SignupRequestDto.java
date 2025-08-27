@@ -12,5 +12,6 @@ public class SignupRequestDto {
     private String name;
     private String nickname;
     private String phone;     // 선택
-    private String address;   // 선택
+    private String address1;   // 선택
+    private String address2;   // 선택
 }

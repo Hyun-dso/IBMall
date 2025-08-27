@@ -38,4 +38,13 @@
 		AND is_used = false
 		AND expired_at > NOW()
 	</update>
+
+	<select id="findLastCreatedAtByEmail" parameterType="string"
+		resultType="java.time.LocalDateTime">
+		SELECT created_at
+		FROM email_verification
+		WHERE email = #{email}
+		ORDER BY id DESC
+		LIMIT 1
+	</select>
 </mapper>

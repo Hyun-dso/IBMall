@@ -25,5 +25,15 @@ public class OrderDetailService {
     public OrderDetailDto getOrderDetailById(Long orderId) {
         return orderDetailMapper.findOrderDetailById(orderId);
     }
+    
+    /**
+     * 특정 주문 UID에 대한 상세 정보 조회
+     * @param orderUid 주문 UID
+     * @return 주문에 포함된 상품들 + 배송 정보
+     */
+    public OrderDetailDto getOrderDetailByUid(String orderUid) {
+        return orderDetailMapper.findOrderDetailByUid(orderUid);
+    }
+
 
 }

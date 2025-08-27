@@ -11,7 +11,8 @@ public class Member {
     private String name;
     private String nickname;
     private String phone;   // ex: 010-1234-5678
-    private String address; // ex: 서울 강남구 ...
+    private String address1; // ex: 서울 강남구 ...
+    private String address2;
     private String provider;       // "local", "google", "naver"
     private String providerId;     // 소셜 로그인용 고유값 (일반 회원은 null)
     private Boolean verified;    // 이메일 인증 여부

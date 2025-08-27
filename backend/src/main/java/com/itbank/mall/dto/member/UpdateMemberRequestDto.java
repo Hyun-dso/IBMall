@@ -9,5 +9,6 @@ public class UpdateMemberRequestDto {
 	private String name;
     private String nickname;
     private String phone;
-    private String address;
+    private String address1;
+    private String address2;
 }

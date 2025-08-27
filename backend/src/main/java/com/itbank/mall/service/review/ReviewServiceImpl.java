@@ -43,7 +43,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         return result;
     }
-
+   
     @Override
     public boolean hasAlreadyWritten(Long memberId, Long orderItemId) {
         return reviewMapper.findByMemberIdAndOrderItemId(memberId, orderItemId) != null;
@@ -53,6 +53,20 @@ public class ReviewServiceImpl implements ReviewService {
     public List<Review> getProductReviews(Long productId) {
         return reviewMapper.findByProductId(productId);
     }
-}
+    
+    @Override
+    public boolean updateReview(Review review) {
+        // 작성자 검증은 Mapper에서 id + member_id 조건으로 처리 권장
+    	int updated = reviewMapper.updateReview(review); 
+        return updated > 0;
+    }
+
+    @Override
+    public boolean deleteReview(Long reviewId, Long memberId) {
+        int deleted = reviewMapper.deleteReview(reviewId, memberId);
+        // 필요하면 여기서 order_item.is_reviewed = false, 마일리지 회수 로직 추가
+        return deleted > 0;
+    }
+} 
 
 

@@ -96,7 +96,7 @@
 		p.name AS product_name,
 		po.option_value AS option_value, -- 옵션 없으면 NULL
 		oi.quantity AS quantity,
-		oi.price AS line_total -- ⚠️ 라인합계(단가 아님)
+		(oi.quantity * oi.price) AS line_total
 		FROM orders o
 		JOIN order_items oi ON oi.order_id = o.order_id
 		JOIN product p ON p.product_id = oi.product_id
@@ -209,7 +209,7 @@ LIMIT #{size} OFFSET #{offset}
     FROM orders o
     WHERE o.order_uid   = #{orderUid}
       AND o.buyer_name  = #{name}
-      AND o.buyer_phone = #{phone}
+      AND REPLACE(o.buyer_phone, '-', '') = #{phone}
     LIMIT 1
   </select>
 

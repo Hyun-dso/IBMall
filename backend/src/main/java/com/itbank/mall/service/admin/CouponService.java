@@ -26,4 +26,9 @@ public class CouponService {
     public List<CouponEntity> getAllCoupons() {
         return couponMapper.selectAllCoupons();
     }
+    // 쿠폰 삭제
+    public int deleteCoupon(Long couponId) {
+        return couponMapper.deleteCouponById(couponId);
+    }
+
 }

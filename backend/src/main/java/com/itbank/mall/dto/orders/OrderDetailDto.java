@@ -44,8 +44,11 @@ public class OrderDetailDto {
     // 배송 정보 -------------------------
     private String buyerName;
 
-    /** 배송지 주소 */
-    private String deliveryAddress;
+    /** 주소 */
+    private String deliveryAddress1;
+    
+    /** 상세 주소 */
+    private String deliveryAddress2;
 
     /** 수령인 이름 */
     private String recipient;
