@@ -33,14 +33,14 @@ public class MemberCouponController {
 
     // ✅ [2] 내 유효한 쿠폰 목록 조회
     @GetMapping("/{memberId}")
-    public ApiResponse<List<MemberCouponEntity>> getMyCoupons(@PathVariable int memberId) {
+    public ApiResponse<List<MemberCouponEntity>> getMyCoupons(@PathVariable("memberId") int memberId) {
         List<MemberCouponEntity> list = memberCouponService.getValidCoupons(memberId);
         return ApiResponse.ok(list);
     }
 
     // ✅ [3] 쿠폰 사용 처리
     @PutMapping("/use/{memberCouponId}")
-    public ApiResponse<String> useCoupon(@PathVariable int memberCouponId) {
+    public ApiResponse<String> useCoupon(@PathVariable("memberCouponId") int memberCouponId) {
         int row = memberCouponService.useCoupon(memberCouponId);
         return row > 0 ? ApiResponse.ok(null, "쿠폰 사용 완료") : ApiResponse.fail("쿠폰 사용 실패");
     }

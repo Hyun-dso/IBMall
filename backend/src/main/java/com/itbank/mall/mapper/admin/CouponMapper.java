@@ -11,4 +11,7 @@ import com.itbank.mall.entity.coupon.CouponEntity;
 public interface CouponMapper {
     int insertCoupon(CouponDto dto);
     List<CouponEntity> selectAllCoupons();
+    int deleteCouponById(Long couponId);
+
 }
+

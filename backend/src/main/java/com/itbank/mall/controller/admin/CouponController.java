@@ -30,4 +30,11 @@ public class CouponController {
     public List<CouponEntity> getAllCoupons() {
         return couponService.getAllCoupons();
     }
+ // 쿠폰 삭제 (관리자용)
+    @DeleteMapping("/{couponId}")
+    public String deleteCoupon(@PathVariable("couponId") Long couponId) {
+        int row = couponService.deleteCoupon(couponId);
+        return row > 0 ? "삭제 성공" : "삭제 실패";
+    }
+
 }

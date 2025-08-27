@@ -1,36 +1,47 @@
 package com.itbank.mall.service.admin;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-
+import com.itbank.mall.entity.orders.DeliveryEntity;
+import com.itbank.mall.event.delivery.DeliveryStatusChangedEvent;
 import com.itbank.mall.mapper.admin.DeliveryStatusMapper;
-
+import com.itbank.mall.service.orders.DeliveryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class DeliveryStatusService {
 
     private final DeliveryStatusMapper deliveryStatusMapper;
+    private final DeliveryService deliveryService;
+    private final ApplicationEventPublisher events;
 
+    @Transactional
     public boolean updateStatus(Long orderId, String status) {
-        String trackingNumber = null;
+        DeliveryEntity current = deliveryService.findByOrderId(orderId);
 
-        // 배송중일 때만 운송장 번호 생성
-        if ("배송중".equals(status)) {
-            trackingNumber = generateTrackingNumber();
+        // 동일 상태인데 SHIPPING인데 운송장이 없으면 새로 생성
+        if (current != null && status.equals(current.getStatus())) {
+            if ("SHIPPING".equals(status) && (current.getTrackingNumber() == null || current.getTrackingNumber().isBlank())) {
+                String tn = deliveryService.generateAndAssignTrackingNumber(orderId);
+                deliveryStatusMapper.updateOrderStatus(orderId, status, tn);
+                events.publishEvent(new DeliveryStatusChangedEvent(orderId, status, tn));
+            }
+            return true;
         }
 
-        int result = deliveryStatusMapper.updateOrderStatus(orderId, status, trackingNumber);
-        return result > 0;
+        String trackingNumber = null;
+        if ("SHIPPING".equals(status)) {
+            trackingNumber = deliveryService.generateAndAssignTrackingNumber(orderId);
+        }
+
+        int updated = deliveryStatusMapper.updateOrderStatus(orderId, status, trackingNumber);
+        if (updated > 0) {
+            events.publishEvent(new DeliveryStatusChangedEvent(orderId, status, trackingNumber));
+            return true;
+        }
+        return false;
     }
 
-    private String generateTrackingNumber() {
-        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmm"));  // 날짜+시간
-        String uuidPart = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();  // UUID 일부
-        return "IB" + datePart + uuidPart;
-    }
 }
