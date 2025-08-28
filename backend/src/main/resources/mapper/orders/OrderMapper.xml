@@ -209,7 +209,7 @@ LIMIT #{size} OFFSET #{offset}
     FROM orders o
     WHERE o.order_uid   = #{orderUid}
       AND o.buyer_name  = #{name}
-      AND o.buyer_phone = #{phone}
+      AND REPLACE(o.buyer_phone, '-', '') = #{phone}
     LIMIT 1
   </select>
 

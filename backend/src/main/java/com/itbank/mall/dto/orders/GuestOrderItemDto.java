@@ -8,5 +8,5 @@ public class GuestOrderItemDto {
     private Long productOptionId;
     private String productName;
     private int quantity;
-    private int price;
+    private int unitPrice;
 }

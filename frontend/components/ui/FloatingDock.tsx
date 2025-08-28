@@ -2,8 +2,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import FloatingCart from '@/components/cart/FloatingCart';
-import ThemeToggle from '@/components/ui/ThemeToggle';
+import FloatingCart from '@/components/FloatingCart';
+import ThemeToggle from '@/components/util/ThemeToggle';
 
 const MIN_DESKTOP_WIDTH = 1024;
 

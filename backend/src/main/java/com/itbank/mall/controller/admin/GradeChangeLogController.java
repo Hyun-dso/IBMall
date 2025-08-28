@@ -29,14 +29,6 @@ public class GradeChangeLogController {
     public ApiResponse<List<GradeChangeLogDto>> getGradeChangeLogs() {
         return ApiResponse.ok(gradeChangeLogMapper.selectGradeChangeLogs(), "OK");
     }
-
-    // ❌ 운영에서는 제거 권장 (GET 상태 변경 금지)
-    // @GetMapping("/update-member-grade")
-    // public ApiResponse<String> updateMemberGrade(@RequestParam Long memberId) {
-    //     boolean updated = gradeUpdateService.updateMemberGradeByMemberId(memberId);
-    //     return ApiResponse.ok(updated ? "등급 갱신 완료" : "등급 변경 없음");
-    // }
-
     // ✅ 상태 변경은 POST만 유지
     @PostMapping(value = "/update-member-grade", consumes = "application/json", produces = "application/json")
     public ApiResponse<String> updateMemberGrade(@RequestBody GradeUpdateRequestDto dto) {
