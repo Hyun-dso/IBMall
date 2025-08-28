@@ -96,7 +96,7 @@
 		p.name AS product_name,
 		po.option_value AS option_value, -- 옵션 없으면 NULL
 		oi.quantity AS quantity,
-		oi.price AS line_total -- ⚠️ 라인합계(단가 아님)
+		(oi.quantity * oi.price) AS line_total
 		FROM orders o
 		JOIN order_items oi ON oi.order_id = o.order_id
 		JOIN product p ON p.product_id = oi.product_id
@@ -133,8 +133,8 @@
     <result property="hasDelivery" column="has_delivery"/>
   </resultMap>
 
-	<!-- Row(VO) 매핑: 상세 헤더 -->  
-<resultMap id="OrderDetailMap" type="com.itbank.mall.mapper.row.OrderDetailRow">
+	<!-- Row(VO) 매핑: 상세 헤더 -->
+  <resultMap id="OrderDetailMap" type="com.itbank.mall.mapper.row.OrderDetailRow">
     <id     property="orderId"    column="order_id"/>
     <result property="orderUid"   column="order_uid"/>
     <result property="createdAt"  column="created_at"/>
