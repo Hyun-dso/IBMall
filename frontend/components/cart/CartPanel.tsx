@@ -1,7 +1,7 @@
 // /components/cart/CartPanel.tsx
 'use client';
 
-import ProductLineItemCard from '@/components/ProductLineItemCard';
+import ProductLineItemCard from '@/components/product/ProductLineItemCard';
 import type { CartItem } from '@/types/cart';
 
 type Props = {

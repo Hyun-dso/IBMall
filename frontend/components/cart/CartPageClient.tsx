@@ -2,19 +2,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'react-hot-toast';
 import type { CartItem } from '@/types/cart';
 import { useCartStore } from '@/stores/useCartStore';
-import ProductLineItemCard from '@/components/ProductLineItemCard';
-import ProductBuyButtons from '@/components/product/ProductBuyButtons'; // 추가
+import ProductLineItemCard from '@/components/product/ProductLineItemCard';
 
 interface Props {
     ssrItems?: CartItem[]; // 회원일 때 서버에서 주입
 }
 
 export default function CartPageClient({ ssrItems }: Props) {
-    const router = useRouter();
     const updateQty = useCartStore((s) => s.updateQty);
     const remove = useCartStore((s) => s.remove);
     const storeItems = useCartStore((s) => s.items);
@@ -42,17 +38,17 @@ export default function CartPageClient({ ssrItems }: Props) {
         [items]
     );
 
-    const handleCheckout = async () => {
-        try {
-            toast.loading('결제 준비 중');
-            // TODO: 비회원 결제 /api/payments/guest/cart, PortOne V2 연동
-            toast.dismiss();
-            toast.success('결제 모듈 연결 대기중');
-        } catch {
-            toast.dismiss();
-            toast.error('결제 처리 중 오류가 발생했습니다. 잠시 후 다시 시도하세요.');
-        }
-    };
+    // const handleCheckout = async () => {
+    //     try {
+    //         toast.loading('결제 준비 중');
+    //         // TODO: 비회원 결제 /api/payments/guest/cart, PortOne V2 연동
+    //         toast.dismiss();
+    //         toast.success('결제 모듈 연결 대기중');
+    //     } catch {
+    //         toast.dismiss();
+    //         toast.error('결제 처리 중 오류가 발생했습니다. 잠시 후 다시 시도하세요.');
+    //     }
+    // };
 
     if (!ready) {
         return (
@@ -92,12 +88,12 @@ export default function CartPageClient({ ssrItems }: Props) {
                 </div>
 
                 {/* 변경: 기본 버튼 → ProductBuyButtons */}
-                <ProductBuyButtons
+                {/* <ProductBuyButtons
                     mode="cart"
                     className="w-full"
                     label="결제하기"
                     onBuyNow={handleCheckout}
-                />
+                /> */}
             </aside>
         </div>
     );

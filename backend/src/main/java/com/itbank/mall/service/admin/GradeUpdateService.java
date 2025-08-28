@@ -113,7 +113,7 @@ public class GradeUpdateService {
     
     @Transactional
     public boolean updateMemberGradeByMemberId(Long memberId) {
-        return updateMemberGradeByMemberId(memberId, "ADMIN_SINGLE_UPDATE", false);
+    	return updateMemberGradeByMemberId(memberId, "ADMIN_SINGLE_UPDATE", false);
     }
 
     // ✅ 변경 이력 조회(기존)

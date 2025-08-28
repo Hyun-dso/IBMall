@@ -2,8 +2,7 @@
 import type { Product } from '@/types/product';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import Button from '@/components/ui/Button';
-import ProductBuyButtons from '@/components/product/ProductBuyButtons';
+import ProductBuyButtons from '@/components/ProductBuyButtons';
 
 async function fetchProductById(id: string): Promise<Product | null> {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -64,7 +63,6 @@ export default async function ProductPage({
           </p>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="md">장바구니</Button>
             <ProductBuyButtons productId={product.productId} />
           </div>
         </div>

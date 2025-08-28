@@ -4,6 +4,6 @@ import { cookies } from 'next/headers';
 
 export default async function GuestPaymentsIndex() {
     const hasSession = Boolean((await cookies()).get('accessToken')?.value);
-    if (hasSession) redirect('/payments/member/cart');
+    if (hasSession) redirect('/payments/member');
     redirect('/payments/guest/cart');
 }
