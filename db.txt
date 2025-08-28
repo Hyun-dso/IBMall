@@ -59,7 +59,7 @@ CREATE TABLE `category` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,7 +70,8 @@ LOCK TABLES `category` WRITE;
 /*!40000 ALTER TABLE `category` DISABLE KEYS */;
 INSERT INTO `category` VALUES
 (13,'사람'),
-(16,'노트북');
+(16,'노트북'),
+(17,'노트북');
 /*!40000 ALTER TABLE `category` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -89,7 +90,7 @@ CREATE TABLE `coupon` (
   `created_at` datetime DEFAULT current_timestamp() COMMENT '생성일시',
   PRIMARY KEY (`coupon_id`),
   UNIQUE KEY `code` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -98,6 +99,8 @@ CREATE TABLE `coupon` (
 
 LOCK TABLES `coupon` WRITE;
 /*!40000 ALTER TABLE `coupon` DISABLE KEYS */;
+INSERT INTO `coupon` VALUES
+(9,'WELCOME11',11,'2025-12-31 23:59:59','2025-08-25 15:36:46');
 /*!40000 ALTER TABLE `coupon` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -122,7 +125,7 @@ CREATE TABLE `deliveries` (
   UNIQUE KEY `uq_tracking_number` (`tracking_number`),
   KEY `fk_deliveries_order` (`order_id`),
   CONSTRAINT `fk_deliveries_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -141,9 +144,12 @@ INSERT INTO `deliveries` VALUES
 (24,41,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234',NULL,'READY'),
 (25,42,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234',NULL,'READY'),
 (26,43,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234',NULL,'READY'),
-(27,44,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234',NULL,'READY'),
-(28,45,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234',NULL,'READY'),
-(29,46,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234',NULL,'READY');
+(27,44,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234','IB-20250826-TPB2DYH8','SHIPPING'),
+(28,45,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234','IB-20250826-A3647Y8Y','SHIPPING'),
+(29,46,'울산 남구 남중로80번길 35 123',NULL,'김동현','01012341234','IB-20250826-QRVCKUAH','SHIPPING'),
+(31,47,'서울시 강남구 테헤란로 123','OO아파트 101동 202호','테스트수령인','010-9876-5432','IB-20250826-4JL2DS8B','DELIVERED'),
+(32,48,'서울시 강남구 테헤란로 123','OO아파트 101동 202호','테스트수령인','010-9876-5432',NULL,'READY'),
+(33,52,'울산 남구 남중로80번길 35','302호','김동현','010-3213-2132',NULL,'READY');
 /*!40000 ALTER TABLE `deliveries` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -189,8 +195,10 @@ CREATE TABLE `email_verification` (
   `expired_at` datetime NOT NULL,
   `is_used` tinyint(1) DEFAULT 0,
   `created_at` datetime DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  PRIMARY KEY (`id`),
+  KEY `idx_email_created_at` (`email`,`created_at` DESC),
+  KEY `idx_email_token_valid` (`email`,`token`,`is_used`,`expired_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=83 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -199,6 +207,58 @@ CREATE TABLE `email_verification` (
 
 LOCK TABLES `email_verification` WRITE;
 /*!40000 ALTER TABLE `email_verification` DISABLE KEYS */;
+INSERT INTO `email_verification` VALUES
+(32,'donghyun322@gmail.com','830805','2025-08-26 14:36:19',0,'2025-08-26 14:21:17'),
+(33,'donghyun322@gmail.com','366742','2025-08-26 14:36:22',0,'2025-08-26 14:21:19'),
+(34,'donghyun322@gmail.com','268619','2025-08-26 14:36:23',0,'2025-08-26 14:21:21'),
+(35,'dong@gmail.com','081011','2025-08-26 14:36:41',1,'2025-08-26 14:21:39'),
+(36,'dong@gmail.com','945839','2025-08-26 14:36:44',1,'2025-08-26 14:21:41'),
+(37,'dong@gmail.com','196372','2025-08-26 14:36:45',1,'2025-08-26 14:21:42'),
+(38,'dong@gmail.com','646608','2025-08-26 14:40:09',0,'2025-08-26 14:25:07'),
+(39,'dong@gmail.com','643740','2025-08-26 14:40:10',0,'2025-08-26 14:25:08'),
+(40,'dong@gmail.com','319863','2025-08-26 14:40:11',0,'2025-08-26 14:25:09'),
+(41,'dong@gmail.com','361868','2025-08-26 14:40:12',0,'2025-08-26 14:25:09'),
+(42,'dong@gmail.com','203963','2025-08-26 14:40:12',0,'2025-08-26 14:25:10'),
+(43,'dong@gmail.com','283688','2025-08-26 14:40:13',0,'2025-08-26 14:25:11'),
+(44,'dong@gmail.com','812779','2025-08-26 14:40:13',0,'2025-08-26 14:25:11'),
+(45,'dong@gmail.com','258895','2025-08-26 14:40:13',0,'2025-08-26 14:25:11'),
+(46,'dong@gmail.com','245183','2025-08-26 14:40:14',0,'2025-08-26 14:25:11'),
+(47,'donghyun3212@gmail.com','119578','2025-08-26 14:45:22',1,'2025-08-26 14:30:20'),
+(48,'donghyun3212@gmail.com','474443','2025-08-26 14:47:22',1,'2025-08-26 14:32:19'),
+(49,'donghyun3212@gmail.com','229392','2025-08-26 14:52:47',1,'2025-08-26 14:37:44'),
+(50,'donghyun3212@gmail.com','826724','2025-08-26 14:52:49',1,'2025-08-26 14:37:46'),
+(51,'donghyun3212@gmail.com','045017','2025-08-26 14:52:50',1,'2025-08-26 14:37:48'),
+(52,'donghyun3212@gmail.com','339483','2025-08-26 14:54:40',1,'2025-08-26 14:39:37'),
+(53,'donghyun3212@gmail.com','311579','2025-08-26 14:56:23',1,'2025-08-26 14:41:20'),
+(54,'donghyun3212@gmail.com','319269','2025-08-26 14:57:25',1,'2025-08-26 14:42:23'),
+(55,'donghyun3212@gmail.com','188084','2025-08-26 14:57:26',1,'2025-08-26 14:42:24'),
+(56,'donghyun3212@gmail.com','323852','2025-08-26 14:57:28',1,'2025-08-26 14:42:25'),
+(57,'donghyun3212@gmail.com','814989','2025-08-26 14:57:29',1,'2025-08-26 14:42:26'),
+(58,'donghyun3212@gmail.com','257725','2025-08-26 15:00:40',1,'2025-08-26 14:45:38'),
+(59,'donghyun3212@gmail.com','346118','2025-08-26 15:00:40',1,'2025-08-26 14:45:38'),
+(60,'donghyun3212@gmail.com','172547','2025-08-26 15:00:41',1,'2025-08-26 14:45:39'),
+(61,'donghyun3212@gmail.com','910536','2025-08-26 15:00:42',1,'2025-08-26 14:45:40'),
+(62,'donghyun3212@gmail.com','145367','2025-08-26 15:00:43',1,'2025-08-26 14:45:40'),
+(63,'donghyun3212@gmail.com','903015','2025-08-26 15:00:43',1,'2025-08-26 14:45:41'),
+(64,'donghyun3212@gmail.com','409844','2025-08-26 15:00:43',1,'2025-08-26 14:45:41'),
+(65,'donghyun3212@gmail.com','298337','2025-08-26 15:00:43',1,'2025-08-26 14:45:41'),
+(66,'donghyun3212@gmail.com','341588','2025-08-26 15:00:44',1,'2025-08-26 14:45:42'),
+(67,'donghyun3212@gmail.com','762673','2025-08-26 15:00:45',1,'2025-08-26 14:45:42'),
+(68,'donghyun3212@gmail.com','605545','2025-08-26 15:05:52',1,'2025-08-26 14:50:50'),
+(69,'donghyun3212@gmail.com','903908','2025-08-26 15:05:53',1,'2025-08-26 14:50:51'),
+(70,'donghyun3212@gmail.com','176666','2025-08-26 15:05:54',1,'2025-08-26 14:50:51'),
+(71,'donghyun3212@gmail.com','501498','2025-08-26 15:05:55',1,'2025-08-26 14:50:52'),
+(72,'donghyun3212@gmail.com','963412','2025-08-26 15:05:55',1,'2025-08-26 14:50:53'),
+(73,'donghyun3212@gmail.com','447922','2025-08-26 15:05:55',1,'2025-08-26 14:50:53'),
+(74,'donghyun3212@gmail.com','622765','2025-08-26 15:05:55',1,'2025-08-26 14:50:53'),
+(75,'donghyun3212@gmail.com','734949','2025-08-26 15:05:56',1,'2025-08-26 14:50:54'),
+(76,'donghyun3212@gmail.com','717872','2025-08-26 15:05:57',1,'2025-08-26 14:50:54'),
+(77,'donghyun3212@gmail.com','372990','2025-08-26 15:05:57',1,'2025-08-26 14:50:54'),
+(78,'donghyun3212@gmail.com','491566','2025-08-26 15:08:36',1,'2025-08-26 14:53:33'),
+(79,'donghyun3212@gmail.com','001876','2025-08-26 15:10:36',1,'2025-08-26 14:55:33'),
+(80,'donghyun3212@gmail.com','867156','2025-08-26 15:19:58',1,'2025-08-26 15:04:55'),
+(81,'donghyun3212@gmail.com','636890','2025-08-26 15:21:36',0,'2025-08-26 15:06:34'),
+(82,'donghyun3212@gmail.com','577161','2025-08-26 17:51:31',0,'2025-08-26 17:36:28');
 /*!40000 ALTER TABLE `email_verification` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -335,7 +395,7 @@ CREATE TABLE `member` (
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `uniq_nickname` (`nickname`),
   UNIQUE KEY `uq_member_phone` (`phone`)
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -345,12 +405,13 @@ CREATE TABLE `member` (
 LOCK TABLES `member` WRITE;
 /*!40000 ALTER TABLE `member` DISABLE KEYS */;
 INSERT INTO `member` VALUES
-(36,'donghyun3212@gmail.com','$2a$10$pU/xC3pJvOjL6DlnIwDcr.o8gutsnFaBNfNlNI/2tcBI/p25FMiWe','','','010-4806-7700','local',NULL,0,'2025-08-13 12:33:26','USER','BASIC',NULL,NULL),
 (37,'123@j.j','$2a$10$6vbzy9YjAeHN/n23qjgDQ.X5i0RpMFkPtJ2eioEPrWf4F4qeA6y.u','길동이','김진우','010-1234-5678','local',NULL,0,'2025-08-14 10:28:07','USER','BASIC',NULL,NULL),
-(38,'test@test.com','$2a$10$TyzXXEG6snLFUrxeUPH4NuADaABUQiHOo2a6cSwAxFAsSePF0r0tq','1234','1234',NULL,'local',NULL,0,'2025-08-14 13:04:11','USER','BASIC',NULL,NULL),
-(39,'seller@seller.com','$2a$10$lF8dVzkXsdGomXGFViaXku/5y4R4bb86Go1iPd5SrSYYECtS1RAs6','테스트용 셀러의 닉네임','테스트용 셀러의 이름',NULL,'local',NULL,0,'2025-08-14 16:46:20','SELLER','BASIC',NULL,NULL),
+(38,'test@test.com','$2a$10$TyzXXEG6snLFUrxeUPH4NuADaABUQiHOo2a6cSwAxFAsSePF0r0tq','1234','1234','1','local',NULL,0,'2025-08-14 13:04:11','USER','BASIC','',''),
+(39,'seller@seller.com','$2a$10$lF8dVzkXsdGomXGFViaXku/5y4R4bb86Go1iPd5SrSYYECtS1RAs6','테스트용 셀러','셀러','12','local',NULL,0,'2025-08-14 16:46:20','SELLER','BASIC','서울 종로구 돈화문로 26','509호'),
 (40,'order46@example.com',NULL,'order46','김동현','01012341234',NULL,NULL,1,'2025-08-22 15:25:45','USER','BASIC',NULL,NULL),
-(41,'asdf@asdf.com','$2a$10$7WRtjhZtYHhYZ2eYyex7Eu1RcRE4yCwQG4cGEW5U67DAyfOuYh8ya','asdf','asdf','','local',NULL,0,'2025-08-25 02:23:10','USER','BASIC',NULL,NULL);
+(41,'asdf@asdf.com','$2a$10$7WRtjhZtYHhYZ2eYyex7Eu1RcRE4yCwQG4cGEW5U67DAyfOuYh8ya','asdf','asdf','','local',NULL,0,'2025-08-25 02:23:10','USER','BASIC',NULL,NULL),
+(43,'jinwoo9337@naver.com','1234','진우','김진우','010-1111-2222','local',NULL,1,'2025-08-26 15:28:52','USER','BASIC','서울특별시','관악구'),
+(44,'user4691@example.com','1bdd8b32e5b6ed5418023c39f3b9b306','nick556','name603','010-3469-9251','local','ee0a33f6-8245-11f0-9df0-10b6764c8393',0,'2025-08-26 15:28:52','USER','BASIC','주소58','상세14');
 /*!40000 ALTER TABLE `member` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -372,7 +433,7 @@ CREATE TABLE `member_coupon` (
   KEY `coupon_id` (`coupon_id`),
   CONSTRAINT `member_coupon_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
   CONSTRAINT `member_coupon_ibfk_2` FOREIGN KEY (`coupon_id`) REFERENCES `coupon` (`coupon_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -381,6 +442,8 @@ CREATE TABLE `member_coupon` (
 
 LOCK TABLES `member_coupon` WRITE;
 /*!40000 ALTER TABLE `member_coupon` DISABLE KEYS */;
+INSERT INTO `member_coupon` VALUES
+(3,37,9,1,'2025-08-25 15:52:28');
 /*!40000 ALTER TABLE `member_coupon` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -594,7 +657,7 @@ CREATE TABLE `order_items` (
   CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`),
   CONSTRAINT `chk_order_items_quantity_pos` CHECK (`quantity` >= 1),
   CONSTRAINT `chk_order_items_price_pos` CHECK (`price` >= 0)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -617,7 +680,9 @@ INSERT INTO `order_items` VALUES
 (29,43,72,NULL,1,1000,0),
 (30,44,72,NULL,1,1000,0),
 (31,45,72,NULL,1,1000,0),
-(32,46,74,NULL,1,1000,1);
+(32,46,74,NULL,1,1000,1),
+(34,47,75,NULL,2,2000,0),
+(38,52,74,NULL,1,1000,0);
 /*!40000 ALTER TABLE `order_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -646,7 +711,7 @@ CREATE TABLE `orders` (
   CONSTRAINT `fk_orders_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`) ON DELETE SET NULL,
   CONSTRAINT `chk_orders_type` CHECK (`order_type` in ('MEMBER','GUEST')),
   CONSTRAINT `chk_orders_status` CHECK (`status` in ('ORDERED','SHIPPING','DELIVERED','CANCELLED','REFUNDED'))
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -667,7 +732,10 @@ INSERT INTO `orders` VALUES
 (43,NULL,'김동현','01012341234','2025-08-22 14:09:58','ORDERED',1000,'GUEST','00abf13979649e81'),
 (44,NULL,'김동현','01012341234','2025-08-22 14:14:10','ORDERED',1000,'GUEST','f1d424cc960b7ec0'),
 (45,NULL,'김동현','01012341234','2025-08-22 14:17:16','ORDERED',1000,'GUEST','38a326be8114e4e3'),
-(46,40,'김동현','01012341234','2025-08-22 14:52:54','ORDERED',1000,'GUEST','e515f27f45f09558');
+(46,40,'김동현','01012341234','2025-08-22 14:52:54','ORDERED',1000,'GUEST','e515f27f45f09558'),
+(47,43,'테스트구매자','010-1234-5678','2025-08-26 15:40:32','ORDERED',30000,'GUEST','ORD-8f5b7acc-8247-11f0-9df0-10b6764c8393'),
+(48,43,'테스트구매자','010-1234-5678','2025-08-26 15:41:11','ORDERED',30000,'GUEST','ORD-a70c810a-8247-11f0-9df0-10b6764c8393'),
+(52,NULL,'김동현','010-3213-2132','2025-08-27 17:38:16','ORDERED',1000,'GUEST','5de3fc00d65c9027');
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -733,7 +801,7 @@ CREATE TABLE `payment` (
   KEY `idx_payment_member_created` (`member_id`,`created_at`),
   CONSTRAINT `fk_payment_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_payment_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -754,7 +822,8 @@ INSERT INTO `payment` VALUES
 (41,'00abf13979649e81',NULL,'00abf13979649e81','이상현',1000,1000,'','PAID','00abf13979649e81','2025-08-22 14:10:00','INICIS','김동현','donghyun3212@gmail.com','01012341234',43),
 (42,'f1d424cc960b7ec0',NULL,'f1d424cc960b7ec0','이상현',1000,1000,'','PAID','f1d424cc960b7ec0','2025-08-22 14:14:11','INICIS','김동현','donghyun3212@gmail.com','01012341234',44),
 (43,'38a326be8114e4e3',NULL,'38a326be8114e4e3','이상현',1000,1000,'','PAID','38a326be8114e4e3','2025-08-22 14:17:18','INICIS','김동현','donghyun3212@gmail.com','01012341234',45),
-(44,'e515f27f45f09558',40,'e515f27f45f09558','김동현',1000,1000,'','PAID','e515f27f45f09558','2025-08-22 14:52:55','INICIS','김동현','donghyun3212@gmail.com','01012341234',46);
+(44,'e515f27f45f09558',40,'e515f27f45f09558','김동현',1000,1000,'','PAID','e515f27f45f09558','2025-08-22 14:52:55','INICIS','김동현','donghyun3212@gmail.com','01012341234',46),
+(49,'5de3fc00d65c9027',NULL,'5de3fc00d65c9027','김동현',1000,1000,'','PAID','5de3fc00d65c9027','2025-08-27 17:38:20','INICIS','김동현','donghyun3212@gmail.com','010-3213-2132',52);
 /*!40000 ALTER TABLE `payment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -798,7 +867,7 @@ LOCK TABLES `product` WRITE;
 /*!40000 ALTER TABLE `product` DISABLE KEYS */;
 INSERT INTO `product` VALUES
 (72,'이상현',1000,113,13,'팀장입니다.',NULL,'2025-08-21 10:53:09',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'ACTIVE'),
-(74,'김동현',1000,96,13,'김동현입니다',NULL,'2025-08-21 16:58:56',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'ACTIVE'),
+(74,'김동현',1000,95,13,'김동현입니다',NULL,'2025-08-21 16:58:56',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'ACTIVE'),
 (75,'테스트',2000,99,13,NULL,'','2025-08-21 16:59:25',0,0,0,NULL,NULL,NULL,NULL,'ACTIVE');
 /*!40000 ALTER TABLE `product` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -1059,7 +1128,7 @@ CREATE TABLE `wishlist` (
   KEY `product_id` (`product_id`),
   CONSTRAINT `wishlist_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
   CONSTRAINT `wishlist_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`product_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1068,6 +1137,8 @@ CREATE TABLE `wishlist` (
 
 LOCK TABLES `wishlist` WRITE;
 /*!40000 ALTER TABLE `wishlist` DISABLE KEYS */;
+INSERT INTO `wishlist` VALUES
+(5,43,75);
 /*!40000 ALTER TABLE `wishlist` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -1080,4 +1151,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-08-25 15:33:11
+-- Dump completed on 2025-08-27 17:42:39
