@@ -1,7 +1,7 @@
 // /app/payments/page.tsx
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { getUserFromServer } from '@/lib/auth';
+import { getUserFromServer } from '@/lib/api/account.server';
 
 export default async function PaymentsIndexPage() {
   const cookie = (await headers()).get('cookie') || '';

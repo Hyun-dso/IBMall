@@ -116,7 +116,7 @@ function toAdminResponse<T>(
     // 실패: status/코드/메시지 정규화
     const code =
         (isRecord(body) && typeof body.code === 'string' && (body.code as string)) ||
-        (isRecord(body) && isRecord((body as any).error) && typeof (body as any).error.code === 'string' && (body as any).error.code) ||
+        (isRecord(body) && isRecord((body).error) && typeof (body).error.code === 'string' && (body).error.code) ||
         'UNKNOWN';
 
     return {
@@ -196,7 +196,7 @@ export type JsonResult<T> =
     | { ok: true; data: T; message?: string | null }
     | { ok: false; status: number; message: string; code?: string };
 
-function normalizeError(res: Response, body: any): { status: number; message: string; code?: string } {
+function normalizeError(res: Response, body: { message: string; error: { message: string; code: string; }; }): { status: number; message: string; code?: string } {
     if (body && typeof body === 'object') {
         const msg = body?.message || body?.error?.message || res.statusText;
         const code = body?.error?.code;

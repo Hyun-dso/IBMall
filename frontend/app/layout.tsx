@@ -1,67 +1,46 @@
-// /app/layout.tsx
-import '@/styles/globals.css';
-import { headers } from 'next/headers';
-import localFont from 'next/font/local';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import ThemeSync from './ThemeSync';
-import ThemeToggle from '@/components/ui/ThemeToggle';
-import { getUserFromServer } from '@/lib/auth';
-import FloatingDock from '@/components/ui/FloatingDock';
-import GlobalToast from '@/components/GlobalToast';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "@/styles/globals.css";
+import GlobalToast from '@/components/util/GlobalToast';
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { headers } from "next/headers";
+import { getUserFromServer } from "@/lib/api/account.server";
+import FloatingDock from "@/components/ui/FloatingDock";
 
-const myFont = localFont({
-  src: '../public/fonts/PretendardVariable.woff2',
-  display: 'swap',
-  variable: '--font-myfont',
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
-export const metadata = {
-  title: 'IBMall',
-  description: '쇼핑몰',
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "IB Mall",
+  description: "안녕ㅎㅎ",
 };
 
-export const dynamic = 'force-dynamic';
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children, }: Readonly<{ children: React.ReactNode; }>) {
+
   const cookie = (await headers()).get('cookie') || '';
   const user = await getUserFromServer(cookie);
 
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <head>
-        {/* FOUC 방지용 테마 초기 적용 */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('theme');
-                  var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var isDark = theme === 'dark' || (!theme || theme === 'system') && systemDark;
-                  if (isDark) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch(_) {}
-              })();
-            `,
-          }}
-        />
-      </head>
-      <body className={`${myFont.variable} font-sans`}>
-        <ThemeSync />
-        <GlobalToast />
+    <html lang="ko">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <Header user={user} />
-        <main className="relative z-10 w-full flex justify-center min-h-[calc(100dvh-6rem)] mt-[var(--header-height)] pt-4 bg-background dark:bg-dark-background">
+        <main className={`relative z-10 w-full flex justify-center min-h-[calc(100dvh-var(--header-height))] mt-[var(--header-height)] mb-[var(--footer-height)] bg-background`}>
           {children}
         </main>
-        <footer className="fixed w-full h-24 bottom-0 flex border-t border-border dark:border-dark-border bg-surface dark:bg-dark-surface">
-          <Footer />
-        </footer>
+        <GlobalToast />
         <FloatingDock />
-        <ThemeToggle />
+        <Footer />
       </body>
     </html>
   );

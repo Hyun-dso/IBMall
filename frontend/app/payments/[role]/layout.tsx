@@ -1,25 +1,7 @@
 // /app/payments/[role]/layout.tsx
-import { cookies } from 'next/headers';
-import { redirect, notFound } from 'next/navigation';
-import type { PaymentRole } from '@/types/payment';
-
-type Params = { role: PaymentRole };
 
 export default async function PaymentsRoleLayout({
-    children,
-    params,
-}: { children: React.ReactNode; params: any }) {
-    const { role } = params as { role: 'member' | 'guest' };
-    if (role !== 'member' && role !== 'guest') notFound();
-
-  if (role !== 'member' && role !== 'guest') notFound();
-
-  // ✅ Next 15 기준 cookies()는 동기 사용
-  const cookieStore = cookies();
-  const hasSession = Boolean((await cookieStore).get('accessToken')?.value);
-
-  if (role === 'member' && !hasSession) redirect('/signin?next=/payments/member/cart');
-  if (role === 'guest' && hasSession) redirect('/payments/member/cart');
-
+  children,
+}: { children: React.ReactNode; }) {
   return <>{children}</>;
 }

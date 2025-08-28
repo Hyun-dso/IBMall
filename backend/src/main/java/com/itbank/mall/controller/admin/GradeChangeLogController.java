@@ -29,7 +29,6 @@ public class GradeChangeLogController {
     public ApiResponse<List<GradeChangeLogDto>> getGradeChangeLogs() {
         return ApiResponse.ok(gradeChangeLogMapper.selectGradeChangeLogs(), "OK");
     }
-
     // ✅ 상태 변경은 POST만 유지
     @PostMapping(value = "/update-member-grade", consumes = "application/json", produces = "application/json")
     public ApiResponse<String> updateMemberGrade(@RequestBody GradeUpdateRequestDto dto) {

@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Button from '@/components/ui/Button';
 import { showToast } from '@/lib/toast';
 
 const CARD_CLASS =
@@ -289,12 +288,11 @@ export default function TrackOrderPage() {
             </div>
 
             <div className="flex gap-2">
-              <Button type="submit" disabled={loading}>
+              <button type="submit" disabled={loading}>
                 {orderUid.trim() ? '상세 조회' : '목록 검색'}
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => {
                   setOrderUid('');
                   setList(null);
@@ -302,7 +300,7 @@ export default function TrackOrderPage() {
                 }}
               >
                 초기화
-              </Button>
+              </button>
             </div>
           </form>
         </section>
@@ -327,9 +325,9 @@ export default function TrackOrderPage() {
                       </div>
                     </div>
                     <div className="shrink-0">
-                      <Button size="sm" onClick={() => onFetchDetail(o.orderUid)}>
+                      <button onClick={() => onFetchDetail(o.orderUid)}>
                         상세
-                      </Button>
+                      </button>
                     </div>
                   </li>
                 ))}
@@ -383,7 +381,7 @@ export default function TrackOrderPage() {
             )}
 
             <div className="mt-6 flex gap-2">
-              <Button
+              <button
                 className="flex-1"
                 onClick={() => {
                   const nm = name.trim();
@@ -394,9 +392,8 @@ export default function TrackOrderPage() {
                 }}
               >
                 주문 완료 화면으로
-              </Button>
-              <Button
-                variant="outline"
+              </button>
+              <button
                 className="flex-1"
                 onClick={() => {
                   setDetail(null);
@@ -410,7 +407,7 @@ export default function TrackOrderPage() {
                 }}
               >
                 세션 힌트 저장
-              </Button>
+              </button>
             </div>
           </section>
         )}

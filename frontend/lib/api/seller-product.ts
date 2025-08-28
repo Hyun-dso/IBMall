@@ -15,22 +15,22 @@ function normalizeProduct(r: RawProduct): Product {
         name: String(r.name ?? ''),
         price: Number(r.price ?? 0),
         stock: Number(r.stock ?? 0),
-        description: (r as any).description ?? null,
-        thumbnailUrl: (r as any).thumbnailUrl ?? null,
-        status: (r as any).status ?? 'ACTIVE',
-        images: Array.isArray((r as any).images) ? (r as any).images : [],
-        createdAt: (r as any).createdAt ?? new Date().toISOString(),
+        description: (r).description ?? null,
+        thumbnailUrl: (r).thumbnailUrl ?? null,
+        status: (r).status ?? 'ACTIVE',
+        images: Array.isArray((r).images) ? (r).images : [],
+        createdAt: (r).createdAt ?? new Date().toISOString(),
     };
 }
 
 /* SSR */
 export async function listProductsServer(): Promise<JsonResult<Product[]>> {
-    const res = await serverJSON<any[]>(PRODUCTS_PATH, { method: 'GET' });
-    if (!res.ok) return res as any;
+    const res = await serverJSON<[]>(PRODUCTS_PATH, { method: 'GET' });
+    if (!res.ok) return res;
     try {
         return { ok: true, data: res.data.map(normalizeProduct), message: res.message ?? null };
-    } catch (e: any) {
-        return { ok: false, status: 500, message: e.message || '정규화 오류' };
+    } catch {
+        return { ok: false, status: 500, message: '정규화 오류' };
     }
 }
 
