@@ -118,9 +118,6 @@ export default function CartPaymentFrom({
         >
             <h2 className="text-lg font-semibold">{title}</h2>
 
-
-            <ProductLineItemCard item={product} onQuantityChange={handleQuantityChange} />
-
             {/* 장바구니 섹션: 리스트만 카드로 감싸서 렌더링 */}
             <section className={`p-6 ${CARD_CLASS}`}>
                 <h2 className="text-lg font-semibold mb-4">장바구니</h2>
